@@ -95,7 +95,22 @@ Numbers are normalised with the school's country code (`0712 345 678` → `25471
 
 **Set fees for a term** → *School Fee Structure*: pick the term, optionally a class and boarding type, add fee lines. You can have a general structure plus class-specific ones; the most specific wins per fee type. Transport and activity fees come from the route/activity, not the structure. "Once" fee types (e.g. Admission) are only ever charged once per student.
 
-**Bill the term** → *Fee Billing Run*: pick term, due date, optionally a class or stream → **Preview** shows every student's lines and the total → Submit. Invoices are created in the background, one per student, never twice for the same term (safe to re-run later for new admissions). Parents are notified by SMS and/or emailed a PDF statement if enabled. Mid-term admissions: Student → Fees → *Bill for a Term*.
+**Bill the term** → *Fee Billing Run*:
+1. Pick the **term**, then filter if you like: one or more **classes**, a **stream**, **Day/Boarder**. Leave the filters blank to bill everyone. Set the invoice date and due date.
+2. Click **Get Students & Fees**. Every matching student is listed with their fee lines (e.g. *Tuition 25,000 · Lunch 6,000 · Transport 9,000*) and total. The **Totals** section shows students and amount, and **By Fee Type** shows each fee's number of students and amount.
+   * Students already invoiced for the term are left out and counted.
+   * Students with no fees in the structure are counted too.
+3. Untick anyone you don't want to invoice now (*Students → Tick all / Untick all*). Totals update as you tick.
+4. Click **Post N Invoices**. Invoices are created and submitted in the background, exactly as reviewed. Each row then shows *Invoiced* with its invoice, or the error. Parents are notified if ticked.
+
+You can run it again later for new admissions; anyone already invoiced is skipped. For a single mid-term admission use Student → Fees → *Bill for a Term*.
+
+**Automatic billing at the start of each term:** *School Settings → Accounts & IDs → Automatic Term Billing*.
+* Tick **Bill each term automatically**.
+* Choose **Create draft for review**: the Bursar is alerted with the student count and total, checks it, and clicks Post. Or choose **Post automatically**: invoices go out straight away.
+* Choose how many days before the term starts (0 = first day) and when fees are due.
+* A daily job does the rest. If the term has no fee structure yet, the Bursar is reminded to create or copy one.
+* Terms that already have a billing run are never billed again. A term more than 2 weeks old is left alone, so switching this on mid-term won't bill the current term.
 
 **Receive money** → *Fee Payment* (or Student → Fees → Record Payment). The form shows what's owed per fee type. Choose:
 * **Oldest balance first** (default): oldest invoice first, then by fee-type priority (Tuition before Transport, etc.).

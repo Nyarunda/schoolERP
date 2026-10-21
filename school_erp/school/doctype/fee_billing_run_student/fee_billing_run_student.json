@@ -1,0 +1,137 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-22 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "include",
+  "student",
+  "student_name",
+  "stream",
+  "school_class",
+  "fee_lines",
+  "total",
+  "status",
+  "sales_invoice",
+  "note",
+  "lines_json"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "default": "1",
+   "fieldname": "include",
+   "fieldtype": "Check",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Include"
+  },
+  {
+   "columns": 2,
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "idx": 3,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Stream",
+   "options": "Stream",
+   "read_only": 1
+  },
+  {
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 5,
+   "label": "Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "fee_lines",
+   "fieldtype": "Small Text",
+   "idx": 6,
+   "in_list_view": 1,
+   "label": "Fees",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "Total",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 8,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nInvoiced\nSkipped\nError",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "idx": 9,
+   "label": "Invoice",
+   "no_copy": 1,
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "note",
+   "fieldtype": "Data",
+   "idx": 10,
+   "label": "Note",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "lines_json",
+   "fieldtype": "Code",
+   "hidden": 1,
+   "idx": 11,
+   "label": "Lines Json",
+   "options": "JSON",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-22 13:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Fee Billing Run Student",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_order": "DESC",
+ "states": []
+}

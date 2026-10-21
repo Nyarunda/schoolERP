@@ -6,15 +6,29 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "title",
   "school_term",
   "school_year",
+  "classes",
+  "stream",
+  "boarding_type",
+  "cb1",
   "posting_date",
   "due_date",
-  "cb1",
-  "school_class",
-  "stream",
   "submit_invoices",
   "send_notifications",
+  "auto_generated",
+  "sb_totals",
+  "total_students",
+  "total_amount",
+  "cb_totals",
+  "already_billed",
+  "no_fees",
+  "fetched_on",
+  "sb_summary",
+  "fee_summary",
+  "sb_students",
+  "students",
   "sb_result",
   "status",
   "invoices_created",
@@ -27,10 +41,18 @@
  ],
  "fields": [
   {
-   "fieldname": "school_term",
-   "fieldtype": "Link",
+   "fieldname": "title",
+   "fieldtype": "Data",
    "idx": 1,
    "in_list_view": 1,
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_standard_filter": 1,
    "label": "Term",
    "options": "School Term",
    "reqd": 1
@@ -39,63 +61,157 @@
    "fetch_from": "school_term.school_year",
    "fieldname": "school_year",
    "fieldtype": "Link",
-   "idx": 2,
+   "idx": 3,
    "label": "School Year",
    "options": "School Year",
    "read_only": 1
   },
   {
+   "description": "Leave blank to bill every class",
+   "fieldname": "classes",
+   "fieldtype": "Table MultiSelect",
+   "idx": 4,
+   "label": "Classes",
+   "options": "Fee Billing Run Class"
+  },
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 5,
+   "label": "Only Stream",
+   "options": "Stream"
+  },
+  {
+   "default": "All",
+   "fieldname": "boarding_type",
+   "fieldtype": "Select",
+   "idx": 6,
+   "label": "Day / Boarder",
+   "options": "All\nDay\nBoarder"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 7
+  },
+  {
    "default": "Today",
    "fieldname": "posting_date",
    "fieldtype": "Date",
-   "idx": 3,
-   "label": "Posting Date",
+   "idx": 8,
+   "label": "Invoice Date",
    "reqd": 1
   },
   {
    "fieldname": "due_date",
    "fieldtype": "Date",
-   "idx": 4,
+   "idx": 9,
    "label": "Due Date",
    "reqd": 1
   },
   {
-   "fieldname": "cb1",
-   "fieldtype": "Column Break",
-   "idx": 5
-  },
-  {
-   "fieldname": "school_class",
-   "fieldtype": "Link",
-   "idx": 6,
-   "label": "Only Class",
-   "options": "School Class"
-  },
-  {
-   "fieldname": "stream",
-   "fieldtype": "Link",
-   "idx": 7,
-   "label": "Only Stream",
-   "options": "Stream"
-  },
-  {
    "default": "1",
+   "description": "Untick to create draft invoices you can check one by one",
    "fieldname": "submit_invoices",
    "fieldtype": "Check",
-   "idx": 8,
-   "label": "Submit Invoices"
+   "idx": 10,
+   "label": "Post (submit) invoices"
   },
   {
    "default": "1",
    "fieldname": "send_notifications",
    "fieldtype": "Check",
-   "idx": 9,
+   "idx": 11,
    "label": "Notify Parents (SMS/Email)"
+  },
+  {
+   "fieldname": "auto_generated",
+   "fieldtype": "Check",
+   "idx": 12,
+   "label": "Created automatically",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_totals",
+   "fieldtype": "Section Break",
+   "idx": 13,
+   "label": "Totals"
+  },
+  {
+   "bold": 1,
+   "fieldname": "total_students",
+   "fieldtype": "Int",
+   "idx": 14,
+   "label": "Students to Invoice",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "idx": 15,
+   "in_list_view": 1,
+   "label": "Total to Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_totals",
+   "fieldtype": "Column Break",
+   "idx": 16
+  },
+  {
+   "fieldname": "already_billed",
+   "fieldtype": "Int",
+   "idx": 17,
+   "label": "Already Invoiced (skipped)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "no_fees",
+   "fieldtype": "Int",
+   "idx": 18,
+   "label": "No Fees Found",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fetched_on",
+   "fieldtype": "Datetime",
+   "idx": 19,
+   "label": "Fees Worked Out At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_summary",
+   "fieldtype": "Section Break",
+   "idx": 20,
+   "label": "By Fee Type"
+  },
+  {
+   "fieldname": "fee_summary",
+   "fieldtype": "Table",
+   "idx": 21,
+   "label": "Fee Summary",
+   "options": "Fee Billing Run Fee Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_students",
+   "fieldtype": "Section Break",
+   "idx": 22,
+   "label": "Students"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "students",
+   "fieldtype": "Table",
+   "idx": 23,
+   "label": "Students",
+   "options": "Fee Billing Run Student"
   },
   {
    "fieldname": "sb_result",
    "fieldtype": "Section Break",
-   "idx": 10,
+   "idx": 24,
    "label": "Result"
   },
   {
@@ -103,7 +219,7 @@
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
-   "idx": 11,
+   "idx": 25,
    "in_list_view": 1,
    "label": "Status",
    "options": "Draft\nQueued\nRunning\nCompleted\nCompleted with Errors\nFailed",
@@ -113,8 +229,7 @@
    "allow_on_submit": 1,
    "fieldname": "invoices_created",
    "fieldtype": "Int",
-   "idx": 12,
-   "in_list_view": 1,
+   "idx": 26,
    "label": "Invoices Created",
    "read_only": 1
   },
@@ -122,28 +237,27 @@
    "allow_on_submit": 1,
    "fieldname": "students_skipped",
    "fieldtype": "Int",
-   "idx": 13,
+   "idx": 27,
    "label": "Students Skipped",
    "read_only": 1
   },
   {
    "fieldname": "cb2",
    "fieldtype": "Column Break",
-   "idx": 14
+   "idx": 28
   },
   {
    "allow_on_submit": 1,
    "fieldname": "total_billed",
    "fieldtype": "Currency",
-   "idx": 15,
-   "in_list_view": 1,
-   "label": "Total Billed",
+   "idx": 29,
+   "label": "Total Invoiced",
    "read_only": 1
   },
   {
    "fieldname": "amended_from",
    "fieldtype": "Link",
-   "idx": 16,
+   "idx": 30,
    "label": "Amended From",
    "no_copy": 1,
    "options": "Fee Billing Run",
@@ -151,15 +265,16 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "sb_log",
    "fieldtype": "Section Break",
-   "idx": 17
+   "idx": 31
   },
   {
    "allow_on_submit": 1,
    "fieldname": "error_log",
    "fieldtype": "Long Text",
-   "idx": 18,
+   "idx": 32,
    "label": "Error Log",
    "read_only": 1
   }
@@ -167,7 +282,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-22 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Fee Billing Run",
@@ -223,5 +338,7 @@
  "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
 }

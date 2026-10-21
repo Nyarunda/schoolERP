@@ -16,3 +16,7 @@ build/
 # never commit vendor signing keys
 *.key
 vendor_private*
+
+# local service files
+dump.rdb
+*.rdb

@@ -108,3 +108,36 @@ def _merge_activity(lines, fee_type, amount, name):
 
 def net_amount(line: dict) -> float:
 	return round(line["amount"] * (1 - (line.get("discount_percent") or 0) / 100.0), 2)
+
+
+def summarize_run(students: list[dict]) -> dict:
+	"""
+	students: [{include, lines: [{fee_type, amount, discount_percent}]}]
+	Totals over the included students: count, amount, and per fee type (students charged, amount).
+	"""
+	by_type: dict[str, dict] = {}
+	total, count = 0.0, 0
+	for s in students:
+		if not s.get("include"):
+			continue
+		count += 1
+		for line in s.get("lines") or []:
+			amt = net_amount(line)
+			total += amt
+			row = by_type.setdefault(line["fee_type"], {"fee_type": line["fee_type"], "students": 0, "amount": 0.0,
+														"priority": line.get("priority", 10)})
+			row["students"] += 1
+			row["amount"] = round(row["amount"] + amt, 2)
+	rows = sorted(by_type.values(), key=lambda r: (r["priority"], r["fee_type"]))
+	return {"students": count, "amount": round(total, 2), "by_fee_type": rows}
+
+
+def describe_lines(lines: list[dict], fmt=lambda v: f"{v:,.0f}") -> str:
+	"""'Tuition 25,000 · Lunch 6,000 (−50%)' for the student row."""
+	parts = []
+	for l in lines:
+		txt = f"{l['fee_type']} {fmt(net_amount(l))}"
+		if l.get("discount_percent"):
+			txt += f" (-{l['discount_percent']:g}%)"
+		parts.append(txt)
+	return " · ".join(parts)

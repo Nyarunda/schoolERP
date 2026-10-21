@@ -5,7 +5,9 @@ from frappe import _
 from frappe.utils import flt, getdate
 
 from school_erp import licensing
-from school_erp.logic.billing import compute_fee_lines, net_amount
+import json
+
+from school_erp.logic.billing import compute_fee_lines, describe_lines, net_amount, summarize_run
 
 
 def _fee_types():
@@ -132,46 +134,58 @@ def make_invoice(student_doc, term, lines, fee_types, posting_date, due_date, ru
 	return si
 
 
-def students_for(term_filters):
+def students_for(f):
+	"""Active students matching a run's filters: classes (list), stream, boarding_type."""
 	filters = {"status": "Active"}
-	if term_filters.get("school_class"):
-		filters["school_class"] = term_filters["school_class"]
-	if term_filters.get("stream"):
-		filters["stream"] = term_filters["stream"]
+	classes = [c for c in (f.get("classes") or ([f["school_class"]] if f.get("school_class") else [])) if c]
+	if classes:
+		filters["school_class"] = ("in", classes)
+	if f.get("stream"):
+		filters["stream"] = f["stream"]
+	if f.get("boarding_type") and f["boarding_type"] != "All":
+		filters["boarding_type"] = f["boarding_type"]
 	return frappe.get_all("Student", filters=filters, pluck="name", order_by="school_class, stream, student_name")
 
 
-@frappe.whitelist()
-def preview_billing(school_term, school_class=None, stream=None):
-	"""What a billing run would do, without creating anything."""
-	frappe.has_permission("Fee Billing Run", "create", throw=True)
+def run_filters(doc):
+	return {"classes": [c.school_class for c in doc.get("classes") or []], "stream": doc.stream, "boarding_type": doc.boarding_type}
+
+
+def fill_run(doc):
+	"""Work out every matching student's fee lines and put them on the run for review."""
 	licensing.require("fees")
-	data = BillingData(school_term)
-	students = students_for({"school_class": school_class, "stream": stream})
-	out = {"students": len(students), "to_bill": 0, "already_billed": 0, "no_fees": 0, "total": 0.0, "rows": []}
-	for name in students:
-		if existing_invoice(name, school_term):
-			out["already_billed"] += 1
+	data = BillingData(doc.school_term)
+	currency = frappe.db.get_single_value("School Settings", "currency")
+	fmt = lambda v: frappe.utils.fmt_money(v, precision=0, currency=None)  # noqa: E731
+	doc.set("students", [])
+	already = no_fees = 0
+	for name in students_for(run_filters(doc)):
+		if existing_invoice(name, doc.school_term):
+			already += 1
 			continue
-		doc = frappe.get_cached_doc("Student", name)
-		lines = data.lines_for(doc)
+		stu = frappe.get_cached_doc("Student", name)
+		lines = data.lines_for(stu)
 		if not lines:
-			out["no_fees"] += 1
+			no_fees += 1
 			continue
-		total = sum(net_amount(l) for l in lines)
-		out["to_bill"] += 1
-		out["total"] += total
-		if len(out["rows"]) < 200:
-			out["rows"].append(
-				{
-					"student": name,
-					"student_name": doc.student_name,
-					"school_class": doc.school_class,
-					"total": total,
-					"lines": [{"fee_type": l["fee_type"], "amount": net_amount(l)} for l in lines],
-				}
-			)
-	return out
+		doc.append("students", {
+			"include": 1, "student": name, "student_name": stu.student_name, "stream": stu.stream, "school_class": stu.school_class,
+			"fee_lines": describe_lines(lines, fmt), "total": sum(net_amount(l) for l in lines),
+			"lines_json": json.dumps(lines), "status": "Pending",
+		})
+	doc.already_billed = already
+	doc.no_fees = no_fees
+	doc.fetched_on = frappe.utils.now_datetime()
+	set_run_totals(doc)
+	return doc
+
+
+def set_run_totals(doc):
+	rows = [{"include": r.include, "lines": json.loads(r.lines_json or "[]")} for r in doc.students]
+	summary = summarize_run(rows)
+	doc.total_students = summary["students"]
+	doc.total_amount = summary["amount"]
+	doc.set("fee_summary", [{"fee_type": r["fee_type"], "students": r["students"], "amount": r["amount"]} for r in summary["by_fee_type"]])
 
 
 @frappe.whitelist()
@@ -197,34 +211,36 @@ def bill_single_student(student, school_term, posting_date=None, due_date=None):
 
 
 def execute_billing_run(run):
-	"""Background job started when a Fee Billing Run is submitted."""
+	"""Background job started when a Fee Billing Run is posted: invoices exactly the reviewed, ticked rows."""
 	doc = frappe.get_doc("Fee Billing Run", run)
 	doc.db_set("status", "Running", commit=True)
 	errors, created, skipped, total = [], 0, 0, 0.0
-	invoices = []
+	invoiced_students = []
 	try:
-		data = BillingData(doc.school_term)
-		for name in students_for({"school_class": doc.school_class, "stream": doc.stream}):
-			if existing_invoice(name, doc.school_term):
+		fee_types = BillingData(doc.school_term).fee_types
+		for row in doc.students:
+			if not row.include or row.status == "Invoiced":
+				continue
+			if existing_invoice(row.student, doc.school_term):
+				frappe.db.set_value("Fee Billing Run Student", row.name, {"status": "Skipped", "note": _("Already invoiced for this term")})
 				skipped += 1
 				continue
 			try:
-				student = frappe.get_doc("Student", name)
-				lines = data.lines_for(student)
-				if not lines:
-					skipped += 1
-					continue
-				si = make_invoice(
-					student, doc.school_term, lines, data.fee_types,
-					doc.posting_date, doc.due_date, run=doc.name, submit=doc.submit_invoices,
-				)
+				lines = json.loads(row.lines_json or "[]")
+				student = frappe.get_doc("Student", row.student)
+				si = make_invoice(student, doc.school_term, lines, fee_types, doc.posting_date, doc.due_date,
+								  run=doc.name, submit=doc.submit_invoices)
+				frappe.db.set_value("Fee Billing Run Student", row.name, {"status": "Invoiced", "sales_invoice": si.name, "note": None})
 				frappe.db.commit()  # one student at a time so a failure never undoes the others
 				created += 1
 				total += flt(si.grand_total)
-				invoices.append((name, si.name))
-			except Exception:
+				invoiced_students.append(row.student)
+			except Exception as e:
 				frappe.db.rollback()
-				errors.append(f"{name}: {frappe.get_traceback(with_context=False).strip().splitlines()[-1]}")
+				msg = str(e) or frappe.get_traceback(with_context=False).strip().splitlines()[-1]
+				frappe.db.set_value("Fee Billing Run Student", row.name, {"status": "Error", "note": msg[:140]})
+				frappe.db.commit()
+				errors.append(f"{row.student}: {msg}")
 	except Exception:
 		frappe.db.rollback()
 		errors.append(frappe.get_traceback())
@@ -242,16 +258,70 @@ def execute_billing_run(run):
 		commit=True,
 	)
 
-	if doc.send_notifications and doc.submit_invoices and invoices and licensing.is_enabled("messaging"):
+	if doc.send_notifications and doc.submit_invoices and invoiced_students and licensing.is_enabled("messaging"):
 		frappe.enqueue(
 			"school_erp.api.messaging.notify_billing",
 			queue="long",
 			timeout=3600,
 			term=doc.school_term,
 			due_date=str(doc.due_date),
-			students=[s for s, _ in invoices],
+			students=invoiced_students,
+			now=bool(frappe.flags.in_test),
 		)
 	frappe.publish_realtime("fee_billing_run_done", {"name": doc.name}, doctype="Fee Billing Run", docname=doc.name)
+
+
+# ----------------------------------------------------------------------------- automatic term billing
+AUTO_BILL_WINDOW_DAYS = 14  # a term is billed automatically only up to 2 weeks after it starts
+
+
+def auto_bill_terms():
+	"""Daily: when a term is about to start (per School Settings), create its billing run, and post it if set to."""
+	s = frappe.get_cached_doc("School Settings")
+	if not s.auto_bill_terms or not licensing.is_enabled("fees"):
+		return
+	from frappe.utils import add_days, cint, getdate, nowdate
+
+	from school_erp.api.notify import notify, users_for_role
+
+	today = getdate(nowdate())
+	lead = cint(s.auto_bill_days_before)
+	for term in frappe.get_all("School Term", filters={"end_date": (">=", today)}, fields=["name", "start_date"], order_by="start_date"):
+		start = getdate(term.start_date)
+		if add_days(start, -lead) > today:
+			continue  # not yet
+		if today > add_days(start, AUTO_BILL_WINDOW_DAYS):
+			continue  # long-running term (e.g. auto-billing just switched on): leave it to the bursar
+		if frappe.db.exists("Fee Billing Run", {"school_term": term.name, "docstatus": ("<", 2)}):
+			continue  # already billed (by hand or automatically)
+		bursars = users_for_role("Bursar") + ([s.head_teacher_user] if s.head_teacher_user else [])
+		if not frappe.db.exists("School Fee Structure", {"school_term": term.name, "is_active": 1}):
+			if str(s.auto_bill_warned_on or "") != str(today):
+				frappe.db.set_single_value("School Settings", "auto_bill_warned_on", today)
+				notify(_("Automatic billing for {0} is waiting for a fee structure").format(term.name),
+					   _("Create the School Fee Structures for {0} (or copy them from last term); billing will run the next day.").format(term.name),
+					   users=bursars)
+			continue
+		run = frappe.new_doc("Fee Billing Run")
+		posting = max(start, today) if lead == 0 else start
+		run.update({
+			"school_term": term.name, "posting_date": posting,
+			"due_date": max(getdate(add_days(start, cint(s.auto_bill_due_days) or 14)), getdate(posting)), "boarding_type": "All",
+			"submit_invoices": 1, "send_notifications": int(s.auto_bill_notify_parents or 0), "auto_generated": 1,
+		})
+		fill_run(run)
+		run.flags.ignore_permissions = True
+		run.insert()
+		money = frappe.utils.fmt_money(run.total_amount, currency=s.currency)
+		if s.auto_bill_mode == "Post automatically" and run.total_students:
+			run.submit()
+			notify(_("{0} fees posted automatically: {1} students, {2}").format(term.name, run.total_students, money),
+				   users=bursars, doc=run, sms=False)
+		else:
+			notify(_("{0} fee billing is ready for review: {1} students, {2}").format(term.name, run.total_students, money),
+				   _("Open the billing run, check the students and totals, untick anyone to leave out, then click Post."),
+				   users=bursars, doc=run)
+		frappe.db.commit()
 
 
 @frappe.whitelist()

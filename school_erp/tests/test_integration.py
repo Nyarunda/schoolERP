@@ -73,7 +73,7 @@ def setup_school(cls):
 	settings.save()
 
 	year = str(getdate(nowdate()).year)
-	cls.term = frappe.db.get_value("School Term", {"school_year": year, "start_date": ("<=", nowdate())},
+	cls.term = frappe.db.get_value("School Term", {"school_year": year, "start_date": ("<=", nowdate()), "term_name": ("like", "Term %")},
 								   "name", order_by="start_date desc") or f"Term 1 {year}"
 
 	if not frappe.db.exists("Stream", "Grade 4 Test"):

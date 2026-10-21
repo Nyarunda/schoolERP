@@ -69,6 +69,7 @@ scheduler_events = {
 		"school_erp.api.staff.update_staff_leave_status",
 		"school_erp.api.transport_ops.alert_expiring_documents",
 		"school_erp.school.doctype.school_notice.school_notice.publish_scheduled",
+		"school_erp.api.billing.auto_bill_terms",
 	],
 	"hourly": ["school_erp.api.paybill.retry_pending"],
 	"cron": {

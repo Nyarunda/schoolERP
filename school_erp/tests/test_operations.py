@@ -314,3 +314,88 @@ class TestOperations(TestCase):
 		self.assertIn("Maternity Leave", leave_types)
 		self.assertNotIn("Paternity Leave", leave_types)  # Jane is female
 		self.assertTrue(any(a["label"] == "Apply for leave" for a in d["actions"]))
+
+	# ------------------------------------------------------------------ term billing runs
+	def _fresh_students(self, n, **kw):
+		from school_erp.tests.test_integration import TestSchoolFlow
+
+		return [TestSchoolFlow.make_student(self, **kw).name for _i in range(n)]
+
+	def test_billing_run_review_untick_and_post(self):
+		frappe.db.set_single_value("School Settings", "notify_after_billing", 0)
+		a, b, c = self._fresh_students(3)
+		run = frappe.get_doc({"doctype": "Fee Billing Run", "school_term": self.term, "posting_date": nowdate(),
+							  "due_date": add_days(nowdate(), 14), "classes": [{"school_class": "Grade 4"}],
+							  "send_notifications": 0}).insert()
+		run.get_students()
+		rows = {r.student: r for r in run.students}
+		for s in (a, b, c):
+			self.assertIn(s, rows)
+			self.assertEqual(flt(rows[s].total), 40000)
+			self.assertIn("Tuition 25,000", rows[s].fee_lines)
+		rows[c].include = 0  # leave one student out
+		run.save()
+		self.assertEqual(run.total_students, len(run.students) - 1)
+		tuition = next(r for r in run.fee_summary if r.fee_type == "Tuition")
+		self.assertEqual(tuition.students, run.total_students)
+		run.submit()  # runs synchronously in tests
+		run.reload()
+		self.assertIn(run.status, ("Completed", "Completed with Errors"))
+		rows = {r.student: r for r in run.students}
+		self.assertEqual(rows[a].status, "Invoiced")
+		self.assertEqual(frappe.db.get_value("Sales Invoice", rows[a].sales_invoice, "docstatus"), 1)
+		self.assertEqual(rows[c].status, "Pending")  # unticked: not invoiced
+		self.assertFalse(frappe.db.exists("Sales Invoice", {"student": c, "school_term": self.term}))
+		self.assertEqual(flt(run.total_billed), 40000 * sum(1 for r in run.students if r.status == "Invoiced"))
+
+		# a second run for the same term skips everyone already invoiced
+		run2 = frappe.get_doc({"doctype": "Fee Billing Run", "school_term": self.term, "posting_date": nowdate(),
+							   "due_date": add_days(nowdate(), 14), "classes": [{"school_class": "Grade 4"}]}).insert()
+		run2.get_students()
+		self.assertNotIn(a, [r.student for r in run2.students])
+		self.assertIn(c, [r.student for r in run2.students])
+		self.assertGreaterEqual(run2.already_billed, 2)
+
+	def test_automatic_term_billing(self):
+		from school_erp.api.billing import auto_bill_terms
+
+		# a term starting today, with its own fee structure
+		year = frappe.db.get_value("School Term", self.term, "school_year")
+		label = "Auto Term " + frappe.generate_hash(length=5)  # a fresh term each run
+		tname = frappe.get_doc({"doctype": "School Term", "term_name": label, "school_year": year,
+								"start_date": nowdate(), "end_date": add_days(nowdate(), 60)}).insert().name
+		frappe.db.set_single_value("School Settings", "auto_bill_warned_on", None)
+		settings = frappe.get_doc("School Settings")
+		settings.update({"auto_bill_terms": 1, "auto_bill_mode": "Create draft for review", "auto_bill_days_before": 0,
+						 "auto_bill_due_days": 10, "auto_bill_notify_parents": 0})
+		settings.save()
+		try:
+			with patch(NOTIFY) as sent:
+				auto_bill_terms()  # no fee structure yet: bursar is told, nothing created
+			self.assertFalse(frappe.db.exists("Fee Billing Run", {"school_term": tname}))
+			self.assertTrue(any("waiting for a fee structure" in c.args[1]["subject"] for c in sent.call_args_list))
+
+			frappe.get_doc({"doctype": "School Fee Structure", "school_term": tname, "school_class": "Grade 4", "boarding_type": "All",
+							"items": [{"fee_type": "Tuition", "amount": 20000}]}).insert()
+			with patch(NOTIFY) as sent:
+				auto_bill_terms()
+			runs = frappe.get_all("Fee Billing Run", filters={"school_term": tname}, fields=["name", "docstatus", "auto_generated", "total_students", "due_date"])
+			self.assertEqual(len(runs), 1)
+			self.assertEqual((runs[0].docstatus, runs[0].auto_generated), (0, 1))  # draft for review
+			self.assertGreater(runs[0].total_students, 0)
+			self.assertEqual(getdate(runs[0].due_date), getdate(add_days(nowdate(), 10)))
+			self.assertTrue(any("ready for review" in c.args[1]["subject"] for c in sent.call_args_list))
+			auto_bill_terms()  # never twice for the same term
+			self.assertEqual(frappe.db.count("Fee Billing Run", {"school_term": tname}), 1)
+
+			# "Post automatically" posts straight away
+			frappe.delete_doc("Fee Billing Run", runs[0].name)
+			settings.reload()
+			settings.auto_bill_mode = "Post automatically"
+			settings.save()
+			auto_bill_terms()
+			run = frappe.get_doc("Fee Billing Run", {"school_term": tname})
+			self.assertEqual(run.docstatus, 1)
+			self.assertTrue(frappe.db.exists("Sales Invoice", {"school_term": tname, "docstatus": 1}))
+		finally:
+			frappe.db.set_single_value("School Settings", "auto_bill_terms", 0)

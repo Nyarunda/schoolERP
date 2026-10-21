@@ -268,3 +268,16 @@ def test_vehicle_checks():
 	probs = ops.vehicle_problems(bad, False, date(2026, 10, 21), insurance_expiry=date(2026, 10, 1))
 	assert "Brakes: NOT OK - soft pedal" in probs
 	assert any("fitness" in p for p in probs) and any("Insurance expired" in p for p in probs)
+
+
+def test_billing_run_summary_counts_only_ticked_students():
+	from school_erp.logic.billing import describe_lines, summarize_run
+
+	a = [{"fee_type": "Tuition", "amount": 25000, "priority": 1}, {"fee_type": "Lunch", "amount": 6000, "priority": 3}]
+	b = [{"fee_type": "Tuition", "amount": 25000, "discount_percent": 50, "priority": 1}]
+	c = [{"fee_type": "Tuition", "amount": 25000, "priority": 1}, {"fee_type": "Transport", "amount": 9000, "priority": 4}]
+	s = summarize_run([{"include": 1, "lines": a}, {"include": 1, "lines": b}, {"include": 0, "lines": c}])
+	assert s["students"] == 2
+	assert s["amount"] == 25000 + 6000 + 12500
+	assert [(r["fee_type"], r["students"], r["amount"]) for r in s["by_fee_type"]] == [("Tuition", 2, 37500), ("Lunch", 1, 6000)]
+	assert describe_lines(b) == "Tuition 12,500 (-50%)"

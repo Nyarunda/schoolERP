@@ -158,33 +158,34 @@ bench use school.localhost
 
 ---
 
-## 5. Put schoolERP in a git repo and add it to the bench
+## 5. Get schoolERP from GitHub into the bench
 
-Unzip the project into your home folder (from Windows, copy `schoolERP.zip` to `\\wsl$\Ubuntu-24.04\home\<you>\`):
+The code lives at **https://github.com/Nyarunda/schoolERP** (private). Give WSL access to GitHub once:
 
 ```bash
-cd ~
-sudo apt install -y unzip
-unzip schoolERP.zip          # creates ~/schoolERP
+git config --global user.name  "Your Name"
+git config --global user.email "you@example.com"
+ssh-keygen -t ed25519 -C "you@example.com"     # press Enter to accept defaults
+cat ~/.ssh/id_ed25519.pub
 ```
 
-The zip already contains the git history (`git -C ~/schoolERP log` shows it).
+Copy the printed key into GitHub → Settings → SSH and GPG keys → New SSH key, then check with `ssh -T git@github.com`.
 
-Install it into the bench. `get-app` clones your local repo into `apps/school_erp`:
+Install the app. `get-app` clones the repo into `apps/school_erp`:
 
 ```bash
 cd ~/frappe-bench
-bench get-app ~/schoolERP
+bench get-app git@github.com:Nyarunda/schoolERP.git
 bench --site school.localhost install-app school_erp
 bench --site test.localhost   install-app school_erp
 bench build --app school_erp
 ```
 
-From now on **work inside `~/frappe-bench/apps/school_erp`**. That folder is the git repo you will push from. (You can delete `~/schoolERP` afterwards.)
+From now on **work inside `~/frappe-bench/apps/school_erp`**. That folder is a normal git clone; `origin` already points at GitHub.
 
 ```bash
 cd ~/frappe-bench/apps/school_erp
-git remote remove origin     # it points at ~/schoolERP; GitHub is added in section 8
+git remote -v                # should show git@github.com:Nyarunda/schoolERP.git
 ./scripts/install-hooks.sh   # every git push now runs the checks first
 code .                       # optional: open in VS Code (WSL extension)
 ```
@@ -262,29 +263,9 @@ Only push when all three levels pass.
 
 ---
 
-## 8. Push to GitHub (first time)
+## 8. Pushing your changes
 
-1. On github.com create a new **empty** repository named `schoolERP` (Private recommended; no README/licence, since the project already has them).
-2. Give WSL access to GitHub (once):
-
-   ```bash
-   git config --global user.name  "Your Name"
-   git config --global user.email "you@example.com"
-   ssh-keygen -t ed25519 -C "you@example.com"     # press Enter to accept defaults
-   cat ~/.ssh/id_ed25519.pub
-   ```
-
-   Copy the printed key into GitHub → Settings → SSH and GPG keys → New SSH key. Test with `ssh -T git@github.com`.
-
-3. Push:
-
-   ```bash
-   cd ~/frappe-bench/apps/school_erp
-   git remote add origin git@github.com:<your-username>/schoolERP.git
-   git push -u origin main
-   ```
-
-The pre-push hook runs the checks first; GitHub Actions then repeats them and runs the full integration tests on a clean ERPNext v16 (see the **Actions** tab).
+The repo is already on GitHub, so just commit and push from `~/frappe-bench/apps/school_erp` (see the daily workflow below). The pre-push hook runs the checks first; GitHub Actions then repeats them and runs the full integration tests on a clean ERPNext v16 (see the repo's **Actions** tab).
 
 > Never commit `vendor.key` (your private licence key). `.gitignore` excludes `*.key`, and the check script refuses to push if one is staged.
 
@@ -304,7 +285,7 @@ git push -u origin feature/my-change      # hook runs checks; open a Pull Reques
 
 After pulling changes made elsewhere: `bench --site school.localhost migrate`.
 
-To install on a school server later: `bench get-app git@github.com:<your-username>/schoolERP.git`.
+To install on a school server later: `bench get-app git@github.com:Nyarunda/schoolERP.git`.
 
 ---
 

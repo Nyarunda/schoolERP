@@ -22,7 +22,7 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 
 ```bash
 cd ~/frappe-bench
-bench get-app git@github.com:<your-username>/schoolERP.git
+bench get-app git@github.com:Nyarunda/schoolERP.git
 bench --site yoursite install-app school_erp
 bench --site yoursite migrate
 bench build --app school_erp

@@ -160,13 +160,12 @@ bench use school.localhost
 
 ## 5. Put schoolERP in a git repo and add it to the bench
 
-Unzip the project into your home folder (from Windows, copy `school_erp.zip` to `\\wsl$\Ubuntu-24.04\home\<you>\`):
+Unzip the project into your home folder (from Windows, copy `schoolERP.zip` to `\\wsl$\Ubuntu-24.04\home\<you>\`):
 
 ```bash
 cd ~
 sudo apt install -y unzip
-unzip school_erp.zip
-mv school_erp schoolERP
+unzip schoolERP.zip          # creates ~/schoolERP
 ```
 
 The zip already contains the git history (`git -C ~/schoolERP log` shows it).

@@ -1,0 +1,325 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "LV-.YYYY.-.#####",
+ "creation": "2026-10-21 20:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "staff_member",
+  "staff_name",
+  "leave_type",
+  "cb1",
+  "from_date",
+  "to_date",
+  "total_days",
+  "balance_before",
+  "sb_details",
+  "reason",
+  "attachment",
+  "cb2",
+  "reliever",
+  "reliever_name",
+  "sb_approval",
+  "status",
+  "approver",
+  "cb3",
+  "approved_by",
+  "decision_date",
+  "decision_comment",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "staff_member",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_standard_filter": 1,
+   "label": "Staff Member",
+   "options": "Staff Member",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "staff_member.full_name",
+   "fieldname": "staff_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Staff Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "leave_type",
+   "fieldtype": "Link",
+   "idx": 3,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Leave Type",
+   "options": "Leave Type",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "From Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "idx": 6,
+   "label": "To Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_days",
+   "fieldtype": "Float",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "Working Days",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_before",
+   "fieldtype": "Float",
+   "idx": 8,
+   "label": "Balance Before",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_details",
+   "fieldtype": "Section Break",
+   "idx": 9,
+   "label": "Details"
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "idx": 10,
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "idx": 11,
+   "label": "Supporting Document"
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 12
+  },
+  {
+   "description": "Who covers the duties while away",
+   "fieldname": "reliever",
+   "fieldtype": "Link",
+   "idx": 13,
+   "label": "Reliever",
+   "options": "Staff Member"
+  },
+  {
+   "fetch_from": "reliever.full_name",
+   "fieldname": "reliever_name",
+   "fieldtype": "Data",
+   "idx": 14,
+   "label": "Reliever Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_approval",
+   "fieldtype": "Section Break",
+   "idx": 15,
+   "label": "Approval"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Pending Approval",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 16,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending Approval\nApproved\nRejected\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approver",
+   "fieldtype": "Link",
+   "idx": 17,
+   "label": "Approver",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb3",
+   "fieldtype": "Column Break",
+   "idx": 18
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "idx": 19,
+   "label": "Decided By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "decision_date",
+   "fieldtype": "Datetime",
+   "idx": 20,
+   "label": "Decision Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "decision_comment",
+   "fieldtype": "Small Text",
+   "idx": 21,
+   "label": "Comment"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 22,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Leave Application",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Leave Application",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Teacher",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Staff",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Driver",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Transport Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "staff_member,staff_name,leave_type,status",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "staff_name",
+ "track_changes": 1
+}

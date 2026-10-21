@@ -1,0 +1,284 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "DL-.YYYY.-.#####",
+ "creation": "2026-10-21 20:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "log_date",
+  "trip",
+  "driver",
+  "driver_name",
+  "cb1",
+  "vehicle",
+  "route",
+  "check_in_time",
+  "has_issues",
+  "sb_before",
+  "fit_to_drive",
+  "odometer_start",
+  "fuel_level",
+  "checklist",
+  "issues",
+  "sb_after",
+  "fuel_added_litres",
+  "fuel_cost",
+  "cb2",
+  "odometer_end",
+  "distance_km",
+  "students_carried",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "Today",
+   "fieldname": "log_date",
+   "fieldtype": "Date",
+   "idx": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Log Date",
+   "reqd": 1
+  },
+  {
+   "default": "Morning Pickup",
+   "fieldname": "trip",
+   "fieldtype": "Select",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Trip",
+   "options": "Morning Pickup\nEvening Drop-off\nOther Trip"
+  },
+  {
+   "fieldname": "driver",
+   "fieldtype": "Link",
+   "idx": 3,
+   "in_standard_filter": 1,
+   "label": "Driver",
+   "options": "Staff Member",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "driver.full_name",
+   "fieldname": "driver_name",
+   "fieldtype": "Data",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Driver Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "idx": 6,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Vehicle",
+   "options": "School Vehicle",
+   "reqd": 1
+  },
+  {
+   "fieldname": "route",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Route",
+   "options": "Transport Route"
+  },
+  {
+   "fieldname": "check_in_time",
+   "fieldtype": "Datetime",
+   "idx": 8,
+   "label": "Checked In At",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "has_issues",
+   "fieldtype": "Check",
+   "idx": 9,
+   "in_list_view": 1,
+   "label": "Issues Reported",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_before",
+   "fieldtype": "Section Break",
+   "idx": 10,
+   "label": "Before you drive"
+  },
+  {
+   "fieldname": "fit_to_drive",
+   "fieldtype": "Check",
+   "idx": 11,
+   "label": "I am fit to drive today (rested, sober, well)"
+  },
+  {
+   "fieldname": "odometer_start",
+   "fieldtype": "Float",
+   "idx": 12,
+   "label": "Odometer (km)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fuel_level",
+   "fieldtype": "Select",
+   "idx": 13,
+   "label": "Fuel Level",
+   "options": "Full\n3/4\nHalf\n1/4\nReserve",
+   "reqd": 1
+  },
+  {
+   "fieldname": "checklist",
+   "fieldtype": "Table",
+   "idx": 14,
+   "label": "Safety Checklist",
+   "options": "Vehicle Checklist Item"
+  },
+  {
+   "fieldname": "issues",
+   "fieldtype": "Small Text",
+   "idx": 15,
+   "label": "Problems noticed"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "sb_after",
+   "fieldtype": "Section Break",
+   "idx": 16,
+   "label": "Fuel & end of trip"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "fuel_added_litres",
+   "fieldtype": "Float",
+   "idx": 17,
+   "label": "Fuel Added (litres)"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "fuel_cost",
+   "fieldtype": "Currency",
+   "idx": 18,
+   "label": "Fuel Cost"
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 19
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "odometer_end",
+   "fieldtype": "Float",
+   "idx": 20,
+   "label": "Odometer at end (km)"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "distance_km",
+   "fieldtype": "Float",
+   "idx": 21,
+   "label": "Distance (km)",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "students_carried",
+   "fieldtype": "Int",
+   "idx": 22,
+   "label": "Students Carried"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 23,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Driver Daily Log",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Driver Daily Log",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Transport Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Driver",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "driver,vehicle,log_date",
+ "sort_field": "check_in_time",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "driver_name"
+}

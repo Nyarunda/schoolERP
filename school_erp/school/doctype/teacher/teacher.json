@@ -10,6 +10,7 @@
   "phone",
   "email",
   "cb1",
+  "staff_member",
   "employee",
   "user",
   "is_active"
@@ -44,10 +45,18 @@
    "idx": 4
   },
   {
+   "fieldname": "staff_member",
+   "fieldtype": "Link",
+   "idx": 5,
+   "label": "Staff Member",
+   "options": "Staff Member",
+   "read_only": 1
+  },
+  {
    "description": "Optional: link to HR employee record",
    "fieldname": "employee",
    "fieldtype": "Link",
-   "idx": 5,
+   "idx": 6,
    "label": "Employee",
    "options": "Employee"
   },
@@ -55,7 +64,7 @@
    "description": "Optional: lets the teacher log in",
    "fieldname": "user",
    "fieldtype": "Link",
-   "idx": 6,
+   "idx": 7,
    "label": "User",
    "options": "User"
   },
@@ -63,13 +72,13 @@
    "default": "1",
    "fieldname": "is_active",
    "fieldtype": "Check",
-   "idx": 7,
+   "idx": 8,
    "label": "Is Active"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-21 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Teacher",

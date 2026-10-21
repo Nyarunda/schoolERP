@@ -1,0 +1,72 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 20:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "level",
+  "user",
+  "action",
+  "timestamp",
+  "comment"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "level",
+   "fieldtype": "Select",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Level",
+   "options": "First\nFinal"
+  },
+  {
+   "columns": 3,
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "columns": 2,
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "Approved\nRejected"
+  },
+  {
+   "columns": 2,
+   "fieldname": "timestamp",
+   "fieldtype": "Datetime",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Timestamp"
+  },
+  {
+   "columns": 2,
+   "fieldname": "comment",
+   "fieldtype": "Small Text",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Comment"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-21 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Expense Approval",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_order": "DESC",
+ "states": []
+}

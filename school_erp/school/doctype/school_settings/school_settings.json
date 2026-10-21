@@ -70,6 +70,25 @@
   "mpesa_registered_on",
   "sb_mpesa_urls",
   "mpesa_urls_html",
+  "operations_tab",
+  "head_teacher_user",
+  "notify_staff_by_sms",
+  "sb_expense_approval",
+  "expense_single_approval_limit",
+  "expense_first_approver_role",
+  "expense_final_approver_role",
+  "sb_duty",
+  "duty_report_recipient",
+  "duty_report_due_time",
+  "sb_transport_ops",
+  "transport_manager_user",
+  "driver_checkin_deadline",
+  "checkin_alert_sent_on",
+  "duty_alert_sent_on",
+  "sb_complaints",
+  "complaint_ack_sms",
+  "complaint_resolved_sms",
+  "complaint_daily_limit",
   "license_tab",
   "license_key",
   "license_status_html",
@@ -541,61 +560,196 @@
    "label": "URLs"
   },
   {
-   "fieldname": "license_tab",
+   "fieldname": "operations_tab",
    "fieldtype": "Tab Break",
    "idx": 66,
+   "label": "Staff & Approvals"
+  },
+  {
+   "description": "Approves leave for staff with no 'Reports To', and receives duty reports and alerts.",
+   "fieldname": "head_teacher_user",
+   "fieldtype": "Link",
+   "idx": 67,
+   "label": "Head Teacher / Principal (login)",
+   "options": "User"
+  },
+  {
+   "default": "1",
+   "fieldname": "notify_staff_by_sms",
+   "fieldtype": "Check",
+   "idx": 68,
+   "label": "Also SMS staff about leave, relieving and alerts"
+  },
+  {
+   "fieldname": "sb_expense_approval",
+   "fieldtype": "Section Break",
+   "idx": 69,
+   "label": "Expense Approvals"
+  },
+  {
+   "default": "10000",
+   "description": "Expenses up to this amount need one approval; above it, a second (final) approval.",
+   "fieldname": "expense_single_approval_limit",
+   "fieldtype": "Currency",
+   "idx": 70,
+   "label": "One approval up to"
+  },
+  {
+   "description": "Blank = Bursar",
+   "fieldname": "expense_first_approver_role",
+   "fieldtype": "Link",
+   "idx": 71,
+   "label": "First Approver Role",
+   "options": "Role"
+  },
+  {
+   "description": "Blank = Head Teacher",
+   "fieldname": "expense_final_approver_role",
+   "fieldtype": "Link",
+   "idx": 72,
+   "label": "Final Approver Role",
+   "options": "Role"
+  },
+  {
+   "fieldname": "sb_duty",
+   "fieldtype": "Section Break",
+   "idx": 73,
+   "label": "Teacher on Duty"
+  },
+  {
+   "description": "Blank = Head Teacher",
+   "fieldname": "duty_report_recipient",
+   "fieldtype": "Link",
+   "idx": 74,
+   "label": "Send duty reports to",
+   "options": "User"
+  },
+  {
+   "default": "17:00:00",
+   "fieldname": "duty_report_due_time",
+   "fieldtype": "Time",
+   "idx": 75,
+   "label": "Remind if no report by"
+  },
+  {
+   "fieldname": "sb_transport_ops",
+   "fieldtype": "Section Break",
+   "idx": 76,
+   "label": "Driver Check-in"
+  },
+  {
+   "fieldname": "transport_manager_user",
+   "fieldtype": "Link",
+   "idx": 77,
+   "label": "Transport Manager (login)",
+   "options": "User"
+  },
+  {
+   "default": "06:30:00",
+   "fieldname": "driver_checkin_deadline",
+   "fieldtype": "Time",
+   "idx": 78,
+   "label": "Drivers must check in by"
+  },
+  {
+   "fieldname": "checkin_alert_sent_on",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "idx": 79,
+   "label": "Checkin Alert Sent On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "duty_alert_sent_on",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "idx": 80,
+   "label": "Duty Alert Sent On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_complaints",
+   "fieldtype": "Section Break",
+   "idx": 81,
+   "label": "Complaints"
+  },
+  {
+   "default": "Dear {name}, your complaint has been received. Ref {ref}. Track it at {url}. {school_name}",
+   "fieldname": "complaint_ack_sms",
+   "fieldtype": "Small Text",
+   "idx": 82,
+   "label": "Acknowledgement SMS"
+  },
+  {
+   "default": "Dear {name}, your complaint {ref} has been resolved: {resolution}. {school_name}",
+   "fieldname": "complaint_resolved_sms",
+   "fieldtype": "Small Text",
+   "idx": 83,
+   "label": "Resolved SMS"
+  },
+  {
+   "default": "3",
+   "fieldname": "complaint_daily_limit",
+   "fieldtype": "Int",
+   "idx": 84,
+   "label": "Max web complaints per phone per day"
+  },
+  {
+   "fieldname": "license_tab",
+   "fieldtype": "Tab Break",
+   "idx": 85,
    "label": "License"
   },
   {
    "description": "Paste the license key supplied by your vendor. Modules switch on when you save.",
    "fieldname": "license_key",
    "fieldtype": "Long Text",
-   "idx": 67,
+   "idx": 86,
    "label": "License Key"
   },
   {
    "fieldname": "license_status_html",
    "fieldtype": "HTML",
-   "idx": 68,
+   "idx": 87,
    "label": "License Status"
   },
   {
    "fieldname": "cb_lic",
    "fieldtype": "Column Break",
-   "idx": 69
+   "idx": 88
   },
   {
    "fieldname": "license_status",
    "fieldtype": "Data",
-   "idx": 70,
+   "idx": 89,
    "label": "License Status",
    "read_only": 1
   },
   {
    "fieldname": "licensed_to",
    "fieldtype": "Data",
-   "idx": 71,
+   "idx": 90,
    "label": "Licensed To",
    "read_only": 1
   },
   {
    "fieldname": "licensed_modules",
    "fieldtype": "Small Text",
-   "idx": 72,
+   "idx": 91,
    "label": "Licensed Modules",
    "read_only": 1
   },
   {
    "fieldname": "license_expiry",
    "fieldtype": "Date",
-   "idx": 73,
+   "idx": 92,
    "label": "License Expiry",
    "read_only": 1
   },
   {
    "fieldname": "max_students",
    "fieldtype": "Int",
-   "idx": 74,
+   "idx": 93,
    "label": "Max Students",
    "read_only": 1
   }
@@ -603,7 +757,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-21 19:00:00.000000",
+ "modified": "2026-10-21 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Settings",

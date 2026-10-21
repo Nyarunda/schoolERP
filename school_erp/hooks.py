@@ -34,22 +34,24 @@ jinja = {
 	]
 }
 
-# Every School DocType is checked against the license on save/submit
+# Every licensed School DocType is checked against the license on save/submit
+from school_erp.logic.license import DOCTYPE_MODULE as _DOCTYPE_MODULE  # noqa: E402
+
 _licensed = "school_erp.licensing.enforce_on_doc"
-doc_events = {
-	dt: {"validate": _licensed, "before_submit": _licensed}
-	for dt in (
-		"School Fee Structure",
-		"Fee Type",
-		"Fee Billing Run",
-		"Fee Payment",
-		"Transport Route",
-		"School Activity",
-		"Timetable",
-		"Subject",
-		"Period",
-		"School Message",
-	)
+doc_events = {dt: {"validate": _licensed, "before_submit": _licensed} for dt in _DOCTYPE_MODULE}
+
+# Staff see only their own leave, duty reports and driver logs (plus what they must approve)
+permission_query_conditions = {
+	"Leave Application": "school_erp.permissions.leave_query",
+	"Duty Report": "school_erp.permissions.duty_report_query",
+	"Driver Daily Log": "school_erp.permissions.driver_log_query",
+	"School Expense": "school_erp.permissions.expense_query",
+}
+has_permission = {
+	"Leave Application": "school_erp.permissions.leave_has_permission",
+	"Duty Report": "school_erp.permissions.duty_report_has_permission",
+	"Driver Daily Log": "school_erp.permissions.driver_log_has_permission",
+	"School Expense": "school_erp.permissions.expense_has_permission",
 }
 
 doctype_js = {
@@ -61,8 +63,16 @@ doctype_js = {
 school_sms_sender = []
 
 scheduler_events = {
-	"daily": ["school_erp.licensing.daily_license_check"],
+	"daily": [
+		"school_erp.licensing.daily_license_check",
+		"school_erp.api.staff.update_staff_leave_status",
+		"school_erp.api.transport_ops.alert_expiring_documents",
+	],
 	"hourly": ["school_erp.api.paybill.retry_pending"],
+	"cron": {
+		"*/15 4-10 * * 1-6": ["school_erp.api.transport_ops.alert_missing_checkins"],
+		"*/30 15-20 * * 1-5": ["school_erp.api.staff.alert_missing_duty_reports"],
+	},
 }
 
 fixtures = []

@@ -252,3 +252,47 @@ def execute_billing_run(run):
 			students=[s for s, _ in invoices],
 		)
 	frappe.publish_realtime("fee_billing_run_done", {"name": doc.name}, doctype="Fee Billing Run", docname=doc.name)
+
+
+@frappe.whitelist()
+def copy_fee_structures(from_term, to_term, increase_percent=0, round_to=0):
+	"""Copy every active fee structure (each class / boarding type) from one term to another,
+	optionally raising amounts by a percentage and rounding (e.g. to the nearest 50)."""
+	frappe.has_permission("School Fee Structure", "create", throw=True)
+	licensing.require("fees")
+	if from_term == to_term:
+		frappe.throw(_("Pick a different term to copy to"))
+	pct, step = flt(increase_percent), flt(round_to)
+	created, skipped = [], []
+	for name in frappe.get_all("School Fee Structure", filters={"school_term": from_term, "is_active": 1}, pluck="name"):
+		src = frappe.get_doc("School Fee Structure", name)
+		if frappe.db.exists("School Fee Structure", {"school_term": to_term, "school_class": src.school_class or ("is", "not set"),
+													  "boarding_type": src.boarding_type, "is_active": 1}):
+			skipped.append(src.title)
+			continue
+		new = frappe.copy_doc(src)
+		new.school_term = to_term
+		for row in new.items:
+			amt = flt(row.amount) * (1 + pct / 100)
+			row.amount = round(amt / step) * step if step else round(amt, 2)
+		new.insert()
+		created.append(new.name)
+	return {"created": created, "skipped": skipped}
+
+
+@frappe.whitelist()
+def fee_matrix(school_year):
+	"""Total fees per class (rows) per term (columns) for a year, for the Fee Structure form/report."""
+	terms = frappe.get_all("School Term", filters={"school_year": school_year}, order_by="start_date", pluck="name")
+	classes = frappe.get_all("School Class", filters={"is_active": 1}, order_by="level", pluck="name")
+	rows = []
+	for cls in classes:
+		row = {"school_class": cls}
+		for t in terms:
+			totals = frappe.db.sql(
+				"""select boarding_type, sum(total_amount) from `tabSchool Fee Structure`
+				where school_term=%s and is_active=1 and (school_class=%s or ifnull(school_class,'')='')
+				group by boarding_type""", (t, cls))
+			row[t] = {bt: flt(v) for bt, v in totals}
+		rows.append(row)
+	return {"terms": terms, "rows": rows}

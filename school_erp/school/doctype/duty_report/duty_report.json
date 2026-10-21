@@ -1,0 +1,307 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "DR-.YYYY.-.#####",
+ "creation": "2026-10-21 20:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "report_date",
+  "staff_member",
+  "staff_name",
+  "cb1",
+  "arrival_time",
+  "departure_time",
+  "overall_rating",
+  "sb_morning",
+  "assembly_held",
+  "students_late",
+  "staff_late",
+  "cb2",
+  "assembly_notes",
+  "sb_day",
+  "lessons_ok",
+  "missed_lessons",
+  "meals_ok",
+  "meals_notes",
+  "cb3",
+  "cleanliness",
+  "sick_bay_cases",
+  "visitors",
+  "sb_incidents",
+  "incidents",
+  "general_remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "Today",
+   "fieldname": "report_date",
+   "fieldtype": "Date",
+   "idx": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Report Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "staff_member",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_standard_filter": 1,
+   "label": "Teacher on Duty",
+   "options": "Staff Member",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "staff_member.full_name",
+   "fieldname": "staff_name",
+   "fieldtype": "Data",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Staff Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "arrival_time",
+   "fieldtype": "Time",
+   "idx": 5,
+   "label": "Arrival Time"
+  },
+  {
+   "fieldname": "departure_time",
+   "fieldtype": "Time",
+   "idx": 6,
+   "label": "Departure Time"
+  },
+  {
+   "default": "Good",
+   "fieldname": "overall_rating",
+   "fieldtype": "Select",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "How was the day?",
+   "options": "Good\nFair\nPoor"
+  },
+  {
+   "fieldname": "sb_morning",
+   "fieldtype": "Section Break",
+   "idx": 8,
+   "label": "Morning"
+  },
+  {
+   "default": "1",
+   "fieldname": "assembly_held",
+   "fieldtype": "Check",
+   "idx": 9,
+   "label": "Assembly Held"
+  },
+  {
+   "fieldname": "students_late",
+   "fieldtype": "Int",
+   "idx": 10,
+   "label": "Students late"
+  },
+  {
+   "fieldname": "staff_late",
+   "fieldtype": "Int",
+   "idx": 11,
+   "label": "Staff late"
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 12
+  },
+  {
+   "fieldname": "assembly_notes",
+   "fieldtype": "Small Text",
+   "idx": 13,
+   "label": "Assembly Notes"
+  },
+  {
+   "fieldname": "sb_day",
+   "fieldtype": "Section Break",
+   "idx": 14,
+   "label": "Learning & Welfare"
+  },
+  {
+   "default": "1",
+   "fieldname": "lessons_ok",
+   "fieldtype": "Check",
+   "idx": 15,
+   "label": "All lessons attended"
+  },
+  {
+   "depends_on": "eval:!doc.lessons_ok",
+   "fieldname": "missed_lessons",
+   "fieldtype": "Small Text",
+   "idx": 16,
+   "label": "Missed Lessons"
+  },
+  {
+   "default": "1",
+   "fieldname": "meals_ok",
+   "fieldtype": "Check",
+   "idx": 17,
+   "label": "Meals served on time"
+  },
+  {
+   "depends_on": "eval:!doc.meals_ok",
+   "fieldname": "meals_notes",
+   "fieldtype": "Small Text",
+   "idx": 18,
+   "label": "Meals Notes"
+  },
+  {
+   "fieldname": "cb3",
+   "fieldtype": "Column Break",
+   "idx": 19
+  },
+  {
+   "default": "Good",
+   "fieldname": "cleanliness",
+   "fieldtype": "Select",
+   "idx": 20,
+   "label": "Cleanliness",
+   "options": "Excellent\nGood\nFair\nPoor"
+  },
+  {
+   "fieldname": "sick_bay_cases",
+   "fieldtype": "Int",
+   "idx": 21,
+   "label": "Sick Bay Cases"
+  },
+  {
+   "fieldname": "visitors",
+   "fieldtype": "Small Text",
+   "idx": 22,
+   "label": "Visitors"
+  },
+  {
+   "fieldname": "sb_incidents",
+   "fieldtype": "Section Break",
+   "idx": 23,
+   "label": "Incidents"
+  },
+  {
+   "description": "Fights, injuries, damage, security issues... Record student cases as Discipline Incidents too.",
+   "fieldname": "incidents",
+   "fieldtype": "Small Text",
+   "idx": 24,
+   "label": "Incidents"
+  },
+  {
+   "fieldname": "general_remarks",
+   "fieldtype": "Text",
+   "idx": 25,
+   "label": "General Remarks",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 26,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Duty Report",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Duty Report",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Teacher",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Staff",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "staff_member,report_date",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "staff_name"
+}

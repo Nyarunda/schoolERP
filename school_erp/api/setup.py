@@ -39,6 +39,38 @@ SUBJECTS = [
 ]
 
 
+LEAVE_TYPES = [
+	("Annual Leave", 21, {"requires_reliever": 1}),
+	("Sick Leave", 14, {"requires_attachment": 1}),
+	("Maternity Leave", 90, {"gender": "Female", "include_weekends": 1, "requires_reliever": 1}),
+	("Paternity Leave", 14, {"gender": "Male", "include_weekends": 1}),
+	("Compassionate Leave", 5, {}),
+	("Study Leave", 10, {"requires_reliever": 1}),
+	("Unpaid Leave", 0, {"is_paid": 0}),
+]
+
+# category, candidate account names (first one found in the chart of accounts wins)
+EXPENSE_CATEGORIES = [
+	("Fuel & Transport", ["Fuel", "Travel Expenses", "Miscellaneous Expenses"]),
+	("Vehicle Repairs", ["Repairs and Maintenance", "Miscellaneous Expenses"]),
+	("Food & Kitchen", ["Cost of Goods Sold", "Miscellaneous Expenses"]),
+	("Stationery & Teaching Materials", ["Office Supplies", "Print and Stationery", "Miscellaneous Expenses"]),
+	("Utilities (Water & Electricity)", ["Utility Expenses", "Miscellaneous Expenses"]),
+	("Repairs & Maintenance", ["Repairs and Maintenance", "Miscellaneous Expenses"]),
+	("Casual Labour", ["Salary", "Miscellaneous Expenses"]),
+	("Sports & Activities", ["Entertainment Expenses", "Miscellaneous Expenses"]),
+	("Office & Admin", ["Office Maintenance Expenses", "Administrative Expenses", "Miscellaneous Expenses"]),
+]
+
+
+def _find_expense_account(company, names):
+	for n in names:
+		acc = frappe.db.get_value("Account", {"company": company, "account_name": n, "is_group": 0})
+		if acc:
+			return acc
+	return frappe.db.get_value("Account", {"company": company, "root_type": "Expense", "is_group": 0})
+
+
 def _ensure(doctype, name, values):
 	if frappe.db.exists(doctype, name):
 		return False
@@ -89,6 +121,19 @@ def run_setup():
 			_ensure("Period", name, {"period_name": name, "sequence": seq, "start_time": start, "end_time": end, "is_break": brk})
 		for name, short in SUBJECTS:
 			_ensure("Subject", name, {"subject_name": name, "short_name": short, "subject_code": short})
+
+	# staff: standard leave types
+	if licensing.is_enabled("staff"):
+		for name, days, extra in LEAVE_TYPES:
+			if _ensure("Leave Type", name, {"leave_type_name": name, "days_per_year": days, **extra}):
+				created.append(name)
+
+	# expenses: categories mapped to the company's expense accounts
+	if licensing.is_enabled("expenses"):
+		for cat, account_names in EXPENSE_CATEGORIES:
+			acc = _find_expense_account(settings.company, account_names)
+			if acc and _ensure("Expense Category", cat, {"category_name": cat, "expense_account": acc, "is_active": 1}):
+				created.append(cat)
 
 	# current year + three terms
 	year = str(date.today().year)

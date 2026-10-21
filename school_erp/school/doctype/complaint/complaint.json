@@ -1,0 +1,230 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "CMP-.YYYY.-.#####",
+ "creation": "2026-10-21 20:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "source",
+  "complainant_name",
+  "phone",
+  "email",
+  "relationship",
+  "student_ref",
+  "student",
+  "cb1",
+  "category",
+  "priority",
+  "status",
+  "assigned_to",
+  "sb_body",
+  "subject",
+  "description",
+  "sb_resolution",
+  "resolution",
+  "cb2",
+  "resolved_on",
+  "days_to_resolve"
+ ],
+ "fields": [
+  {
+   "default": "Phone",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "idx": 1,
+   "in_standard_filter": 1,
+   "label": "Source",
+   "options": "Phone\nWalk-in\nWeb Form\nEmail\nLetter\nStaff"
+  },
+  {
+   "fieldname": "complainant_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Your Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "idx": 3,
+   "label": "Phone Number",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "idx": 4,
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "default": "Parent / Guardian",
+   "fieldname": "relationship",
+   "fieldtype": "Select",
+   "idx": 5,
+   "label": "You are a",
+   "options": "Parent / Guardian\nStudent\nStaff\nCommunity Member\nOther"
+  },
+  {
+   "fieldname": "student_ref",
+   "fieldtype": "Data",
+   "idx": 6,
+   "label": "Student Name or ID (if about a student)"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 8
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "idx": 9,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Academics\nFees & Payments\nTransport\nMeals\nStaff Conduct\nBullying\nSafety & Security\nFacilities\nOther",
+   "reqd": 1
+  },
+  {
+   "default": "Medium",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "idx": 10,
+   "in_standard_filter": 1,
+   "label": "Priority",
+   "options": "Low\nMedium\nHigh\nUrgent"
+  },
+  {
+   "default": "Open",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 11,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nIn Progress\nResolved\nClosed"
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Link",
+   "idx": 12,
+   "label": "Assigned To",
+   "options": "User"
+  },
+  {
+   "fieldname": "sb_body",
+   "fieldtype": "Section Break",
+   "idx": 13,
+   "label": "Complaint"
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "idx": 14,
+   "label": "Subject",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "idx": 15,
+   "label": "Details",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sb_resolution",
+   "fieldtype": "Section Break",
+   "idx": 16,
+   "label": "Resolution"
+  },
+  {
+   "description": "Shown to the complainant on the status page and in the SMS",
+   "fieldname": "resolution",
+   "fieldtype": "Text",
+   "idx": 17,
+   "label": "Resolution"
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 18
+  },
+  {
+   "fieldname": "resolved_on",
+   "fieldtype": "Datetime",
+   "idx": 19,
+   "label": "Resolved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "days_to_resolve",
+   "fieldtype": "Float",
+   "idx": 20,
+   "label": "Days To Resolve",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-21 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Complaint",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Teacher",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "complainant_name,phone,subject,status",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "subject",
+ "track_changes": 1
+}

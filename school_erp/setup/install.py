@@ -1,7 +1,7 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-ROLES = ["School Admin", "Bursar", "Teacher"]
+ROLES = ["School Admin", "Bursar", "Teacher", "Head Teacher", "Staff", "Driver", "Transport Manager"]
 
 
 def before_install():
@@ -12,10 +12,23 @@ def after_install():
 	make_roles()
 	make_custom_fields()
 	make_customer_group()
+	fill_new_settings_defaults()
 
 
 def after_migrate():
+	make_roles()
 	make_custom_fields()
+	fill_new_settings_defaults()
+
+
+def fill_new_settings_defaults():
+	"""When an upgrade adds School Settings fields, store their defaults once.
+	Only fields with no stored value at all are touched, so a school's own choices are never overwritten."""
+	meta = frappe.get_meta("School Settings")
+	stored = set(frappe.db.sql_list("select field from `tabSingles` where doctype = 'School Settings'"))
+	for df in meta.fields:
+		if df.default and df.fieldname not in stored and df.fieldtype not in ("Link", "Dynamic Link"):
+			frappe.db.set_single_value("School Settings", df.fieldname, df.default, update_modified=False)
 
 
 def make_roles():

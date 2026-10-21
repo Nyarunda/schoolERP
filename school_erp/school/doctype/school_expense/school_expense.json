@@ -1,0 +1,286 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "EXP-.YYYY.-.#####",
+ "creation": "2026-10-21 20:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "posting_date",
+  "expense_category",
+  "expense_account",
+  "amount",
+  "payee",
+  "cb1",
+  "mode_of_payment",
+  "reference_no",
+  "receipt",
+  "requested_by",
+  "sb_desc",
+  "description",
+  "sb_approval",
+  "status",
+  "levels_required",
+  "cb2",
+  "journal_entry",
+  "rejection_reason",
+  "sb_log",
+  "approvals",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expense_category",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Expense Category",
+   "options": "Expense Category",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "expense_category.expense_account",
+   "fieldname": "expense_account",
+   "fieldtype": "Link",
+   "idx": 3,
+   "label": "Expense Account",
+   "options": "Account",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Amount",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payee",
+   "fieldtype": "Data",
+   "idx": 5,
+   "label": "Paid To",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 6
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Paid From",
+   "options": "Mode of Payment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "idx": 8,
+   "label": "Receipt / Invoice No."
+  },
+  {
+   "fieldname": "receipt",
+   "fieldtype": "Attach",
+   "idx": 9,
+   "label": "Receipt"
+  },
+  {
+   "fieldname": "requested_by",
+   "fieldtype": "Link",
+   "idx": 10,
+   "label": "Requested By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_desc",
+   "fieldtype": "Section Break",
+   "idx": 11
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "idx": 12,
+   "label": "What was it for?",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sb_approval",
+   "fieldtype": "Section Break",
+   "idx": 13,
+   "label": "Approval"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 14,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nPending Approval\nPending Final Approval\nApproved\nRejected\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "levels_required",
+   "fieldtype": "Int",
+   "idx": 15,
+   "label": "Approvals Needed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 16
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "idx": 17,
+   "label": "Journal Entry",
+   "no_copy": 1,
+   "options": "Journal Entry",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "idx": 18,
+   "label": "Rejection Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_log",
+   "fieldtype": "Section Break",
+   "idx": 19,
+   "label": "Approval History"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "approvals",
+   "fieldtype": "Table",
+   "idx": 20,
+   "label": "Approvals",
+   "no_copy": 1,
+   "options": "Expense Approval",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 21,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "School Expense",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "School Expense",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Teacher",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Staff",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "payee,expense_category,status",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "payee",
+ "track_changes": 1
+}

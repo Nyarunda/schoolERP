@@ -11,6 +11,8 @@
   "fee_type",
   "is_active",
   "cb1",
+  "vehicle",
+  "driver",
   "vehicle_registration",
   "driver_name",
   "driver_phone",
@@ -57,39 +59,59 @@
    "idx": 5
   },
   {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "idx": 6,
+   "label": "Vehicle",
+   "options": "School Vehicle"
+  },
+  {
+   "fieldname": "driver",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Driver",
+   "options": "Staff Member"
+  },
+  {
+   "fetch_from": "vehicle.registration_number",
+   "fetch_if_empty": 1,
    "fieldname": "vehicle_registration",
    "fieldtype": "Data",
-   "idx": 6,
+   "idx": 8,
    "label": "Vehicle Registration"
   },
   {
+   "fetch_from": "driver.full_name",
+   "fetch_if_empty": 1,
    "fieldname": "driver_name",
    "fieldtype": "Data",
-   "idx": 7,
+   "idx": 9,
    "label": "Driver Name"
   },
   {
+   "fetch_from": "driver.phone",
+   "fetch_if_empty": 1,
    "fieldname": "driver_phone",
    "fieldtype": "Data",
-   "idx": 8,
+   "idx": 10,
    "label": "Driver Phone",
    "options": "Phone"
   },
   {
    "fieldname": "sb_stops",
    "fieldtype": "Section Break",
-   "idx": 9
+   "idx": 11
   },
   {
    "fieldname": "stops",
    "fieldtype": "Small Text",
-   "idx": 10,
+   "idx": 12,
    "label": "Pick-up Points"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-21 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Transport Route",

@@ -15,6 +15,10 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 | `activities` | Games & activities (swimming, football...) each with a fee per term |
 | `timetable` | Subjects, periods, class timetables with teacher clash checks, printable grid |
 | `messaging` | SMS and email to parents: billing notices, payment receipts, reminders, PDF statements |
+| `staff` | Staff members (teachers, drivers, support), **leave** with types, balances, approvals, approval + **reliever notifications**, **duty roster & daily Teacher-on-Duty reports**. See [docs/STAFF_AND_OPERATIONS.md](docs/STAFF_AND_OPERATIONS.md) |
+| `expenses` | **Expense posting with amount-based approvals** (one or two levels), posted to the accounts automatically |
+| `transport_ops` | **Driver morning check-in** (safety checklist, fitness, odometer, fuel), alerts for failed checks and missed check-ins, vehicles and document expiry |
+| `welfare` | **Discipline incidents** (SMS parent) and **complaints** (staff + public web form with SMS tracking) |
 | `mpesa` | **M-Pesa Paybill auto-posting**: parents pay with the Student ID as account number and the payment is posted to the student automatically. See [docs/MPESA.md](docs/MPESA.md) |
 
 ---
@@ -47,7 +51,7 @@ Issue a key for each school according to its agreement and payment:
 ```bash
 python tools/license_tool.py issue --private-key-file vendor.key \
   --school "Greenhill Academy" --site greenhill.example.com \
-  --modules fees,transport,lunch,activities,messaging,timetable,mpesa \
+  --modules fees,transport,lunch,activities,messaging,timetable,mpesa,staff,expenses,transport_ops,welfare \
   --expires 2027-12-31 --max-students 600
 ```
 
@@ -101,13 +105,20 @@ Numbers are normalised with the school's country code (`0712 345 678` → `25471
 
 **Timetable** → *Timetable* per stream per term. Add lessons (day, period, subject, teacher, room). Duplicate slots, lessons in breaks and teachers double-booked across streams are rejected. Use "Copy Slots From" to start from last term. Print with "Class Timetable".
 
-## 6. Roles
+## 6. Reports & sidebar
+
+The School sidebar has sections for Students & Welfare, Fees, Finance, Staff, Transport, Academics, Reports and Setup. 16 reports: Fee Balances, Fee Collection, Fee Structure Matrix (fees per class per term), Paybill Reconciliation, Income vs Expenses, Expense Register, Class Enrolment, Discipline Summary, Complaints Summary, Leave Balance, Staff On Leave, Duty Reports Register, Teacher Workload, Driver Check-in Register, Vehicle Fuel and Mileage, Transport List (and lunch list).
+
+## 7. Roles
 
 * **School Admin**: everything in the app.
 * **Bursar**: students, fees, payments, billing, messages.
-* **Teacher**: read students and timetables.
+* **Teacher**: read students and timetables, duty reports, discipline incidents.
+* **Head Teacher**: approves leave and final expenses; receives duty reports, complaints and alerts.
+* **Staff**: every staff login: apply for leave, raise expenses.
+* **Driver** / **Transport Manager**: driver check-ins and vehicles.
 
-## 7. What's where
+## 8. What's where
 
 ```
 school_erp/
@@ -132,7 +143,7 @@ Testing:
 * `./scripts/install-hooks.sh`: run the checks automatically before every `git push`.
 * GitHub Actions runs both on every push and pull request.
 
-## 8. Notes
+## 9. Notes
 
 * Frappe's separate **Education** and **LMS (Learning)** apps can be installed alongside; this app does not depend on them and uses its own DocType names to avoid clashes.
 * Credit notes against an invoice show on the statement as "Fee credit / reversal". Payment Entries made directly in ERPNext (not through Fee Payment) still reduce balances; they are spread across fee types by priority.

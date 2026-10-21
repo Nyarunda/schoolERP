@@ -24,6 +24,10 @@ MODULES = {
 	"activities": "Games & Activities",
 	"messaging": "SMS & Email to Parents",
 	"mpesa": "M-Pesa Paybill Auto-posting",
+	"staff": "Staff, Leave & Duty Reports",
+	"welfare": "Discipline & Complaints",
+	"expenses": "Expenses & Approvals",
+	"transport_ops": "Driver Daily Logs & Vehicles",
 }
 
 # Which module each DocType belongs to
@@ -38,6 +42,17 @@ DOCTYPE_MODULE = {
 	"Subject": "timetable",
 	"Period": "timetable",
 	"School Message": "messaging",
+	"Staff Member": "staff",
+	"Leave Type": "staff",
+	"Leave Application": "staff",
+	"Duty Roster": "staff",
+	"Duty Report": "staff",
+	"Discipline Incident": "welfare",
+	"Complaint": "welfare",
+	"Expense Category": "expenses",
+	"School Expense": "expenses",
+	"School Vehicle": "transport_ops",
+	"Driver Daily Log": "transport_ops",
 }
 
 # Fee categories that need an extra module on top of "fees"

@@ -205,3 +205,66 @@ def test_ip_allowlist_and_urls():
 	assert pb.url_problems("https://greenhill.example.com/api/method/school_erp.api.paybill.confirm") == []
 	assert pb.url_problems("https://school-mpesa.example.com")  # forbidden word
 	assert pb.url_problems("http://school.localhost:8000")
+
+
+# ------------------------------------------------------------------ staff, approvals, vehicles
+from school_erp.logic import operations as ops  # noqa: E402
+
+
+def test_leave_days_skip_weekends_and_holidays():
+	# Fri 23 Oct 2026 -> Tue 27 Oct 2026; Mon 26 is a holiday
+	assert ops.leave_days(date(2026, 10, 23), date(2026, 10, 27)) == 3
+	assert ops.leave_days(date(2026, 10, 23), date(2026, 10, 27), holidays={date(2026, 10, 26)}) == 2
+	assert ops.leave_days(date(2026, 10, 23), date(2026, 10, 27), include_weekends=True) == 5
+	assert ops.leave_days(date(2026, 10, 27), date(2026, 10, 23)) == 0
+
+
+def leave_app(**kw):
+	base = {"from_date": date(2026, 11, 2), "to_date": date(2026, 11, 4), "total_days": 3, "reliever": "STF-0002", "attachment": None}
+	base.update(kw)
+	return base
+
+
+ANNUAL = {"days_per_year": 21, "requires_reliever": 1, "gender": "All", "applies_to": "All"}
+STAFF = {"name": "STF-0001", "gender": "Female", "staff_type": "Teaching"}
+
+
+def test_leave_rules():
+	assert ops.leave_problems(leave_app(), ANNUAL, STAFF, taken_days=0, overlapping=[]) == []
+	assert any("remain" in p for p in ops.leave_problems(leave_app(), ANNUAL, STAFF, 20, []))
+	assert any("reliever is required" in p for p in ops.leave_problems(leave_app(reliever=None), ANNUAL, STAFF, 0, []))
+	assert any("own reliever" in p for p in ops.leave_problems(leave_app(reliever="STF-0001"), ANNUAL, STAFF, 0, []))
+	assert any("on leave" in p for p in ops.leave_problems(leave_app(), ANNUAL, STAFF, 0, [], reliever_busy=True))
+	assert any("overlap" in p for p in ops.leave_problems(leave_app(), ANNUAL, STAFF, 0, ["LV-2026-00001"]))
+	paternity = {"days_per_year": 14, "gender": "Male"}
+	assert any("male staff" in p for p in ops.leave_problems(leave_app(reliever=None), paternity, STAFF, 0, []))
+	sick = {"days_per_year": 14, "requires_attachment": 1}
+	assert any("Attach" in p for p in ops.leave_problems(leave_app(reliever=None), sick, STAFF, 0, []))
+	unpaid = {"days_per_year": 0}
+	assert ops.leave_problems(leave_app(reliever=None, total_days=40), unpaid, STAFF, 100, []) == []
+
+
+def test_expense_approval_levels():
+	assert ops.levels_required(8000, 10000) == 1
+	assert ops.levels_required(25000, 10000) == 2
+	assert ops.levels_required(100, 0) == 2
+	a1 = [{"level": "First", "user": "bursar@x", "action": "Approved"}]
+	assert ops.next_level(1, []) == "First" and ops.next_level(1, a1) is None
+	assert ops.next_level(2, a1) == "Final"
+	assert ops.status_for(2, a1) == "Pending Final Approval"
+	assert ops.status_for(1, a1) == "Approved"
+	assert ops.status_for(2, a1 + [{"level": "Final", "user": "head@x", "action": "Rejected"}]) == "Rejected"
+	# separation of duties
+	assert ops.approval_error("clerk@x", "clerk@x", "First", {"Bursar"}, "Bursar", [])
+	assert ops.approval_error("bursar@x", "clerk@x", "Final", {"Bursar", "Head Teacher"}, "Head Teacher", a1)
+	assert ops.approval_error("teacher@x", "clerk@x", "First", {"Teacher"}, "Bursar", [])
+	assert ops.approval_error("head@x", "clerk@x", "Final", {"Head Teacher"}, "Head Teacher", a1) is None
+
+
+def test_vehicle_checks():
+	ok = [{"item": i, "ok": 1} for i in ops.DEFAULT_CHECKLIST]
+	assert ops.vehicle_problems(ok, True, date(2026, 10, 21)) == []
+	bad = ok[:1] + [{"item": "Brakes", "ok": 0, "remarks": "soft pedal"}]
+	probs = ops.vehicle_problems(bad, False, date(2026, 10, 21), insurance_expiry=date(2026, 10, 1))
+	assert "Brakes: NOT OK - soft pedal" in probs
+	assert any("fitness" in p for p in probs) and any("Insurance expired" in p for p in probs)

@@ -29,66 +29,72 @@ def set_license(modules):
 	licensing.clear_cache()
 
 
+def setup_school(cls):
+	"""Shared by all school test classes: license, settings, setup wizard data, a term, a stream, fees."""
+	cls._pub = patch.object(licensing, "PUBLIC_KEY", PUB)
+	cls._pub.start()
+	from school_erp.tests.utils import TEST_COMPANY, before_tests
+
+	before_tests()
+	company = TEST_COMPANY
+	cls.company = company
+
+	settings = frappe.get_doc("School Settings")
+	settings.update({
+		"school_name": "Test School",
+		"company": company,
+		"education_system": "CBC (PP1 - Grade 9)",
+		"paybill_number": "123456",
+		"auto_sms_on_payment": 0,
+		"notify_after_billing": 0,
+		"email_statement_after_billing": 0,
+		"license_key": lic.issue({"school": "Test School", "modules": ALL_MODULES}, PRIV),
+	})
+	settings.save()
+	licensing.clear_cache()
+
+	from school_erp.api.setup import run_setup
+
+	run_setup()
+
+	# a payment mode with an account, so Payment Entries can post
+	cash = frappe.db.get_value("Account", {"company": company, "account_type": "Cash", "is_group": 0})
+	if not frappe.db.exists("Mode of Payment", "_Test School Cash"):
+		frappe.get_doc({
+			"doctype": "Mode of Payment", "mode_of_payment": "_Test School Cash", "type": "Cash",
+			"accounts": [{"company": company, "default_account": cash}],
+		}).insert()
+	frappe.db.set_single_value("School Settings", "default_mode_of_payment", "_Test School Cash")
+
+	# Paybill auto-posting into the same test cash account
+	settings = frappe.get_doc("School Settings")
+	settings.update({"mpesa_enabled": 1, "mpesa_environment": "Sandbox", "mpesa_shortcode": "600000",
+					 "mpesa_mode_of_payment": "_Test School Cash"})
+	settings.save()
+
+	year = str(getdate(nowdate()).year)
+	cls.term = frappe.db.get_value("School Term", {"school_year": year, "start_date": ("<=", nowdate())},
+								   "name", order_by="start_date desc") or f"Term 1 {year}"
+
+	if not frappe.db.exists("Stream", "Grade 4 Test"):
+		frappe.get_doc({"doctype": "Stream", "school_class": "Grade 4", "stream_name": "Test"}).insert()
+	if not frappe.db.exists("Transport Route", "_Test Route"):
+		frappe.get_doc({"doctype": "Transport Route", "route_name": "_Test Route", "fee_per_term": 9000,
+						"fee_type": "Transport"}).insert()
+	if not frappe.db.exists("School Fee Structure", {"school_term": cls.term, "school_class": "Grade 4"}):
+		frappe.get_doc({
+			"doctype": "School Fee Structure", "school_term": cls.term, "school_class": "Grade 4", "boarding_type": "All",
+			"items": [{"fee_type": "Tuition", "amount": 25000}, {"fee_type": "Lunch", "amount": 6000}],
+		}).insert()
+	frappe.db.commit()
+
+
+
 class TestSchoolFlow(TestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls._pub = patch.object(licensing, "PUBLIC_KEY", PUB)
-		cls._pub.start()
-		from school_erp.tests.utils import TEST_COMPANY, before_tests
-
-		before_tests()
-		company = TEST_COMPANY
-		cls.company = company
-
-		settings = frappe.get_doc("School Settings")
-		settings.update({
-			"school_name": "Test School",
-			"company": company,
-			"education_system": "CBC (PP1 - Grade 9)",
-			"paybill_number": "123456",
-			"auto_sms_on_payment": 0,
-			"notify_after_billing": 0,
-			"email_statement_after_billing": 0,
-			"license_key": lic.issue({"school": "Test School", "modules": ALL_MODULES}, PRIV),
-		})
-		settings.save()
-		licensing.clear_cache()
-
-		from school_erp.api.setup import run_setup
-
-		run_setup()
-
-		# a payment mode with an account, so Payment Entries can post
-		cash = frappe.db.get_value("Account", {"company": company, "account_type": "Cash", "is_group": 0})
-		if not frappe.db.exists("Mode of Payment", "_Test School Cash"):
-			frappe.get_doc({
-				"doctype": "Mode of Payment", "mode_of_payment": "_Test School Cash", "type": "Cash",
-				"accounts": [{"company": company, "default_account": cash}],
-			}).insert()
-		frappe.db.set_single_value("School Settings", "default_mode_of_payment", "_Test School Cash")
-
-		# Paybill auto-posting into the same test cash account
-		settings = frappe.get_doc("School Settings")
-		settings.update({"mpesa_enabled": 1, "mpesa_environment": "Sandbox", "mpesa_shortcode": "600000",
-						 "mpesa_mode_of_payment": "_Test School Cash"})
-		settings.save()
-
-		year = str(getdate(nowdate()).year)
-		cls.term = frappe.db.get_value("School Term", {"school_year": year, "start_date": ("<=", nowdate())},
-									   "name", order_by="start_date desc") or f"Term 1 {year}"
-
-		if not frappe.db.exists("Stream", "Grade 4 Test"):
-			frappe.get_doc({"doctype": "Stream", "school_class": "Grade 4", "stream_name": "Test"}).insert()
-		if not frappe.db.exists("Transport Route", "_Test Route"):
-			frappe.get_doc({"doctype": "Transport Route", "route_name": "_Test Route", "fee_per_term": 9000,
-							"fee_type": "Transport"}).insert()
-		if not frappe.db.exists("School Fee Structure", {"school_term": cls.term, "school_class": "Grade 4"}):
-			frappe.get_doc({
-				"doctype": "School Fee Structure", "school_term": cls.term, "school_class": "Grade 4", "boarding_type": "All",
-				"items": [{"fee_type": "Tuition", "amount": 25000}, {"fee_type": "Lunch", "amount": 6000}],
-			}).insert()
-		frappe.db.commit()
+		setup_school(cls)
 
 	@classmethod
 	def tearDownClass(cls):

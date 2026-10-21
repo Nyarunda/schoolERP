@@ -1,0 +1,31 @@
+{
+ "add_total_row": 0,
+ "creation": "2026-10-21 20:00:00.000000",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "is_standard": "Yes",
+ "modified": "2026-10-21 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Paybill Reconciliation",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "M-Pesa Transaction",
+ "report_name": "Paybill Reconciliation",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "School Admin"
+  },
+  {
+   "role": "Bursar"
+  },
+  {
+   "role": "Head Teacher"
+  }
+ ]
+}

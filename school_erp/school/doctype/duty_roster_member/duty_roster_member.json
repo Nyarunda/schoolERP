@@ -1,0 +1,57 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 20:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "staff_member",
+  "staff_name",
+  "duty_role"
+ ],
+ "fields": [
+  {
+   "columns": 4,
+   "fieldname": "staff_member",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Staff Member",
+   "options": "Staff Member",
+   "reqd": 1
+  },
+  {
+   "columns": 3,
+   "fetch_from": "staff_member.full_name",
+   "fieldname": "staff_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Staff Name",
+   "read_only": 1
+  },
+  {
+   "columns": 3,
+   "default": "Teacher on Duty",
+   "fieldname": "duty_role",
+   "fieldtype": "Select",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Duty Role",
+   "options": "Teacher on Duty\nDeputy on Duty\nBoarding Master\nOther"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-21 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Duty Roster Member",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_order": "DESC",
+ "states": []
+}

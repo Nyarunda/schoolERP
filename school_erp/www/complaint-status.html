@@ -1,0 +1,57 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Complaint Status") }}{% endblock %}
+
+{% block page_content %}
+<style>
+	.cs-wrap { max-width: 520px; margin: 32px auto; }
+	.cs-card { border: 1px solid var(--border-color, #e3e7ec); border-radius: 12px; padding: 24px; }
+	.cs-card h1 { font-size: 22px; margin-bottom: 4px; }
+	.cs-muted { color: var(--text-muted, #6b7280); font-size: 14px; }
+	.cs-field { margin-top: 14px; }
+	.cs-field label { font-weight: 600; font-size: 13px; display: block; margin-bottom: 4px; }
+	.cs-field input { width: 100%; padding: 10px 12px; border: 1px solid #d0d5dd; border-radius: 8px; font-size: 15px; }
+	.cs-btn { margin-top: 18px; width: 100%; padding: 11px; border: 0; border-radius: 8px; background: #1f6f5c; color: #fff; font-weight: 600; font-size: 15px; }
+	.cs-result { margin-top: 20px; padding: 16px; border-radius: 10px; background: #f4f6f8; display: none; }
+	.cs-status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 13px; }
+	.cs-Open, .cs-In.Progress { background: #fff6e5; color: #7a4b00; }
+	.cs-Resolved, .cs-Closed { background: #e8f5ee; color: #17633b; }
+</style>
+<div class="cs-wrap">
+	<div class="cs-card">
+		<h1>{{ _("Track your complaint") }}</h1>
+		<div class="cs-muted">{{ _("Enter the reference number from your SMS and the phone number you used.") }}</div>
+		<form id="cs-form">
+			<div class="cs-field"><label>{{ _("Reference number") }}</label><input name="ref" placeholder="CMP-2026-00001" required></div>
+			<div class="cs-field"><label>{{ _("Phone number") }}</label><input name="phone" placeholder="07XX XXX XXX" required></div>
+			<button class="cs-btn" type="submit">{{ _("Check status") }}</button>
+		</form>
+		<div class="cs-result" id="cs-result"></div>
+		<p class="cs-muted" style="margin-top:18px">{{ _("New complaint?") }} <a href="/complaint">{{ _("Send one here") }}</a></p>
+	</div>
+</div>
+<script>
+document.getElementById("cs-form").addEventListener("submit", async (e) => {
+	e.preventDefault();
+	const f = new FormData(e.target), box = document.getElementById("cs-result");
+	const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+	box.style.display = "block";
+	box.textContent = "{{ _('Checking...') }}";
+	try {
+		const r = await fetch("/api/method/school_erp.api.welfare.complaint_status", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": (window.frappe && frappe.csrf_token) || "" },
+			body: JSON.stringify({ ref: f.get("ref"), phone: f.get("phone") }),
+		});
+		const m = (await r.json()).message;
+		if (!m || !m.found) { box.textContent = "{{ _('No complaint found with that reference and phone number.') }}"; return; }
+		box.innerHTML = `<div><b>${esc(m.ref)}</b> &middot; ${esc(m.category)}</div>
+			<div style="margin:6px 0">${esc(m.subject)}</div>
+			<div><span class="cs-status cs-${esc(m.status)}">${esc(m.status)}</span> <span class="cs-muted">{{ _("received") }} ${esc(m.received)}</span></div>
+			${m.resolution ? `<div style="margin-top:10px"><b>{{ _("Resolution") }}:</b><br>${esc(m.resolution)}</div>` : ""}`;
+	} catch (err) {
+		box.textContent = "{{ _('Could not check right now. Please try again.') }}";
+	}
+});
+</script>
+{% endblock %}

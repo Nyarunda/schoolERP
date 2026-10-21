@@ -73,11 +73,25 @@ jobs:
           bench get-app --skip-assets "$GITHUB_WORKSPACE/app"
       - name: Site
         run: |
+          set -o pipefail
           cd ~/frappe-bench
-          bench new-site test.localhost --db-root-password root --admin-password admin --install-app erpnext
-          bench --site test.localhost install-app school_erp
-          bench --site test.localhost set-config allow_tests true
+          # The DB service runs in a container, so the site's DB user must be allowed from any host
+          ( bench new-site test.localhost --db-root-password root --admin-password admin \
+              --mariadb-user-host-login-scope='%' --install-app erpnext \
+            && bench --site test.localhost install-app school_erp \
+            && bench --site test.localhost set-config allow_tests true ) 2>&1 | tee ~/site.log
       - name: Run tests
         run: |
+          set -o pipefail
           cd ~/frappe-bench
-          bench --site test.localhost run-tests --app school_erp
+          bench --site test.localhost run-tests --app school_erp 2>&1 | tee ~/tests.log
+      - name: Show errors as annotations
+        if: failure()
+        run: |
+          # surface the last lines as annotations so they are readable without downloading logs
+          for f in ~/site.log ~/tests.log; do
+            [ -f "$f" ] || continue
+            tail -n 40 "$f" | grep -v '^\s*$' | tail -n 25 | while IFS= read -r line; do
+              echo "::error title=$(basename $f)::${line//%/%25}"
+            done
+          done

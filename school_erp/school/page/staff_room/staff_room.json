@@ -1,0 +1,45 @@
+{
+ "content": null,
+ "creation": "2026-10-22 08:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "",
+ "idx": 0,
+ "modified": "2026-10-22 08:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "staff-room",
+ "owner": "Administrator",
+ "page_name": "staff-room",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "School Admin"
+  },
+  {
+   "role": "Head Teacher"
+  },
+  {
+   "role": "Bursar"
+  },
+  {
+   "role": "Teacher"
+  },
+  {
+   "role": "Staff"
+  },
+  {
+   "role": "Driver"
+  },
+  {
+   "role": "Transport Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Staff Room"
+}

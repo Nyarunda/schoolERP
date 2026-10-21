@@ -263,3 +263,54 @@ class TestOperations(TestCase):
 			self.assertIsNotNone(result, slug)
 			self.assertTrue(frappe.db.exists("Report", name), f"Report record missing for {slug}")
 			run(name, filters=filters)  # through Frappe's own runner (permissions, formatting)
+
+	# ------------------------------------------------------------------ dashboards & notices
+	def test_notice_reaches_audience_and_can_be_acknowledged(self):
+		from school_erp.school.doctype.school_notice.school_notice import acknowledge
+
+		with patch(NOTIFY) as sent:
+			n = frappe.get_doc({"doctype": "School Notice", "title": "Staff meeting", "audience": "Teaching Staff",
+								"priority": "Important", "message": "<p>Friday 3:30 pm</p>"}).insert()
+		users = sent.call_args.args[0]
+		self.assertIn("jane.teacher@test.school", users)
+		self.assertNotIn("dan.driver@test.school", users)  # drivers are not teaching staff
+		n.reload()
+		self.assertTrue(n.notified)
+		self.assertGreaterEqual(n.audience_count, 2)
+		self.assertTrue(n.expiry_date)
+		frappe.set_user("jane.teacher@test.school")
+		try:
+			self.assertEqual(acknowledge(n.name), 1)
+			self.assertEqual(acknowledge(n.name), 1)  # only counted once
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_management_dashboard_data(self):
+		from school_erp.api.dashboard import management
+
+		d = management()
+		for key in ("students", "fees", "staff", "transport", "welfare", "expenses", "cashflow", "attention", "notices"):
+			self.assertIn(key, d, key)
+		self.assertEqual(len(d["fees"]["daily"]["values"]), 29)
+		self.assertEqual(len(d["cashflow"]["labels"]), 6)
+		frappe.set_user("dan.driver@test.school")
+		try:
+			with self.assertRaises(frappe.PermissionError):
+				management()  # drivers don't see the management dashboard
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_staff_room_for_teacher(self):
+		from school_erp.api.dashboard import staff_room
+
+		frappe.set_user("jane.teacher@test.school")
+		try:
+			d = staff_room()
+		finally:
+			frappe.set_user("Administrator")
+		self.assertEqual(d["staff"], self.teacher)
+		self.assertTrue(d["greeting"].endswith("Jane"))
+		leave_types = {b["leave_type"] for b in d["leave"]}
+		self.assertIn("Maternity Leave", leave_types)
+		self.assertNotIn("Paternity Leave", leave_types)  # Jane is female
+		self.assertTrue(any(a["label"] == "Apply for leave" for a in d["actions"]))

@@ -34,4 +34,12 @@ def before_tests():
 		)
 		frappe.db.set_single_value("System Settings", "setup_complete", 1)
 		frappe.db.set_default("company", TEST_COMPANY)
+		mark_setup_complete()
 	frappe.db.commit()
+
+
+def mark_setup_complete():
+	"""Frappe v16 tracks setup per installed app; without this, non-admin users are sent to the Setup Wizard."""
+	if frappe.db.has_column("Installed Application", "is_setup_complete"):
+		frappe.db.sql("update `tabInstalled Application` set is_setup_complete = 1")
+	frappe.clear_cache()

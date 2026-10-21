@@ -21,7 +21,8 @@ after_install = "school_erp.setup.install.after_install"
 after_migrate = "school_erp.setup.install.after_migrate"
 before_tests = "school_erp.tests.utils.before_tests"
 
-app_include_js = "/assets/school_erp/js/school_erp.js"
+app_include_js = ["/assets/school_erp/js/school_erp.js", "/assets/school_erp/js/school_dashboard.js"]
+app_include_css = ["/assets/school_erp/css/school_dashboard.css"]
 
 boot_session = "school_erp.licensing.boot_session"
 
@@ -67,6 +68,7 @@ scheduler_events = {
 		"school_erp.licensing.daily_license_check",
 		"school_erp.api.staff.update_staff_leave_status",
 		"school_erp.api.transport_ops.alert_expiring_documents",
+		"school_erp.school.doctype.school_notice.school_notice.publish_scheduled",
 	],
 	"hourly": ["school_erp.api.paybill.retry_pending"],
 	"cron": {

@@ -35,7 +35,10 @@ class TestSchoolFlow(TestCase):
 		super().setUpClass()
 		cls._pub = patch.object(licensing, "PUBLIC_KEY", PUB)
 		cls._pub.start()
-		company = frappe.defaults.get_global_default("company") or frappe.get_all("Company", pluck="name")[0]
+		from school_erp.tests.utils import TEST_COMPANY, before_tests
+
+		before_tests()
+		company = TEST_COMPANY
 		cls.company = company
 
 		settings = frappe.get_doc("School Settings")

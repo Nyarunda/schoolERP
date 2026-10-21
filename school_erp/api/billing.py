@@ -187,10 +187,12 @@ def bill_single_student(student, school_term, posting_date=None, due_date=None):
 	lines = data.lines_for(doc)
 	if not lines:
 		frappe.throw(_("No fees apply to {0} for {1}. Check the fee structure.").format(doc.student_name, school_term))
-	si = make_invoice(
-		doc, school_term, lines, data.fee_types,
-		posting_date or frappe.utils.nowdate(), due_date or term.start_date, submit=True,
-	)
+	posting_date = getdate(posting_date or frappe.utils.nowdate())
+	# a mid-term admission is billed after the term started: never due before it is posted
+	due_date = getdate(due_date) if due_date else max(getdate(term.start_date), posting_date)
+	if due_date < posting_date:
+		frappe.throw(_("Due Date cannot be before the posting date"))
+	si = make_invoice(doc, school_term, lines, data.fee_types, posting_date, due_date, submit=True)
 	return si.name
 
 

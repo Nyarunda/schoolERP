@@ -1,0 +1,250 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "MSG-.#####",
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "audience",
+  "school_class",
+  "stream",
+  "student",
+  "min_balance",
+  "cb1",
+  "channel",
+  "attach_statement",
+  "status",
+  "sb_msg",
+  "subject",
+  "message",
+  "sms_length",
+  "sb_result",
+  "recipients",
+  "sms_sent",
+  "emails_sent",
+  "failed",
+  "log",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "Students with a balance",
+   "fieldname": "audience",
+   "fieldtype": "Select",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Audience",
+   "options": "All active students\nClass\nStream\nStudents with a balance\nSingle student",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:in_list(['Class','Students with a balance'], doc.audience)",
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 2,
+   "label": "Class",
+   "options": "School Class"
+  },
+  {
+   "depends_on": "eval:in_list(['Stream','Students with a balance'], doc.audience)",
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 3,
+   "label": "Stream",
+   "options": "Stream"
+  },
+  {
+   "depends_on": "eval:doc.audience=='Single student'",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 4,
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "depends_on": "eval:doc.audience=='Students with a balance'",
+   "fieldname": "min_balance",
+   "fieldtype": "Currency",
+   "idx": 5,
+   "label": "Minimum Balance"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 6
+  },
+  {
+   "default": "SMS",
+   "fieldname": "channel",
+   "fieldtype": "Select",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "Channel",
+   "options": "SMS\nEmail\nSMS and Email",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.channel!='SMS'",
+   "fieldname": "attach_statement",
+   "fieldtype": "Check",
+   "idx": 8,
+   "label": "Attach PDF Fee Statement (email)"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 9,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nQueued\nSending\nSent\nSent with Errors",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_msg",
+   "fieldtype": "Section Break",
+   "idx": 10,
+   "label": "Message"
+  },
+  {
+   "depends_on": "eval:doc.channel!='SMS'",
+   "fieldname": "subject",
+   "fieldtype": "Data",
+   "idx": 11,
+   "label": "Subject",
+   "mandatory_depends_on": "eval:doc.channel!='SMS'"
+  },
+  {
+   "description": "Placeholders: {student_name} {first_name} {student_id} {class} {stream} {balance} {guardian_name} {school_name} {paybill}",
+   "fieldname": "message",
+   "fieldtype": "Small Text",
+   "idx": 12,
+   "label": "Message",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sms_length",
+   "fieldtype": "HTML",
+   "idx": 13,
+   "label": "Length"
+  },
+  {
+   "fieldname": "sb_result",
+   "fieldtype": "Section Break",
+   "idx": 14,
+   "label": "Result"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "recipients",
+   "fieldtype": "Int",
+   "idx": 15,
+   "label": "Recipients",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "sms_sent",
+   "fieldtype": "Int",
+   "idx": 16,
+   "label": "Sms Sent",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "emails_sent",
+   "fieldtype": "Int",
+   "idx": 17,
+   "label": "Emails Sent",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "failed",
+   "fieldtype": "Int",
+   "idx": 18,
+   "label": "Failed",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "log",
+   "fieldtype": "Long Text",
+   "idx": 19,
+   "label": "Log",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 20,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "School Message",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "School Message",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

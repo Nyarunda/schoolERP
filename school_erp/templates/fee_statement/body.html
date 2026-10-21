@@ -1,0 +1,224 @@
+{%- set a = s.school.accent or "#1f6f5c" -%}
+{%- set m = s.money -%}
+<style>
+	.fs { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #1d2433; font-size: 11.5px; line-height: 1.45; }
+	.fs table { width: 100%; border-collapse: collapse; }
+	.fs td, .fs th { vertical-align: top; }
+	.fs .accent-bar { height: 6px; background: {{ a }}; border-radius: 3px; margin-bottom: 14px; }
+	.fs .school-name { font-size: 19px; font-weight: 700; color: {{ a }}; letter-spacing: .2px; }
+	.fs .motto { font-style: italic; color: #6b7280; font-size: 11px; margin-top: 1px; }
+	.fs .contact { color: #4b5563; font-size: 10.5px; margin-top: 4px; }
+	.fs .doc-title { font-size: 22px; font-weight: 800; letter-spacing: 2px; color: #1d2433; text-align: right; }
+	.fs .doc-meta { text-align: right; color: #4b5563; font-size: 10.5px; margin-top: 3px; }
+	.fs .logo { max-height: 62px; max-width: 80px; margin-right: 12px; }
+
+	.fs .student { background: #f4f6f8; border-radius: 8px; margin: 14px 0 12px; }
+	.fs .student td { padding: 10px 14px; }
+	.fs .lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: .8px; color: #6b7280; }
+	.fs .val { font-size: 12.5px; font-weight: 600; color: #1d2433; }
+	.fs .val-big { font-size: 16px; font-weight: 700; }
+
+	.fs .cards td.card { width: 25%; padding: 0 5px; }
+	.fs .cards td.card:first-child { padding-left: 0; }
+	.fs .cards td.card:last-child { padding-right: 0; }
+	.fs .card-in { border: 1px solid #e3e7ec; border-radius: 8px; padding: 10px 12px; }
+	.fs .card-num { font-size: 15px; font-weight: 700; margin-top: 3px; white-space: nowrap; }
+	.fs .card-due .card-in { background: {{ a }}; border-color: {{ a }}; }
+	.fs .card-due .lbl, .fs .card-due .card-num { color: #ffffff; }
+	.fs .card-due .card-num { font-size: 17px; }
+	.fs .card-credit .card-in { background: #e8f5ee; border-color: #9fd3b6; }
+	.fs .card-credit .card-num { color: #17633b; }
+	.fs .card-clear .card-in { background: #e8f5ee; border-color: #9fd3b6; }
+	.fs .card-clear .card-num { color: #17633b; }
+
+	.fs .notice { margin: 12px 0 4px; padding: 9px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+	.fs .notice-due { background: #fff6e5; border: 1px solid #f3cf8a; color: #7a4b00; }
+	.fs .notice-credit, .fs .notice-clear { background: #e8f5ee; border: 1px solid #9fd3b6; color: #17633b; }
+
+	.fs h3 { font-size: 12.5px; margin: 18px 0 6px; color: #1d2433; font-weight: 700; }
+	.fs h3 span { color: #6b7280; font-weight: 400; font-size: 10.5px; }
+	.fs .grid th { background: #f4f6f8; color: #4b5563; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .6px; padding: 7px 8px; text-align: left; border-bottom: 1px solid #e3e7ec; }
+	.fs .grid td { padding: 6px 8px; border-bottom: 1px solid #eef1f4; }
+	.fs .grid tr.zebra td { background: #fafbfc; }
+	.fs .num { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.fs .muted { color: #6b7280; }
+	.fs .owed { color: #b42318; font-weight: 600; }
+	.fs .ok { color: #17633b; }
+	.fs .grid tr.total td { border-top: 2px solid #1d2433; border-bottom: none; font-weight: 700; background: #fff; }
+	.fs .grid tr.note td { font-style: italic; color: #4b5563; }
+	.fs .grid tr.edge td { background: #f4f6f8; font-weight: 600; }
+	.fs .ref { color: #6b7280; font-size: 10px; }
+
+	.fs .pay { margin-top: 16px; border: 1.5px dashed {{ a }}; border-radius: 8px; }
+	.fs .pay td { padding: 11px 14px; }
+	.fs .pay-title { font-weight: 700; color: {{ a }}; font-size: 12.5px; margin-bottom: 3px; }
+	.fs .paybill { font-size: 20px; font-weight: 800; letter-spacing: 1px; color: #1d2433; }
+	.fs .acct { font-size: 14px; font-weight: 700; color: #1d2433; }
+	.fs .footer { margin-top: 14px; padding-top: 9px; border-top: 1px solid #e3e7ec; color: #6b7280; font-size: 10px; text-align: center; }
+</style>
+
+<div class="fs">
+	<div class="accent-bar"></div>
+
+	<table>
+		<tr>
+			<td style="width:60%">
+				<table><tr>
+					{% if s.school.logo %}<td style="width:1%"><img class="logo" src="{{ s.school.logo }}"></td>{% endif %}
+					<td>
+						<div class="school-name">{{ s.school.name or "" }}</div>
+						{% if s.school.motto %}<div class="motto">{{ s.school.motto }}</div>{% endif %}
+						<div class="contact">
+							{% if s.school.address %}{{ s.school.address | replace("\n", ", ") }}<br>{% endif %}
+							{% if s.school.phone %}Tel {{ s.school.phone }}{% endif %}{% if s.school.phone and s.school.email %} &middot; {% endif %}{% if s.school.email %}{{ s.school.email }}{% endif %}
+						</div>
+					</td>
+				</tr></table>
+			</td>
+			<td style="width:40%">
+				<div class="doc-title">FEE STATEMENT</div>
+				<div class="doc-meta">Date: <b>{{ s.period.generated }}</b></div>
+				<div class="doc-meta">Period: {{ s.period["from"] }} &ndash; {{ s.period.to }}</div>
+			</td>
+		</tr>
+	</table>
+
+	<table class="student">
+		<tr>
+			<td style="width:38%">
+				<div class="lbl">Student</div>
+				<div class="val val-big">{{ s.student.name }}</div>
+			</td>
+			<td style="width:20%">
+				<div class="lbl">Student ID</div>
+				<div class="val">{{ s.student.id }}</div>
+			</td>
+			<td style="width:20%">
+				<div class="lbl">Class</div>
+				<div class="val">{{ s.student.stream or s.student["class"] or "-" }}</div>
+			</td>
+			<td style="width:22%">
+				<div class="lbl">Parent / Guardian</div>
+				<div class="val">{{ s.student.guardian or "-" }}</div>
+				{% if s.student.phone %}<div class="muted" style="font-size:10.5px">{{ s.student.phone }}</div>{% endif %}
+			</td>
+		</tr>
+	</table>
+
+	<table class="cards">
+		<tr>
+			<td class="card"><div class="card-in">
+				<div class="lbl">Previous Balance</div>
+				<div class="card-num">{{ m(s.ledger.opening) }}</div>
+			</div></td>
+			<td class="card"><div class="card-in">
+				<div class="lbl">Fees Charged</div>
+				<div class="card-num">{{ m(s.ledger.charged + s.ledger.adjusted) }}</div>
+			</div></td>
+			<td class="card"><div class="card-in">
+				<div class="lbl">Payments Received</div>
+				<div class="card-num">{{ m(s.ledger.paid) }}</div>
+			</div></td>
+			<td class="card card-{{ s.status.tone }}"><div class="card-in">
+				<div class="lbl">{{ s.status.label }}</div>
+				<div class="card-num">{{ m(s.ledger.closing if s.ledger.closing >= 0 else -s.ledger.closing) }}</div>
+			</div></td>
+		</tr>
+	</table>
+
+	<div class="notice notice-{{ s.status.tone }}">{{ s.status.text }}</div>
+
+	{% if s.breakdown and (s.breakdown.rows or s.breakdown.extra) %}
+	<h3>What the fees are for <span>({{ s.currency }})</span></h3>
+	<table class="grid">
+		<thead><tr>
+			<th style="width:46%">Fee</th>
+			<th class="num" style="width:18%">Charged</th>
+			<th class="num" style="width:18%">Paid</th>
+			<th class="num" style="width:18%">Balance</th>
+		</tr></thead>
+		<tbody>
+		{% for r in s.breakdown.rows %}
+			<tr class="{{ 'zebra' if loop.index is even else '' }}">
+				<td>{{ r.fee_type }}</td>
+				<td class="num">{{ m(r.billed, False) }}</td>
+				<td class="num">{{ m(r.paid, False) }}</td>
+				<td class="num {{ 'owed' if r.outstanding > 0.004 else 'ok' }}">{{ m(r.outstanding, False) if r.outstanding > 0.004 else "Paid" }}</td>
+			</tr>
+		{% endfor %}
+		{% for r in s.breakdown.extra %}
+			<tr class="note">
+				<td>{{ r.fee_type }}</td><td class="num"></td><td class="num"></td>
+				<td class="num">{{ m(r.outstanding, False) }}</td>
+			</tr>
+		{% endfor %}
+			<tr class="total">
+				<td>Total</td>
+				<td class="num">{{ m(s.breakdown.total.billed, False) }}</td>
+				<td class="num">{{ m(s.breakdown.total.paid, False) }}</td>
+				<td class="num">{{ m(s.breakdown.total.outstanding, False) }}</td>
+			</tr>
+		</tbody>
+	</table>
+	{% endif %}
+
+	<h3>Account activity <span>({{ s.currency }})</span></h3>
+	<table class="grid">
+		<thead><tr>
+			<th style="width:14%">Date</th>
+			<th style="width:38%">Details</th>
+			<th class="num" style="width:16%">Charged</th>
+			<th class="num" style="width:16%">Paid</th>
+			<th class="num" style="width:16%">Balance</th>
+		</tr></thead>
+		<tbody>
+			<tr class="edge">
+				<td>{{ s.period["from"] }}</td>
+				<td>Balance brought forward</td>
+				<td class="num"></td><td class="num"></td>
+				<td class="num">{{ m(s.ledger.opening, False) }}</td>
+			</tr>
+		{% for r in s.ledger.rows %}
+			<tr class="{{ 'zebra' if loop.index is even else '' }}">
+				<td>{{ r.date_label or r.date }}</td>
+				<td>{{ r.details }}{% if r.reference %} <span class="ref">&middot; {{ r.reference }}</span>{% endif %}</td>
+				<td class="num">{{ m(r.debit, False) if r.debit else "" }}</td>
+				<td class="num">{{ m(r.credit, False) if r.credit else "" }}</td>
+				<td class="num">{{ m(r.balance, False) }}</td>
+			</tr>
+		{% else %}
+			<tr><td colspan="5" class="muted" style="text-align:center;padding:12px">No transactions in this period</td></tr>
+		{% endfor %}
+			<tr class="total">
+				<td colspan="2">Balance as at {{ s.period.to }}</td>
+				<td class="num">{{ m(s.ledger.charged + s.ledger.adjusted, False) }}</td>
+				<td class="num">{{ m(s.ledger.paid, False) }}</td>
+				<td class="num">{{ m(s.ledger.closing, False) }}</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<table class="pay">
+		<tr>
+			{% if s.paybill %}
+			<td style="width:34%; border-right:1px solid #e3e7ec">
+				<div class="pay-title">Pay with M-Pesa</div>
+				<div class="lbl">Paybill</div>
+				<div class="paybill">{{ s.paybill }}</div>
+				<div class="lbl" style="margin-top:4px">Account number</div>
+				<div class="acct">{{ s.student.id }}</div>
+			</td>
+			{% endif %}
+			<td>
+				<div class="pay-title">How to pay</div>
+				<div>{{ s.payment_instructions }}</div>
+				{% if s.bank_details %}<div style="margin-top:6px"><span class="lbl">Bank</span><br>{{ s.bank_details | replace("\n", "<br>") }}</div>{% endif %}
+			</td>
+		</tr>
+	</table>
+
+	<div class="footer">
+		{% if s.footer %}{{ s.footer }}<br>{% endif %}
+		{{ s.school.name or "" }}{% if s.school.website %} &middot; {{ s.school.website }}{% endif %}
+	</div>
+</div>

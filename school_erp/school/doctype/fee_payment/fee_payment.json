@@ -1,0 +1,290 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "RCPT-.YYYY.-.#####",
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "school_class",
+  "balance_before",
+  "cb1",
+  "posting_date",
+  "mode_of_payment",
+  "amount",
+  "reference_no",
+  "payer_name",
+  "payer_phone",
+  "sb_alloc",
+  "allocation_method",
+  "target_fee_types",
+  "apply_remainder",
+  "manual_allocation",
+  "allocations",
+  "allocated_total",
+  "unallocated_amount",
+  "sb_result",
+  "payment_entry",
+  "balance_after",
+  "cb2",
+  "remarks",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.school_class",
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 3,
+   "label": "Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_before",
+   "fieldtype": "Currency",
+   "idx": 4,
+   "label": "Balance Before",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "idx": 6,
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Mode Of Payment",
+   "options": "Mode of Payment",
+   "reqd": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "idx": 8,
+   "in_list_view": 1,
+   "label": "Amount",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "idx": 9,
+   "in_standard_filter": 1,
+   "label": "Reference / M-Pesa Code"
+  },
+  {
+   "fieldname": "payer_name",
+   "fieldtype": "Data",
+   "idx": 10,
+   "label": "Paid By"
+  },
+  {
+   "fieldname": "payer_phone",
+   "fieldtype": "Data",
+   "idx": 11,
+   "label": "Payer Phone",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "sb_alloc",
+   "fieldtype": "Section Break",
+   "idx": 12,
+   "label": "What is this payment for?"
+  },
+  {
+   "default": "Oldest balance first",
+   "fieldname": "allocation_method",
+   "fieldtype": "Select",
+   "idx": 13,
+   "label": "Allocation Method",
+   "options": "Oldest balance first\nSpecific fee types"
+  },
+  {
+   "depends_on": "eval:doc.allocation_method=='Specific fee types'",
+   "fieldname": "target_fee_types",
+   "fieldtype": "Table MultiSelect",
+   "idx": 14,
+   "label": "Pay Towards",
+   "mandatory_depends_on": "eval:doc.allocation_method=='Specific fee types'",
+   "options": "Fee Payment Target"
+  },
+  {
+   "default": "1",
+   "depends_on": "eval:doc.allocation_method=='Specific fee types'",
+   "fieldname": "apply_remainder",
+   "fieldtype": "Check",
+   "idx": 15,
+   "label": "Apply any remainder to other balances"
+  },
+  {
+   "fieldname": "manual_allocation",
+   "fieldtype": "Check",
+   "idx": 16,
+   "label": "Edit allocation manually"
+  },
+  {
+   "fieldname": "allocations",
+   "fieldtype": "Table",
+   "idx": 17,
+   "label": "Allocations",
+   "options": "Fee Payment Allocation"
+  },
+  {
+   "fieldname": "allocated_total",
+   "fieldtype": "Currency",
+   "idx": 18,
+   "label": "Allocated Total",
+   "read_only": 1
+  },
+  {
+   "fieldname": "unallocated_amount",
+   "fieldtype": "Currency",
+   "idx": 19,
+   "label": "Advance (not yet billed)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_result",
+   "fieldtype": "Section Break",
+   "idx": 20,
+   "label": "Accounting"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "payment_entry",
+   "fieldtype": "Link",
+   "idx": 21,
+   "label": "Payment Entry",
+   "no_copy": 1,
+   "options": "Payment Entry",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "balance_after",
+   "fieldtype": "Currency",
+   "idx": 22,
+   "label": "Balance After",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 23
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "idx": 24,
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 25,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Fee Payment",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Fee Payment",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "student,student_name,reference_no",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

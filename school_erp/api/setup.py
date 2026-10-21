@@ -1,0 +1,119 @@
+"""One-click school setup from School Settings. Safe to run more than once: it only creates what is missing."""
+
+from datetime import date
+
+import frappe
+from frappe import _
+
+from school_erp.setup.install import make_custom_fields, make_customer_group, make_roles
+
+CLASS_SETS = {
+	"CBC (PP1 - Grade 9)": ["PP1", "PP2"] + [f"Grade {i}" for i in range(1, 10)],
+	"8-4-4 (Form 1 - 4)": [f"Form {i}" for i in range(1, 5)],
+	"British (Year 1 - 13)": ["Reception"] + [f"Year {i}" for i in range(1, 14)],
+	"Custom": [],
+}
+
+# name, category, basis, priority, discountable
+FEE_TYPES = [
+	("Tuition", "Tuition", "Per Term", 1, 1),
+	("Boarding", "Boarding", "Per Term", 2, 1),
+	("Lunch", "Lunch", "Per Term", 3, 0),
+	("Transport", "Transport", "Per Term", 4, 0),
+	("Games & Activities", "Activity", "Per Term", 5, 0),
+	("Exam Fee", "Exam", "Per Term", 6, 0),
+	("Development Levy", "Other", "Per Term", 7, 0),
+	("Admission Fee", "Admission", "Once", 8, 0),
+]
+
+PERIODS = [
+	("P1", 1, "08:00", "08:40", 0), ("P2", 2, "08:40", "09:20", 0), ("Short Break", 3, "09:20", "09:30", 1),
+	("P3", 4, "09:30", "10:10", 0), ("P4", 5, "10:10", "10:50", 0), ("Tea Break", 6, "10:50", "11:20", 1),
+	("P5", 7, "11:20", "12:00", 0), ("P6", 8, "12:00", "12:40", 0), ("Lunch Break", 9, "12:40", "14:00", 1),
+	("P7", 10, "14:00", "14:40", 0), ("P8", 11, "14:40", "15:20", 0),
+]
+
+SUBJECTS = [
+	("Mathematics", "MATH"), ("English", "ENG"), ("Kiswahili", "KIS"), ("Science & Technology", "SCI"),
+	("Social Studies", "SST"), ("Religious Education", "RE"), ("Creative Arts", "ART"), ("Physical Education", "PE"),
+]
+
+
+def _ensure(doctype, name, values):
+	if frappe.db.exists(doctype, name):
+		return False
+	frappe.get_doc(dict(doctype=doctype, **values)).insert(ignore_permissions=True)
+	return True
+
+
+@frappe.whitelist()
+def run_setup():
+	frappe.only_for(["System Manager", "School Admin"])
+	settings = frappe.get_doc("School Settings")
+	if not settings.company:
+		frappe.throw(_("Choose the Company on School Settings first"))
+
+	created = []
+	make_roles()
+	make_custom_fields()
+	make_customer_group()
+
+	# no cash rounding on fee invoices: statements must add up to the shilling
+	frappe.db.set_single_value("Global Defaults", "disable_rounded_total", 1)
+
+	if not settings.default_income_account:
+		settings.default_income_account = frappe.db.get_value("Company", settings.company, "default_income_account")
+	if not settings.cost_center:
+		settings.cost_center = frappe.db.get_value("Company", settings.company, "cost_center")
+	if not settings.customer_group:
+		settings.customer_group = "Students"
+
+	# classes
+	for i, cls in enumerate(CLASS_SETS.get(settings.education_system, []), 1):
+		if _ensure("School Class", cls, {"class_name": cls, "level": i, "is_active": 1}):
+			created.append(cls)
+	classes = CLASS_SETS.get(settings.education_system, [])
+	for a, b in zip(classes, classes[1:]):
+		frappe.db.set_value("School Class", a, "next_class", b)
+
+	from school_erp import licensing
+
+	# fee types (+ their service items)
+	for name, cat, basis, prio, disc in (FEE_TYPES if licensing.is_enabled("fees") else []):
+		if _ensure("Fee Type", name, {"fee_type_name": name, "category": cat, "charge_basis": basis, "priority": prio, "discountable": disc}):
+			created.append(name)
+
+	# timetable masters only if licensed
+	if licensing.is_enabled("timetable"):
+		for name, seq, start, end, brk in PERIODS:
+			_ensure("Period", name, {"period_name": name, "sequence": seq, "start_time": start, "end_time": end, "is_break": brk})
+		for name, short in SUBJECTS:
+			_ensure("Subject", name, {"subject_name": name, "short_name": short, "subject_code": short})
+
+	# current year + three terms
+	year = str(date.today().year)
+	if _ensure("School Year", year, {"year_name": year, "start_date": f"{year}-01-01", "end_date": f"{year}-12-31", "is_current": 1}):
+		created.append(year)
+	terms = [("Term 1", "01-06", "04-04"), ("Term 2", "04-28", "08-01"), ("Term 3", "08-25", "10-31")]
+	for term, start, end in terms:
+		_ensure("School Term", f"{term} {year}",
+				{"term_name": term, "school_year": year, "start_date": f"{year}-{start}", "end_date": f"{year}-{end}"})
+
+	# M-Pesa as a payment mode (account must be set by the accountant)
+	if not frappe.db.exists("Mode of Payment", "M-Pesa"):
+		frappe.get_doc({"doctype": "Mode of Payment", "mode_of_payment": "M-Pesa", "type": "Phone", "enabled": 1}).insert(ignore_permissions=True)
+		created.append("M-Pesa")
+	if not settings.default_mode_of_payment:
+		settings.default_mode_of_payment = "M-Pesa"
+
+	settings.setup_complete = 1
+	settings.save()
+	return {
+		"created": created,
+		"next_steps": [
+			"Set the bank/M-Pesa account on Mode of Payment 'M-Pesa' for your company",
+			"Adjust term dates under School Term",
+			"Create Streams for each class",
+			"Create a School Fee Structure for the term",
+		],
+	}

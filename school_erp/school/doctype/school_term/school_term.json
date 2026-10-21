@@ -1,0 +1,122 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "term_name",
+  "school_year",
+  "cb1",
+  "start_date",
+  "end_date",
+  "is_current"
+ ],
+ "fields": [
+  {
+   "description": "e.g. Term 1",
+   "fieldname": "term_name",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Term",
+   "reqd": 1
+  },
+  {
+   "fieldname": "school_year",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "School Year",
+   "options": "School Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "End Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "is_current",
+   "fieldtype": "Check",
+   "idx": 6,
+   "label": "Is Current"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "School Term",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "start_date",
+ "sort_order": "DESC",
+ "states": []
+}

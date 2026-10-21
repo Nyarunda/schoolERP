@@ -1,0 +1,136 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "stream",
+  "school_class",
+  "cb1",
+  "school_term",
+  "copy_from",
+  "sb_slots",
+  "slots",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Stream",
+   "options": "Stream",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "stream.school_class",
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 2,
+   "label": "Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 4,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Term",
+   "options": "School Term",
+   "reqd": 1
+  },
+  {
+   "description": "Pick an existing timetable to copy its slots",
+   "fieldname": "copy_from",
+   "fieldtype": "Link",
+   "idx": 5,
+   "label": "Copy Slots From",
+   "options": "Timetable"
+  },
+  {
+   "fieldname": "sb_slots",
+   "fieldtype": "Section Break",
+   "idx": 6,
+   "label": "Lessons"
+  },
+  {
+   "fieldname": "slots",
+   "fieldtype": "Table",
+   "idx": 7,
+   "label": "Slots",
+   "options": "Timetable Slot"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "idx": 8,
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Timetable",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

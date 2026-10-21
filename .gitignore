@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# never commit vendor signing keys
+*.key
+vendor_private*

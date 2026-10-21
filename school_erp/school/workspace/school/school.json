@@ -1,0 +1,304 @@
+{
+ "charts": [],
+ "content": "[{\"id\": \"hdr1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>School</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Record Payment\", \"col\": 4}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Students\", \"col\": 4}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Fee Balances\", \"col\": 4}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bill a Term\", \"col\": 4}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Message Parents\", \"col\": 4}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Students\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Fees\", \"col\": 4}}, {\"id\": \"cd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Services\", \"col\": 4}}, {\"id\": \"cd3\", \"type\": \"card\", \"data\": {\"card_name\": \"Timetable\", \"col\": 4}}, {\"id\": \"cd4\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 4}}]",
+ "creation": "2026-10-21 10:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "education",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "School",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Students",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student",
+   "link_count": 0,
+   "link_to": "Student",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Stream",
+   "link_count": 0,
+   "link_to": "Stream",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Class",
+   "link_count": 0,
+   "link_to": "School Class",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Teacher",
+   "link_count": 0,
+   "link_to": "Teacher",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fees",
+   "link_count": 5,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Payment",
+   "link_count": 0,
+   "link_to": "Fee Payment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Billing Run",
+   "link_count": 0,
+   "link_to": "Fee Billing Run",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Structure",
+   "link_count": 0,
+   "link_to": "School Fee Structure",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Fee Type",
+   "link_count": 0,
+   "link_to": "Fee Type",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Fee Balances",
+   "link_count": 0,
+   "link_to": "Fee Balances",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Services",
+   "link_count": 2,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Transport Route",
+   "link_count": 0,
+   "link_to": "Transport Route",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Games & Activities",
+   "link_count": 0,
+   "link_to": "School Activity",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Timetable",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Timetable",
+   "link_count": 0,
+   "link_to": "Timetable",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Subject",
+   "link_count": 0,
+   "link_to": "Subject",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Period",
+   "link_count": 0,
+   "link_to": "Period",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup",
+   "link_count": 4,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "School Settings",
+   "link_count": 0,
+   "link_to": "School Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "School Year",
+   "link_count": 0,
+   "link_to": "School Year",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "School Term",
+   "link_count": 0,
+   "link_to": "School Term",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Parent Messages",
+   "link_count": 0,
+   "link_to": "School Message",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "School",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 1.0,
+ "shortcuts": [
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Record Payment",
+   "link_to": "Fee Payment",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Students",
+   "link_to": "Student",
+   "stats_filter": "{\"status\":\"Active\"}",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "",
+   "label": "Fee Balances",
+   "link_to": "Fee Balances",
+   "type": "Report"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "label": "Bill a Term",
+   "link_to": "Fee Billing Run",
+   "type": "DocType"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "",
+   "label": "Message Parents",
+   "link_to": "School Message",
+   "type": "DocType"
+  }
+ ],
+ "title": "School"
+}

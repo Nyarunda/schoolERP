@@ -1,0 +1,170 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "FS-.#####",
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "school_term",
+  "school_year",
+  "cb1",
+  "school_class",
+  "boarding_type",
+  "is_active",
+  "sb_items",
+  "items",
+  "total_amount",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_standard_filter": 1,
+   "label": "Term",
+   "options": "School Term",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "school_term.school_year",
+   "fieldname": "school_year",
+   "fieldtype": "Link",
+   "idx": 3,
+   "label": "School Year",
+   "options": "School Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "description": "Leave blank to apply to all classes",
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 5,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Class",
+   "options": "School Class"
+  },
+  {
+   "default": "All",
+   "fieldname": "boarding_type",
+   "fieldtype": "Select",
+   "idx": 6,
+   "in_list_view": 1,
+   "label": "Boarding Type",
+   "options": "All\nDay\nBoarder"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "idx": 7,
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "sb_items",
+   "fieldtype": "Section Break",
+   "idx": 8,
+   "label": "Fees"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "idx": 9,
+   "label": "Items",
+   "options": "Fee Structure Item",
+   "reqd": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "idx": 10,
+   "in_list_view": 1,
+   "label": "Total Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "idx": 11,
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "School Fee Structure",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title"
+}

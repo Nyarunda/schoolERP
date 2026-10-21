@@ -1,0 +1,491 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "profile_tab",
+  "school_name",
+  "motto",
+  "school_logo",
+  "cb_profile",
+  "address",
+  "phone",
+  "email",
+  "website",
+  "sb_setup",
+  "education_system",
+  "setup_complete",
+  "accounts_tab",
+  "company",
+  "currency",
+  "default_income_account",
+  "cost_center",
+  "default_mode_of_payment",
+  "cb_ids",
+  "student_id_series",
+  "use_admission_number_as_id",
+  "customer_group",
+  "territory",
+  "statement_tab",
+  "paybill_number",
+  "bank_details",
+  "payment_instructions",
+  "cb_statement",
+  "statement_footer",
+  "statement_accent_color",
+  "show_fee_breakdown",
+  "messaging_tab",
+  "sms_provider",
+  "country_code",
+  "at_username",
+  "at_api_key",
+  "at_sender_id",
+  "at_sandbox",
+  "cb_msg",
+  "auto_sms_on_payment",
+  "notify_after_billing",
+  "email_statement_after_billing",
+  "sb_templates",
+  "billing_sms_template",
+  "payment_sms_template",
+  "reminder_sms_template",
+  "statement_email_subject",
+  "statement_email_body",
+  "license_tab",
+  "license_key",
+  "license_status_html",
+  "cb_lic",
+  "license_status",
+  "licensed_to",
+  "licensed_modules",
+  "license_expiry",
+  "max_students"
+ ],
+ "fields": [
+  {
+   "fieldname": "profile_tab",
+   "fieldtype": "Tab Break",
+   "idx": 1,
+   "label": "School"
+  },
+  {
+   "fieldname": "school_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "label": "School Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "motto",
+   "fieldtype": "Data",
+   "idx": 3,
+   "label": "Motto"
+  },
+  {
+   "fieldname": "school_logo",
+   "fieldtype": "Attach Image",
+   "idx": 4,
+   "label": "Logo"
+  },
+  {
+   "fieldname": "cb_profile",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "idx": 6,
+   "label": "Address"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "idx": 7,
+   "label": "Phone",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "idx": 8,
+   "label": "Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "website",
+   "fieldtype": "Data",
+   "idx": 9,
+   "label": "Website"
+  },
+  {
+   "fieldname": "sb_setup",
+   "fieldtype": "Section Break",
+   "idx": 10,
+   "label": "Initial Setup"
+  },
+  {
+   "default": "CBC (PP1 - Grade 9)",
+   "description": "Used by Run School Setup to create classes, periods, fee types and terms.",
+   "fieldname": "education_system",
+   "fieldtype": "Select",
+   "idx": 11,
+   "label": "Education System",
+   "options": "CBC (PP1 - Grade 9)\n8-4-4 (Form 1 - 4)\nBritish (Year 1 - 13)\nCustom"
+  },
+  {
+   "fieldname": "setup_complete",
+   "fieldtype": "Check",
+   "idx": 12,
+   "label": "Setup Complete",
+   "read_only": 1
+  },
+  {
+   "fieldname": "accounts_tab",
+   "fieldtype": "Tab Break",
+   "idx": 13,
+   "label": "Accounts & IDs"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "idx": 14,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "company.default_currency",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "idx": 15,
+   "label": "Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "description": "Fee income goes here unless a Fee Type has its own account.",
+   "fieldname": "default_income_account",
+   "fieldtype": "Link",
+   "idx": 16,
+   "label": "Default Income Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "idx": 17,
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "default_mode_of_payment",
+   "fieldtype": "Link",
+   "idx": 18,
+   "label": "Default Mode Of Payment",
+   "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "cb_ids",
+   "fieldtype": "Column Break",
+   "idx": 19
+  },
+  {
+   "default": "STU-.YYYY.-.####",
+   "description": "e.g. STU-.YYYY.-.#### gives STU-2026-0001. The Student ID is also the Customer ID and the M-Pesa account number.",
+   "fieldname": "student_id_series",
+   "fieldtype": "Data",
+   "idx": 20,
+   "label": "Student ID Format"
+  },
+  {
+   "description": "If ticked and an admission number is entered, it becomes the Student ID.",
+   "fieldname": "use_admission_number_as_id",
+   "fieldtype": "Check",
+   "idx": 21,
+   "label": "Use Admission Number as Student ID"
+  },
+  {
+   "default": "Students",
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "idx": 22,
+   "label": "Customer Group",
+   "options": "Customer Group"
+  },
+  {
+   "fieldname": "territory",
+   "fieldtype": "Link",
+   "idx": 23,
+   "label": "Territory",
+   "options": "Territory"
+  },
+  {
+   "fieldname": "statement_tab",
+   "fieldtype": "Tab Break",
+   "idx": 24,
+   "label": "Statements"
+  },
+  {
+   "fieldname": "paybill_number",
+   "fieldtype": "Data",
+   "idx": 25,
+   "label": "M-Pesa Paybill / Till"
+  },
+  {
+   "description": "Bank name, account name and number shown on statements.",
+   "fieldname": "bank_details",
+   "fieldtype": "Small Text",
+   "idx": 26,
+   "label": "Bank Details"
+  },
+  {
+   "default": "Pay via M-Pesa Paybill {paybill}, Account No: {student_id}. Always use the Student ID as the account number.",
+   "description": "Placeholders: {student_id} {student_name} {paybill} {school_name}",
+   "fieldname": "payment_instructions",
+   "fieldtype": "Small Text",
+   "idx": 27,
+   "label": "Payment Instructions"
+  },
+  {
+   "fieldname": "cb_statement",
+   "fieldtype": "Column Break",
+   "idx": 28
+  },
+  {
+   "default": "Thank you for your continued support. For any queries, please contact the school bursar.",
+   "fieldname": "statement_footer",
+   "fieldtype": "Small Text",
+   "idx": 29,
+   "label": "Statement Footer"
+  },
+  {
+   "default": "#1f6f5c",
+   "fieldname": "statement_accent_color",
+   "fieldtype": "Color",
+   "idx": 30,
+   "label": "Statement Accent Color"
+  },
+  {
+   "default": "1",
+   "fieldname": "show_fee_breakdown",
+   "fieldtype": "Check",
+   "idx": 31,
+   "label": "Show breakdown by fee type"
+  },
+  {
+   "fieldname": "messaging_tab",
+   "fieldtype": "Tab Break",
+   "idx": 32,
+   "label": "SMS & Email"
+  },
+  {
+   "default": "Frappe SMS Settings",
+   "description": "Frappe SMS Settings works with any HTTP SMS gateway. Custom Hook calls the function named in hooks 'school_sms_sender'.",
+   "fieldname": "sms_provider",
+   "fieldtype": "Select",
+   "idx": 33,
+   "label": "Sms Provider",
+   "options": "Frappe SMS Settings\nAfrica's Talking\nCustom Hook"
+  },
+  {
+   "default": "254",
+   "description": "Added to local numbers like 07XX... before sending.",
+   "fieldname": "country_code",
+   "fieldtype": "Data",
+   "idx": 34,
+   "label": "Country Code"
+  },
+  {
+   "depends_on": "eval:doc.sms_provider==\"Africa's Talking\"",
+   "fieldname": "at_username",
+   "fieldtype": "Data",
+   "idx": 35,
+   "label": "Africa's Talking Username"
+  },
+  {
+   "depends_on": "eval:doc.sms_provider==\"Africa's Talking\"",
+   "fieldname": "at_api_key",
+   "fieldtype": "Password",
+   "idx": 36,
+   "label": "Africa's Talking API Key"
+  },
+  {
+   "depends_on": "eval:doc.sms_provider==\"Africa's Talking\"",
+   "fieldname": "at_sender_id",
+   "fieldtype": "Data",
+   "idx": 37,
+   "label": "Sender ID"
+  },
+  {
+   "depends_on": "eval:doc.sms_provider==\"Africa's Talking\"",
+   "fieldname": "at_sandbox",
+   "fieldtype": "Check",
+   "idx": 38,
+   "label": "Sandbox Mode"
+  },
+  {
+   "fieldname": "cb_msg",
+   "fieldtype": "Column Break",
+   "idx": 39
+  },
+  {
+   "default": "1",
+   "fieldname": "auto_sms_on_payment",
+   "fieldtype": "Check",
+   "idx": 40,
+   "label": "SMS parent when a payment is recorded"
+  },
+  {
+   "default": "1",
+   "fieldname": "notify_after_billing",
+   "fieldtype": "Check",
+   "idx": 41,
+   "label": "Notify parents after a billing run"
+  },
+  {
+   "default": "1",
+   "fieldname": "email_statement_after_billing",
+   "fieldtype": "Check",
+   "idx": 42,
+   "label": "Email PDF statement after a billing run"
+  },
+  {
+   "description": "Placeholders: {student_name} {first_name} {student_id} {class} {stream} {balance} {amount} {reference} {term} {due_date} {guardian_name} {school_name} {paybill}",
+   "fieldname": "sb_templates",
+   "fieldtype": "Section Break",
+   "idx": 43,
+   "label": "Message Templates"
+  },
+  {
+   "default": "Dear {guardian_name}, {term} fees for {first_name} ({student_id}) have been posted. Balance due: {balance}, by {due_date}. Paybill {paybill}, Acc {student_id}. {school_name}",
+   "fieldname": "billing_sms_template",
+   "fieldtype": "Small Text",
+   "idx": 44,
+   "label": "Billing Sms Template"
+  },
+  {
+   "default": "Received {amount} for {first_name} ({student_id}), ref {reference}. New balance: {balance}. Thank you. {school_name}",
+   "fieldname": "payment_sms_template",
+   "fieldtype": "Small Text",
+   "idx": 45,
+   "label": "Payment Sms Template"
+  },
+  {
+   "default": "Dear {guardian_name}, kindly clear {first_name}'s fee balance of {balance}. Paybill {paybill}, Acc {student_id}. {school_name}",
+   "fieldname": "reminder_sms_template",
+   "fieldtype": "Small Text",
+   "idx": 46,
+   "label": "Reminder Sms Template"
+  },
+  {
+   "default": "Fee Statement - {student_name} ({student_id})",
+   "fieldname": "statement_email_subject",
+   "fieldtype": "Data",
+   "idx": 47,
+   "label": "Statement Email Subject"
+  },
+  {
+   "default": "Dear {guardian_name},\n\nPlease find attached the fee statement for {student_name}. The current balance is {balance}.\n\nRegards,\n{school_name}",
+   "fieldname": "statement_email_body",
+   "fieldtype": "Small Text",
+   "idx": 48,
+   "label": "Statement Email Body"
+  },
+  {
+   "fieldname": "license_tab",
+   "fieldtype": "Tab Break",
+   "idx": 49,
+   "label": "License"
+  },
+  {
+   "description": "Paste the license key supplied by your vendor. Modules switch on when you save.",
+   "fieldname": "license_key",
+   "fieldtype": "Long Text",
+   "idx": 50,
+   "label": "License Key"
+  },
+  {
+   "fieldname": "license_status_html",
+   "fieldtype": "HTML",
+   "idx": 51,
+   "label": "License Status"
+  },
+  {
+   "fieldname": "cb_lic",
+   "fieldtype": "Column Break",
+   "idx": 52
+  },
+  {
+   "fieldname": "license_status",
+   "fieldtype": "Data",
+   "idx": 53,
+   "label": "License Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "licensed_to",
+   "fieldtype": "Data",
+   "idx": 54,
+   "label": "Licensed To",
+   "read_only": 1
+  },
+  {
+   "fieldname": "licensed_modules",
+   "fieldtype": "Small Text",
+   "idx": 55,
+   "label": "Licensed Modules",
+   "read_only": 1
+  },
+  {
+   "fieldname": "license_expiry",
+   "fieldtype": "Date",
+   "idx": 56,
+   "label": "License Expiry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "max_students",
+   "fieldtype": "Int",
+   "idx": 57,
+   "label": "Max Students",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "School Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "School Admin",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Bursar"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

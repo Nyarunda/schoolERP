@@ -1,0 +1,342 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "first_name",
+  "middle_name",
+  "last_name",
+  "student_name",
+  "cb_personal",
+  "photo",
+  "gender",
+  "date_of_birth",
+  "status",
+  "cb_school",
+  "admission_number",
+  "admission_date",
+  "stream",
+  "school_class",
+  "boarding_type",
+  "customer",
+  "sb_guardians",
+  "guardians",
+  "primary_guardian",
+  "primary_phone",
+  "primary_email",
+  "sb_services",
+  "transport_route",
+  "pickup_point",
+  "cb_services",
+  "takes_lunch",
+  "sb_activities",
+  "activities",
+  "sb_fees",
+  "scholarship_percent",
+  "scholarship_note",
+  "cb_fees",
+  "fee_notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "idx": 1,
+   "label": "First Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "label": "Middle Name"
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "idx": 3,
+   "label": "Last Name",
+   "reqd": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_personal",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "fieldname": "photo",
+   "fieldtype": "Attach Image",
+   "hidden": 1,
+   "idx": 6,
+   "label": "Photo"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "idx": 7,
+   "in_standard_filter": 1,
+   "label": "Gender",
+   "options": "\nFemale\nMale"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "idx": 8,
+   "label": "Date Of Birth"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 9,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nSuspended\nLeft\nGraduated"
+  },
+  {
+   "fieldname": "cb_school",
+   "fieldtype": "Column Break",
+   "idx": 10
+  },
+  {
+   "fieldname": "admission_number",
+   "fieldtype": "Data",
+   "idx": 11,
+   "in_standard_filter": 1,
+   "label": "Admission Number"
+  },
+  {
+   "default": "Today",
+   "fieldname": "admission_date",
+   "fieldtype": "Date",
+   "idx": 12,
+   "label": "Admission Date"
+  },
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 13,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Stream",
+   "options": "Stream"
+  },
+  {
+   "fetch_from": "stream.school_class",
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 14,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "default": "Day",
+   "fieldname": "boarding_type",
+   "fieldtype": "Select",
+   "idx": 15,
+   "in_standard_filter": 1,
+   "label": "Boarding Type",
+   "options": "Day\nBoarder"
+  },
+  {
+   "description": "Created automatically; same as the Student ID",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "idx": 16,
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_guardians",
+   "fieldtype": "Section Break",
+   "idx": 17,
+   "label": "Parents / Guardians"
+  },
+  {
+   "fieldname": "guardians",
+   "fieldtype": "Table",
+   "idx": 18,
+   "label": "Guardians",
+   "options": "Student Guardian"
+  },
+  {
+   "fieldname": "primary_guardian",
+   "fieldtype": "Data",
+   "idx": 19,
+   "label": "Primary Guardian",
+   "read_only": 1
+  },
+  {
+   "fieldname": "primary_phone",
+   "fieldtype": "Data",
+   "idx": 20,
+   "label": "Primary Phone",
+   "options": "Phone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "primary_email",
+   "fieldtype": "Data",
+   "idx": 21,
+   "label": "Primary Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "collapsible": 0,
+   "fieldname": "sb_services",
+   "fieldtype": "Section Break",
+   "idx": 22,
+   "label": "Services"
+  },
+  {
+   "fieldname": "transport_route",
+   "fieldtype": "Link",
+   "idx": 23,
+   "in_standard_filter": 1,
+   "label": "Transport Route",
+   "options": "Transport Route"
+  },
+  {
+   "depends_on": "transport_route",
+   "fieldname": "pickup_point",
+   "fieldtype": "Data",
+   "idx": 24,
+   "label": "Pickup Point"
+  },
+  {
+   "fieldname": "cb_services",
+   "fieldtype": "Column Break",
+   "idx": 25
+  },
+  {
+   "fieldname": "takes_lunch",
+   "fieldtype": "Check",
+   "idx": 26,
+   "label": "Takes School Lunch"
+  },
+  {
+   "fieldname": "sb_activities",
+   "fieldtype": "Section Break",
+   "idx": 27,
+   "label": "Games & Activities"
+  },
+  {
+   "fieldname": "activities",
+   "fieldtype": "Table",
+   "idx": 28,
+   "label": "Activities",
+   "options": "Student Activity Enrolment"
+  },
+  {
+   "fieldname": "sb_fees",
+   "fieldtype": "Section Break",
+   "idx": 29,
+   "label": "Fees"
+  },
+  {
+   "description": "Applied to fee types marked Discountable",
+   "fieldname": "scholarship_percent",
+   "fieldtype": "Percent",
+   "idx": 30,
+   "label": "Scholarship / Discount %"
+  },
+  {
+   "fieldname": "scholarship_note",
+   "fieldtype": "Data",
+   "idx": 31,
+   "label": "Scholarship Note"
+  },
+  {
+   "fieldname": "cb_fees",
+   "fieldtype": "Column Break",
+   "idx": 32
+  },
+  {
+   "fieldname": "fee_notes",
+   "fieldtype": "Small Text",
+   "idx": 33,
+   "label": "Fee Notes"
+  }
+ ],
+ "image_field": "photo",
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Student",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "student_name,admission_number,school_class,stream",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

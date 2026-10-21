@@ -1,0 +1,44 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "activity",
+  "fee_per_term"
+ ],
+ "fields": [
+  {
+   "fieldname": "activity",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Activity",
+   "options": "School Activity",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "activity.fee_per_term",
+   "fieldname": "fee_per_term",
+   "fieldtype": "Currency",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Fee Per Term",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Student Activity Enrolment",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_order": "DESC",
+ "states": []
+}

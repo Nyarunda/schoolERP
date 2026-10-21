@@ -1,0 +1,73 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_invoice",
+  "school_term",
+  "fee_type",
+  "outstanding",
+  "allocated_amount"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Invoice",
+   "options": "Sales Invoice"
+  },
+  {
+   "columns": 2,
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Term",
+   "options": "School Term"
+  },
+  {
+   "columns": 2,
+   "fieldname": "fee_type",
+   "fieldtype": "Link",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Fee Type",
+   "options": "Fee Type"
+  },
+  {
+   "columns": 1,
+   "fieldname": "outstanding",
+   "fieldtype": "Currency",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Outstanding",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "allocated_amount",
+   "fieldtype": "Currency",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Allocated Amount"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Fee Payment Allocation",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_order": "DESC",
+ "states": []
+}

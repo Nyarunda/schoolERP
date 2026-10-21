@@ -1,0 +1,227 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "FBR-.#####",
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "school_term",
+  "school_year",
+  "posting_date",
+  "due_date",
+  "cb1",
+  "school_class",
+  "stream",
+  "submit_invoices",
+  "send_notifications",
+  "sb_result",
+  "status",
+  "invoices_created",
+  "students_skipped",
+  "cb2",
+  "total_billed",
+  "amended_from",
+  "sb_log",
+  "error_log"
+ ],
+ "fields": [
+  {
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Term",
+   "options": "School Term",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "school_term.school_year",
+   "fieldname": "school_year",
+   "fieldtype": "Link",
+   "idx": 2,
+   "label": "School Year",
+   "options": "School Year",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "idx": 3,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "idx": 4,
+   "label": "Due Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 6,
+   "label": "Only Class",
+   "options": "School Class"
+  },
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Only Stream",
+   "options": "Stream"
+  },
+  {
+   "default": "1",
+   "fieldname": "submit_invoices",
+   "fieldtype": "Check",
+   "idx": 8,
+   "label": "Submit Invoices"
+  },
+  {
+   "default": "1",
+   "fieldname": "send_notifications",
+   "fieldtype": "Check",
+   "idx": 9,
+   "label": "Notify Parents (SMS/Email)"
+  },
+  {
+   "fieldname": "sb_result",
+   "fieldtype": "Section Break",
+   "idx": 10,
+   "label": "Result"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 11,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nQueued\nRunning\nCompleted\nCompleted with Errors\nFailed",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "invoices_created",
+   "fieldtype": "Int",
+   "idx": 12,
+   "in_list_view": 1,
+   "label": "Invoices Created",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "students_skipped",
+   "fieldtype": "Int",
+   "idx": 13,
+   "label": "Students Skipped",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 14
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "total_billed",
+   "fieldtype": "Currency",
+   "idx": 15,
+   "in_list_view": 1,
+   "label": "Total Billed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 16,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Fee Billing Run",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_log",
+   "fieldtype": "Section Break",
+   "idx": 17
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "error_log",
+   "fieldtype": "Long Text",
+   "idx": 18,
+   "label": "Error Log",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Fee Billing Run",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

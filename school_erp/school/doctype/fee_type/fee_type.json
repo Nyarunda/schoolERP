@@ -1,0 +1,154 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:fee_type_name",
+ "creation": "2026-10-21 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "fee_type_name",
+  "category",
+  "charge_basis",
+  "cb1",
+  "priority",
+  "discountable",
+  "income_account",
+  "item",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "fee_type_name",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Fee Type",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Tuition",
+   "description": "Transport, Lunch and Activity fees are billed only to students using those services.",
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Category",
+   "options": "Tuition\nBoarding\nTransport\nLunch\nActivity\nExam\nAdmission\nOther",
+   "reqd": 1
+  },
+  {
+   "default": "Per Term",
+   "description": "Once = charged a single time per student (e.g. Admission)",
+   "fieldname": "charge_basis",
+   "fieldtype": "Select",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Charge Basis",
+   "options": "Per Term\nOnce"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "default": "10",
+   "description": "When a payment is split, lower numbers are paid first",
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Payment Priority"
+  },
+  {
+   "default": "0",
+   "fieldname": "discountable",
+   "fieldtype": "Check",
+   "idx": 6,
+   "label": "Scholarships Apply"
+  },
+  {
+   "fieldname": "income_account",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Income Account",
+   "options": "Account"
+  },
+  {
+   "description": "Service item created automatically",
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "idx": 8,
+   "label": "Item",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "idx": 9,
+   "label": "Description"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Fee Type",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "priority",
+ "sort_order": "ASC",
+ "states": []
+}

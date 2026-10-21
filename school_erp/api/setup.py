@@ -105,6 +105,8 @@ def run_setup():
 		created.append("M-Pesa")
 	if not settings.default_mode_of_payment:
 		settings.default_mode_of_payment = "M-Pesa"
+	if not settings.mpesa_mode_of_payment:
+		settings.mpesa_mode_of_payment = "M-Pesa"
 
 	settings.setup_complete = 1
 	settings.save()

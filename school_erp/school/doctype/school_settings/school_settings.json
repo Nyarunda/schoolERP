@@ -225,7 +225,7 @@
    "label": "Use Admission Number as Student ID"
   },
   {
-   "default": "Students",
+   "description": "Filled by Run School Setup.",
    "fieldname": "customer_group",
    "fieldtype": "Link",
    "idx": 22,
@@ -456,9 +456,8 @@
    "label": "Daraja Consumer Secret"
   },
   {
-   "default": "M-Pesa",
    "depends_on": "mpesa_enabled",
-   "description": "Its default account for your company must be the M-Pesa / Paybill clearing account.",
+   "description": "Its default account for your company must be the M-Pesa / Paybill clearing account. Filled by Run School Setup.",
    "fieldname": "mpesa_mode_of_payment",
    "fieldtype": "Link",
    "idx": 55,
@@ -604,7 +603,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-21 18:00:00.000000",
+ "modified": "2026-10-21 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Settings",

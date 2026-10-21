@@ -15,6 +15,7 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 | `activities` | Games & activities (swimming, football...) each with a fee per term |
 | `timetable` | Subjects, periods, class timetables with teacher clash checks, printable grid |
 | `messaging` | SMS and email to parents: billing notices, payment receipts, reminders, PDF statements |
+| `mpesa` | **M-Pesa Paybill auto-posting**: parents pay with the Student ID as account number and the payment is posted to the student automatically. See [docs/MPESA.md](docs/MPESA.md) |
 
 ---
 
@@ -46,7 +47,7 @@ Issue a key for each school according to its agreement and payment:
 ```bash
 python tools/license_tool.py issue --private-key-file vendor.key \
   --school "Greenhill Academy" --site greenhill.example.com \
-  --modules fees,transport,lunch,activities,messaging,timetable \
+  --modules fees,transport,lunch,activities,messaging,timetable,mpesa \
   --expires 2027-12-31 --max-students 600
 ```
 

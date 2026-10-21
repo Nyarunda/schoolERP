@@ -21,8 +21,82 @@ frappe.ui.form.on("School Settings", {
 			});
 		});
 		render_license(frm);
+		setup_mpesa(frm);
 	},
+	mpesa_callback_base_url: render_mpesa_urls,
+	mpesa_enabled: render_mpesa_urls,
 });
+
+function setup_mpesa(frm) {
+	render_mpesa_urls(frm);
+	if (!frm.doc.mpesa_enabled) return;
+	const grp = __("M-Pesa");
+
+	frm.add_custom_button(__("Register URLs with Safaricom"), () => {
+		if (frm.is_dirty()) return frappe.msgprint(__("Save first"));
+		frappe.confirm(__("Register this site's callback URLs for paybill {0} ({1})?", [frm.doc.mpesa_shortcode, frm.doc.mpesa_environment]), () =>
+			frappe.call({ method: "school_erp.api.paybill.register_urls", freeze: true, freeze_message: __("Contacting Safaricom...") })
+				.then(({ message }) => {
+					frappe.msgprint({ title: __("Registered"), indicator: "green", message: `<pre>${frappe.utils.escape_html(JSON.stringify(message.response, null, 1))}</pre>` });
+					frm.reload_doc();
+				}));
+	}, grp);
+
+	frm.add_custom_button(__("Test Payment (offline)"), () => {
+		frappe.prompt(
+			[
+				{ fieldname: "bill_ref_number", label: __("Account No. (Student ID)"), fieldtype: "Data", reqd: 1 },
+				{ fieldname: "amount", label: __("Amount"), fieldtype: "Currency", reqd: 1, default: 1000 },
+				{ fieldname: "payer", label: __("Payer name"), fieldtype: "Data", default: "Test Parent" },
+			],
+			(v) => frappe.call({ method: "school_erp.api.paybill.local_test_payment", args: v, freeze: true }).then(({ message: m }) => {
+				frappe.msgprint({
+					title: __("Test payment {0}", [m.name]),
+					indicator: m.status === "Posted" ? "green" : "orange",
+					message: `${__("Status")}: <b>${m.status}</b>${m.student ? `<br>${__("Student")}: ${m.student}` : ""}${m.fee_payment ? `<br>${__("Fee Payment")}: <a href="/app/fee-payment/${m.fee_payment}">${m.fee_payment}</a>` : ""}${m.error ? `<br>${frappe.utils.escape_html(m.error)}` : ""}`,
+				});
+			}),
+			__("Simulate a parent paying the Paybill (no Safaricom involved)"),
+			__("Pay"),
+		);
+	}, grp);
+
+	if (frm.doc.mpesa_environment === "Sandbox") {
+		frm.add_custom_button(__("Simulate via Safaricom Sandbox"), () => {
+			frappe.prompt(
+				[
+					{ fieldname: "bill_ref_number", label: __("Account No. (Student ID)"), fieldtype: "Data", reqd: 1 },
+					{ fieldname: "amount", label: __("Amount"), fieldtype: "Int", reqd: 1, default: 100 },
+				],
+				(v) => frappe.call({ method: "school_erp.api.paybill.simulate", args: v, freeze: true }).then(({ message }) =>
+					frappe.msgprint(`<pre>${frappe.utils.escape_html(JSON.stringify(message, null, 1))}</pre>` +
+						__("If accepted, Safaricom calls your confirmation URL within a few seconds. Check M-Pesa Transaction."))),
+				__("Sandbox payment"),
+			);
+		}, grp);
+	}
+
+	frm.add_custom_button(__("Paybill Transactions"), () => frappe.set_route("List", "M-Pesa Transaction"), grp);
+}
+
+function render_mpesa_urls(frm) {
+	const f = frm.get_field("mpesa_urls_html");
+	if (!f) return;
+	if (!frm.doc.mpesa_enabled || !frm.doc.mpesa_callback_token) {
+		f.$wrapper.html(`<div class="text-muted small">${__("Tick 'Auto-post Paybill payments' and save to generate the callback URLs.")}</div>`);
+		return;
+	}
+	const base = (frm.doc.mpesa_callback_base_url || window.location.origin).replace(/\/$/, "");
+	const q = `?token=${frm.doc.mpesa_callback_token}`;
+	const warn = /mpesa|m-pesa|safaricom|localhost|127\.0\.0\.1/i.test(base) || !base.startsWith("https://");
+	f.$wrapper.html(`
+		<div class="small">
+			<div><b>${__("Confirmation URL")}</b><br><code>${base}/api/method/school_erp.api.paybill.confirm${q}</code></div>
+			<div style="margin-top:6px"><b>${__("Validation URL")}</b><br><code>${base}/api/method/school_erp.api.paybill.validate${q}</code></div>
+			${warn ? `<div style="margin-top:8px;color:var(--orange-600)">${__("Safaricom needs a public https address without the words mpesa/safaricom. Set 'Public Site URL'.")}</div>` : ""}
+			<div class="text-muted" style="margin-top:6px">${__("Keep these URLs private: the token in them is what proves a callback is genuine.")}</div>
+		</div>`);
+}
 
 function render_license(frm) {
 	const status = (frm.doc.license_status || "Unlicensed").split(":")[0].toLowerCase();

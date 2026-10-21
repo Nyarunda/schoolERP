@@ -1,0 +1,243 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:trans_id",
+ "creation": "2026-10-21 18:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "trans_id",
+  "trans_time",
+  "amount",
+  "bill_ref_number",
+  "cb1",
+  "status",
+  "student",
+  "student_name",
+  "fee_payment",
+  "sb_payer",
+  "payer_name",
+  "msisdn",
+  "cb2",
+  "business_shortcode",
+  "transaction_type",
+  "org_account_balance",
+  "source",
+  "sb_debug",
+  "attempts",
+  "error",
+  "raw_payload"
+ ],
+ "fields": [
+  {
+   "bold": 1,
+   "fieldname": "trans_id",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "M-Pesa Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "trans_time",
+   "fieldtype": "Datetime",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Paid On"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Amount",
+   "reqd": 1
+  },
+  {
+   "fieldname": "bill_ref_number",
+   "fieldtype": "Data",
+   "idx": 4,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Account No. Entered"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "default": "Received",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 6,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Received\nPosted\nUnmatched\nFailed\nIgnored"
+  },
+  {
+   "description": "Set this for an Unmatched payment, then click Post to Student",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 7,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student"
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "idx": 8,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fee_payment",
+   "fieldtype": "Link",
+   "idx": 9,
+   "label": "Fee Payment",
+   "options": "Fee Payment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_payer",
+   "fieldtype": "Section Break",
+   "idx": 10,
+   "label": "Payer"
+  },
+  {
+   "fieldname": "payer_name",
+   "fieldtype": "Data",
+   "idx": 11,
+   "label": "Payer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "msisdn",
+   "fieldtype": "Data",
+   "idx": 12,
+   "label": "Phone (masked by Safaricom)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 13
+  },
+  {
+   "fieldname": "business_shortcode",
+   "fieldtype": "Data",
+   "idx": 14,
+   "label": "Paybill",
+   "read_only": 1
+  },
+  {
+   "fieldname": "transaction_type",
+   "fieldtype": "Data",
+   "idx": 15,
+   "label": "Transaction Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "org_account_balance",
+   "fieldtype": "Currency",
+   "idx": 16,
+   "label": "Paybill Balance After",
+   "read_only": 1
+  },
+  {
+   "default": "Safaricom",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "idx": 17,
+   "label": "Source",
+   "options": "Safaricom\nTest\nManual",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "sb_debug",
+   "fieldtype": "Section Break",
+   "idx": 18,
+   "label": "Processing"
+  },
+  {
+   "fieldname": "attempts",
+   "fieldtype": "Int",
+   "idx": 19,
+   "label": "Attempts",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "idx": 20,
+   "label": "Error",
+   "read_only": 1
+  },
+  {
+   "fieldname": "raw_payload",
+   "fieldtype": "Code",
+   "idx": 21,
+   "label": "Payload from Safaricom",
+   "options": "JSON",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-21 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "M-Pesa Transaction",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "bill_ref_number,student,payer_name",
+ "sort_field": "trans_time",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "payer_name",
+ "track_changes": 1
+}

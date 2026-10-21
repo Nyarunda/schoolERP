@@ -65,6 +65,12 @@ class TestSchoolFlow(TestCase):
 			}).insert()
 		frappe.db.set_single_value("School Settings", "default_mode_of_payment", "_Test School Cash")
 
+		# Paybill auto-posting into the same test cash account
+		settings = frappe.get_doc("School Settings")
+		settings.update({"mpesa_enabled": 1, "mpesa_environment": "Sandbox", "mpesa_shortcode": "600000",
+						 "mpesa_mode_of_payment": "_Test School Cash"})
+		settings.save()
+
 		year = str(getdate(nowdate()).year)
 		cls.term = frappe.db.get_value("School Term", {"school_year": year, "start_date": ("<=", nowdate())},
 									   "name", order_by="start_date desc") or f"Term 1 {year}"
@@ -170,3 +176,62 @@ class TestSchoolFlow(TestCase):
 		frappe.get_doc({"doctype": "Timetable", "stream": "Grade 4 Test", "school_term": self.term, "slots": [slot]}).insert()
 		with self.assertRaises(frappe.ValidationError):
 			frappe.get_doc({"doctype": "Timetable", "stream": "Grade 5 Test", "school_term": self.term, "slots": [slot]}).insert()
+
+	# ------------------------------------------------------------------ M-Pesa Paybill
+	def paybill_payload(self, ref, amount, code=None):
+		return {
+			"TransactionType": "Pay Bill", "TransID": code or ("T" + frappe.generate_hash(length=9).upper()),
+			"TransTime": "20261021153045", "TransAmount": str(amount), "BusinessShortCode": "600000",
+			"BillRefNumber": ref, "MSISDN": "2547 ***** 126", "FirstName": "GRACE", "LastName": "TEST",
+		}
+
+	def test_paybill_auto_posts_and_is_idempotent(self):
+		from school_erp.api.billing import bill_single_student
+		from school_erp.api.paybill import record_confirmation
+		from school_erp.api.payments import party_balance
+
+		s = self.make_student()
+		bill_single_student(s.name, self.term)
+		messy_ref = s.name.lower().replace("-", " ")  # parent typed "stu 2026 0007"
+		payload = self.paybill_payload(messy_ref, 15000)
+		name = record_confirmation(payload)
+
+		tx = frappe.get_doc("M-Pesa Transaction", name)
+		self.assertEqual(tx.status, "Posted", tx.error)
+		self.assertEqual(tx.student, s.name)
+		self.assertEqual(frappe.db.get_value("Fee Payment", tx.fee_payment, "docstatus"), 1)
+		self.assertEqual(party_balance(s.name), 25000)
+
+		record_confirmation(payload)  # Safaricom retries the same callback
+		self.assertEqual(frappe.db.count("Fee Payment", {"reference_no": payload["TransID"], "docstatus": 1}), 1)
+		self.assertEqual(party_balance(s.name), 25000)
+
+		# cancelling the receipt hands it back to the bursar and is not re-posted by the retry job
+		fp = frappe.get_doc("Fee Payment", tx.fee_payment)
+		fp.cancel()
+		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "status"), "Ignored")
+		from school_erp.api.paybill import retry_pending
+
+		retry_pending()
+		self.assertEqual(party_balance(s.name), 40000)
+
+	def test_paybill_unmatched_then_assigned(self):
+		from school_erp.api.paybill import assign_and_post, record_confirmation
+
+		s = self.make_student()
+		name = record_confirmation(self.paybill_payload("WRONG123", 5000))
+		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "status"), "Unmatched")
+		result = assign_and_post(name, s.name)
+		self.assertEqual(result["status"], "Posted", result.get("error"))
+		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "student"), s.name)
+
+	def test_paybill_needs_license(self):
+		from school_erp.api.paybill import record_confirmation
+
+		s = self.make_student()
+		try:
+			set_license([m for m in ALL_MODULES if m != "mpesa"])
+			name = record_confirmation(self.paybill_payload(s.name, 1000))
+			self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "status"), "Failed")
+		finally:
+			set_license(ALL_MODULES)

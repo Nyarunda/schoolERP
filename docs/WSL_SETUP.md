@@ -257,6 +257,7 @@ On `school.localhost`, after `bench --site school.localhost migrate` and `bench 
 - [ ] Student → Fees → **Fee Statement (PDF)**: check it looks right and the totals match.
 - [ ] Fee Balances report shows the student.
 - [ ] Timetable: create one, then try to book the same teacher in another stream at the same time (should be refused). Print it.
+- [ ] M-Pesa: School Settings → M-Pesa tab → tick Auto-post, Sandbox, short code 600000 → Save → **M-Pesa → Test Payment (offline)** with a Student ID typed in lowercase without hyphens → status **Posted** and the balance drops. Also try a wrong account number → **Unmatched** → open it in Paybill Transactions → Post to Student. (End-to-end sandbox testing: see [MPESA.md](MPESA.md).)
 - [ ] If you changed SMS code: set School Settings → SMS provider to Africa's Talking **Sandbox** and send a statement.
 
 Only push when all three levels pass.

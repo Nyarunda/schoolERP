@@ -53,6 +53,23 @@
   "reminder_sms_template",
   "statement_email_subject",
   "statement_email_body",
+  "mpesa_tab",
+  "mpesa_enabled",
+  "mpesa_environment",
+  "mpesa_shortcode",
+  "mpesa_consumer_key",
+  "mpesa_consumer_secret",
+  "mpesa_mode_of_payment",
+  "cb_mpesa",
+  "mpesa_callback_base_url",
+  "mpesa_callback_token",
+  "mpesa_response_type",
+  "mpesa_validate_account",
+  "mpesa_check_ip",
+  "mpesa_allowed_ips",
+  "mpesa_registered_on",
+  "sb_mpesa_urls",
+  "mpesa_urls_html",
   "license_tab",
   "license_key",
   "license_status_html",
@@ -395,61 +412,191 @@
    "label": "Statement Email Body"
   },
   {
-   "fieldname": "license_tab",
+   "fieldname": "mpesa_tab",
    "fieldtype": "Tab Break",
    "idx": 49,
+   "label": "M-Pesa"
+  },
+  {
+   "description": "Payments to the Paybill with the Student ID as account number are posted to the student automatically.",
+   "fieldname": "mpesa_enabled",
+   "fieldtype": "Check",
+   "idx": 50,
+   "label": "Auto-post Paybill payments"
+  },
+  {
+   "default": "Sandbox",
+   "depends_on": "mpesa_enabled",
+   "fieldname": "mpesa_environment",
+   "fieldtype": "Select",
+   "idx": 51,
+   "label": "Environment",
+   "options": "Sandbox\nProduction"
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "fieldname": "mpesa_shortcode",
+   "fieldtype": "Data",
+   "idx": 52,
+   "label": "Paybill Short Code",
+   "mandatory_depends_on": "mpesa_enabled"
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "fieldname": "mpesa_consumer_key",
+   "fieldtype": "Data",
+   "idx": 53,
+   "label": "Daraja Consumer Key"
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "fieldname": "mpesa_consumer_secret",
+   "fieldtype": "Password",
+   "idx": 54,
+   "label": "Daraja Consumer Secret"
+  },
+  {
+   "default": "M-Pesa",
+   "depends_on": "mpesa_enabled",
+   "description": "Its default account for your company must be the M-Pesa / Paybill clearing account.",
+   "fieldname": "mpesa_mode_of_payment",
+   "fieldtype": "Link",
+   "idx": 55,
+   "label": "Mode of Payment for Paybill",
+   "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "cb_mpesa",
+   "fieldtype": "Column Break",
+   "idx": 56
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "description": "https address Safaricom can reach, e.g. https://greenhill.example.com. Must not contain the words mpesa or safaricom.",
+   "fieldname": "mpesa_callback_base_url",
+   "fieldtype": "Data",
+   "idx": 57,
+   "label": "Public Site URL"
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "description": "Generated automatically and added to the callback URLs.",
+   "fieldname": "mpesa_callback_token",
+   "fieldtype": "Data",
+   "idx": 58,
+   "label": "Callback Secret",
+   "read_only": 1
+  },
+  {
+   "default": "Completed",
+   "depends_on": "mpesa_enabled",
+   "description": "Completed = Safaricom accepts the payment anyway (recommended; it is posted when the site is back or matched by the bursar).",
+   "fieldname": "mpesa_response_type",
+   "fieldtype": "Select",
+   "idx": 59,
+   "label": "If our site is unreachable",
+   "options": "Completed\nCancelled"
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "description": "Only works after Safaricom activates External Validation on your paybill. The parent's payment is refused if the account number is not a Student ID.",
+   "fieldname": "mpesa_validate_account",
+   "fieldtype": "Check",
+   "idx": 60,
+   "label": "Reject unknown account numbers"
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "fieldname": "mpesa_check_ip",
+   "fieldtype": "Check",
+   "idx": 61,
+   "label": "Only accept callbacks from Safaricom IPs"
+  },
+  {
+   "default": "196.201.212.0/24\n196.201.213.0/24\n196.201.214.0/24",
+   "depends_on": "mpesa_check_ip",
+   "fieldname": "mpesa_allowed_ips",
+   "fieldtype": "Small Text",
+   "idx": 62,
+   "label": "Allowed IPs / ranges"
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "fieldname": "mpesa_registered_on",
+   "fieldtype": "Datetime",
+   "idx": 63,
+   "label": "URLs registered on",
+   "read_only": 1
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "fieldname": "sb_mpesa_urls",
+   "fieldtype": "Section Break",
+   "idx": 64,
+   "label": "Callback URLs"
+  },
+  {
+   "fieldname": "mpesa_urls_html",
+   "fieldtype": "HTML",
+   "idx": 65,
+   "label": "URLs"
+  },
+  {
+   "fieldname": "license_tab",
+   "fieldtype": "Tab Break",
+   "idx": 66,
    "label": "License"
   },
   {
    "description": "Paste the license key supplied by your vendor. Modules switch on when you save.",
    "fieldname": "license_key",
    "fieldtype": "Long Text",
-   "idx": 50,
+   "idx": 67,
    "label": "License Key"
   },
   {
    "fieldname": "license_status_html",
    "fieldtype": "HTML",
-   "idx": 51,
+   "idx": 68,
    "label": "License Status"
   },
   {
    "fieldname": "cb_lic",
    "fieldtype": "Column Break",
-   "idx": 52
+   "idx": 69
   },
   {
    "fieldname": "license_status",
    "fieldtype": "Data",
-   "idx": 53,
+   "idx": 70,
    "label": "License Status",
    "read_only": 1
   },
   {
    "fieldname": "licensed_to",
    "fieldtype": "Data",
-   "idx": 54,
+   "idx": 71,
    "label": "Licensed To",
    "read_only": 1
   },
   {
    "fieldname": "licensed_modules",
    "fieldtype": "Small Text",
-   "idx": 55,
+   "idx": 72,
    "label": "Licensed Modules",
    "read_only": 1
   },
   {
    "fieldname": "license_expiry",
    "fieldtype": "Date",
-   "idx": 56,
+   "idx": 73,
    "label": "License Expiry",
    "read_only": 1
   },
   {
    "fieldname": "max_students",
    "fieldtype": "Int",
-   "idx": 57,
+   "idx": 74,
    "label": "Max Students",
    "read_only": 1
   }
@@ -457,7 +604,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-21 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Settings",

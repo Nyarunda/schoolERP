@@ -68,7 +68,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Fees",
-   "link_count": 5,
+   "link_count": 6,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -79,6 +79,17 @@
    "label": "Fee Payment",
    "link_count": 0,
    "link_to": "Fee Payment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Paybill Transactions",
+   "link_count": 0,
+   "link_to": "M-Pesa Transaction",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -251,7 +262,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-21 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School",

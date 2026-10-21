@@ -23,6 +23,7 @@ MODULES = {
 	"lunch": "Lunch",
 	"activities": "Games & Activities",
 	"messaging": "SMS & Email to Parents",
+	"mpesa": "M-Pesa Paybill Auto-posting",
 }
 
 # Which module each DocType belongs to

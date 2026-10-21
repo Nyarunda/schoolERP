@@ -13,6 +13,24 @@ class SchoolSettings(Document):
 		if self.license_key:
 			self.license_key = "".join(self.license_key.split())
 		self.refresh_license_fields()
+		self.validate_mpesa()
+
+	def validate_mpesa(self):
+		if not self.mpesa_enabled:
+			return
+		if not self.mpesa_callback_token:
+			self.mpesa_callback_token = frappe.generate_hash(length=32)
+		if self.mpesa_shortcode:
+			self.mpesa_shortcode = self.mpesa_shortcode.strip()
+			if not self.paybill_number:
+				self.paybill_number = self.mpesa_shortcode
+		if self.mpesa_callback_base_url:
+			from school_erp.logic.paybill import url_problems
+
+			self.mpesa_callback_base_url = self.mpesa_callback_base_url.strip().rstrip("/")
+			problems = url_problems(self.mpesa_callback_base_url)
+			if problems:
+				frappe.msgprint("<br>".join(problems), title="Public Site URL", indicator="orange")
 
 	def on_update(self):
 		licensing.clear_cache()

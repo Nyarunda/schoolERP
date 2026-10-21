@@ -89,3 +89,10 @@ class FeePayment(Document):
 			if pe.docstatus == 1:
 				pe.flags.ignore_permissions = True
 				pe.cancel()
+		# an auto-posted Paybill payment goes back to the bursar instead of being re-posted by the retry job
+		tx = frappe.db.get_value("M-Pesa Transaction", {"fee_payment": self.name})
+		if tx:
+			frappe.db.set_value("M-Pesa Transaction", tx, {
+				"status": "Ignored", "fee_payment": None,
+				"error": f"Fee Payment {self.name} was cancelled. Use 'Post to Student' to post it again.",
+			})

@@ -62,6 +62,7 @@ school_sms_sender = []
 
 scheduler_events = {
 	"daily": ["school_erp.licensing.daily_license_check"],
+	"hourly": ["school_erp.api.paybill.retry_pending"],
 }
 
 fixtures = []

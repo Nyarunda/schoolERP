@@ -172,3 +172,36 @@ def test_timetable_clashes():
 	other = [{"day": "Monday", "period": "P1", "teacher": "T1", "timetable": "Grade 5 East - Term 1 2026", "teacher_name": "Mr Otieno"}]
 	errs = find_teacher_clashes(slots[:1], other)
 	assert errs and "Mr Otieno" in errs[0]
+
+
+# ------------------------------------------------------------------ paybill
+from school_erp.logic import paybill as pb  # noqa: E402
+
+
+def test_account_number_normalisation():
+	assert pb.account_key(" stu 2026-0042 ") == "STU20260042"
+	assert pb.account_key("STU-2026-0042") == pb.account_key("stu20260042")
+	assert pb.clean_ref("  stu-2026-0042 ") == "STU-2026-0042"
+
+
+def test_payload_parsing():
+	d = pb.normalize_payload({
+		"TransactionType": "Pay Bill", "TransID": "sgl31hk2bo", "TransTime": "20261021153045", "TransAmount": "15000.00",
+		"BusinessShortCode": "247247", "BillRefNumber": "stu-2026-0042", "OrgAccountBalance": "120500.00",
+		"MSISDN": "2547 ***** 126", "FirstName": "GRACE", "MiddleName": "", "LastName": "KAMAU",
+	})
+	assert d["trans_id"] == "SGL31HK2BO"
+	assert d["trans_time"].isoformat() == "2026-10-21T15:30:45"
+	assert d["amount"] == 15000.0 and d["bill_ref_number"] == "STU-2026-0042"
+	assert d["payer_name"] == "Grace Kamau"
+	assert pb.parse_trans_time("garbage") is None
+
+
+def test_ip_allowlist_and_urls():
+	allowed = "196.201.212.0/24\n196.201.213.0/24, 196.201.214.0/24"
+	assert pb.ip_allowed("196.201.214.200", allowed)
+	assert not pb.ip_allowed("41.90.1.1", allowed)
+	assert not pb.ip_allowed("not-an-ip", allowed)
+	assert pb.url_problems("https://greenhill.example.com/api/method/school_erp.api.paybill.confirm") == []
+	assert pb.url_problems("https://school-mpesa.example.com")  # forbidden word
+	assert pb.url_problems("http://school.localhost:8000")

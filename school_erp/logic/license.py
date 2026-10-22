@@ -28,6 +28,8 @@ MODULES = {
 	"welfare": "Discipline & Complaints",
 	"expenses": "Expenses & Approvals",
 	"transport_ops": "Driver Daily Logs & Vehicles",
+	"exams": "Exams & Report Cards",
+	"portal": "Parent Portal & Online Fee Payment",
 }
 
 # Which module each DocType belongs to
@@ -53,6 +55,11 @@ DOCTYPE_MODULE = {
 	"School Expense": "expenses",
 	"School Vehicle": "transport_ops",
 	"Driver Daily Log": "transport_ops",
+	"Grading Scale": "exams",
+	"Exam": "exams",
+	"Exam Mark Sheet": "exams",
+	"Report Card": "exams",
+	"STK Push Request": "portal",
 }
 
 # Fee categories that need an extra module on top of "fees"

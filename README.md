@@ -12,7 +12,7 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 
 | Module (license code) | What it gives the school |
 |---|---|
-| **Core** (always on) | Students, parents/guardians, classes, streams, teachers, school years and terms |
+| **Core** (always on) | Students, parents/guardians, classes, streams, teachers, school years and terms, **year-end promotion** |
 | `fees` | Fee types, fee structures per term/class/boarding, one-click term billing, fee payments split by fee type, receipts, **parent fee statements**, Fee Balances report |
 | `transport` | Transport routes with a fee per term; students on a route are billed for it |
 | `lunch` | Lunch fee charged only to students marked "Takes School Lunch" |
@@ -23,6 +23,8 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 | `expenses` | **Expense posting with amount-based approvals** (one or two levels), posted to the accounts automatically |
 | `transport_ops` | **Driver morning check-in** (safety checklist, fitness, odometer, fuel), alerts for failed checks and missed check-ins, vehicles and document expiry |
 | `welfare` | **Discipline incidents** (SMS parent) and **complaints** (staff + public web form with SMS tracking) |
+| `exams` | **Exams & report cards**: marks entry per stream/subject, CBC and 8-4-4 grading, positions, remarks, PDF report cards sent to parents, merit list and subject analysis. See [docs/EXAMS_PORTAL_PROMOTION.md](docs/EXAMS_PORTAL_PROMOTION.md) |
+| `portal` | **Parent portal**: parents log in with their phone number to see balances, statements, receipts, report cards and notices, and **pay with an M-Pesa prompt (STK Push)** |
 | `mpesa` | **M-Pesa Paybill auto-posting**: parents pay with the Student ID as account number and the payment is posted to the student automatically. See [docs/MPESA.md](docs/MPESA.md) |
 
 ---
@@ -55,7 +57,7 @@ Issue a key for each school according to its agreement and payment:
 ```bash
 python tools/license_tool.py issue --private-key-file vendor.key \
   --school "Greenhill Academy" --site greenhill.example.com \
-  --modules fees,transport,lunch,activities,messaging,timetable,mpesa,staff,expenses,transport_ops,welfare \
+  --modules fees,transport,lunch,activities,messaging,timetable,mpesa,staff,expenses,transport_ops,welfare,exams,portal \
   --expires 2027-12-31 --max-students 600
 ```
 

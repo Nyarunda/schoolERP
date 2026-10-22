@@ -135,6 +135,14 @@ def run_setup():
 			if acc and _ensure("Expense Category", cat, {"category_name": cat, "expense_account": acc, "is_active": 1}):
 				created.append(cat)
 
+	# exams: grading scales (CBC, KCSE) and a default matching the education system
+	if licensing.is_enabled("exams"):
+		from school_erp.api.exams import install_default_scales
+
+		install_default_scales()
+		if not settings.default_grading_scale:
+			settings.default_grading_scale = "KCSE (8-4-4)" if settings.education_system.startswith("8-4-4") else "CBC"
+
 	# current year + three terms
 	year = str(date.today().year)
 	if _ensure("School Year", year, {"year_name": year, "start_date": f"{year}-01-01", "end_date": f"{year}-12-31", "is_current": 1}):

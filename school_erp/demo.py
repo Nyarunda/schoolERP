@@ -259,4 +259,65 @@ def make_demo(force=False):
 		log.submit()
 
 	frappe.db.commit()
-	return f"Demo ready: {len(students)} students. Logins: head@demo.school / teacher@demo.school, password {PASSWORD}"
+	make_demo_extras(students)
+	return f"Demo ready: {len(students)} students. Logins: head@demo.school / teacher@demo.school / parent 0711222333, password {PASSWORD}"
+
+
+def make_demo_extras(students=None):
+	"""Exam results (published report cards), a parent portal login and parent notices."""
+	random.seed(7)
+	from school_erp.api.exams import generate_report_cards, install_default_scales, publish
+	from school_erp.school.doctype.school_term.school_term import get_current_term
+
+	term = get_current_term(getdate(nowdate()))
+	install_default_scales()
+	students = students or frappe.get_all("Student", filters={"status": "Active"}, pluck="name")
+	classes = sorted({frappe.db.get_value("Student", s, "school_class") for s in students})
+	subjects = frappe.get_all("Subject", pluck="name", order_by="subject_name")[:6]
+	scale = frappe.db.get_single_value("School Settings", "default_grading_scale") or "CBC"
+	ename = f"End of {term.term_name} - {term.name}"
+	if not frappe.db.exists("Exam", ename):
+		exam = frappe.get_doc({"doctype": "Exam", "exam_name": f"End of {term.term_name}", "school_term": term.name, "exam_type": "End-Term",
+							   "grading_scale": scale, "max_marks": 100, "classes": [{"school_class": c} for c in classes],
+							   "subjects": [{"subject": s} for s in subjects]}).insert()
+		ability = {s: random.uniform(35, 92) for s in students}
+		for stream in frappe.get_all("Stream", filters={"school_class": ("in", classes)}, pluck="name"):
+			for sub in subjects:
+				ms = frappe.get_doc({"doctype": "Exam Mark Sheet", "exam": exam.name, "stream": stream, "subject": sub})
+				ms.get_students()
+				if not ms.marks:
+					continue
+				for m in ms.marks:
+					if random.random() < 0.02:
+						m.absent = 1
+					else:
+						m.marks = str(int(max(5, min(100, random.gauss(ability.get(m.student, 60), 9)))))
+				ms.insert()
+				ms.submit()
+		generate_report_cards(exam.name)
+		publish(exam.name, notify_parents=0)
+
+	# a parent login for the first student's guardian, plus a sibling so the portal shows two children
+	first = frappe.get_doc("Student", students[0])
+	sibling = frappe.get_doc("Student", students[13])
+	for stu in (first, sibling):
+		g = stu.guardians[0]
+		g.guardian_name, g.mobile_no, g.email = "Jane Wanjiru", "0711222333", "parent@demo.school"
+		stu.save()
+	from school_erp.api.portal import give_portal_access
+
+	give_portal_access(student=first.name, send_sms=0)
+	give_portal_access(student=sibling.name, send_sms=0)
+	from frappe.utils.password import update_password
+
+	update_password("parent@demo.school", PASSWORD)
+	frappe.db.set_single_value("System Settings", "allow_login_using_mobile_number", 1)
+	s = frappe.get_doc("School Settings")
+	s.update({"mpesa_enabled": 1, "mpesa_stk_enabled": 1, "mpesa_shortcode": "174379", "mpesa_environment": "Sandbox"})
+	s.save()
+	for title, prio, msg in (("Half-term break: Thursday to Sunday", "Important", "School closes Thursday at 12:30 pm and reopens Monday at 7:30 am."),
+							 ("Sports day this Friday", "Normal", "Parents are welcome from 10:00. Students should come in their house T-shirts.")):
+		if not frappe.db.exists("School Notice", {"title": title}):
+			frappe.get_doc({"doctype": "School Notice", "title": title, "audience": "Parents", "priority": prio, "message": msg,
+							"pinned": int(prio == "Important")}).insert()
+	frappe.db.commit()

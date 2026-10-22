@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-22 16:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "subject",
+  "marks",
+  "out_of",
+  "percent",
+  "grade",
+  "points",
+  "subject_position",
+  "remark",
+  "teacher"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "subject",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Subject",
+   "options": "Subject"
+  },
+  {
+   "columns": 1,
+   "fieldname": "marks",
+   "fieldtype": "Float",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Marks"
+  },
+  {
+   "columns": 1,
+   "fieldname": "out_of",
+   "fieldtype": "Float",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Out Of"
+  },
+  {
+   "columns": 1,
+   "fieldname": "percent",
+   "fieldtype": "Float",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "%",
+   "precision": "1"
+  },
+  {
+   "columns": 1,
+   "fieldname": "grade",
+   "fieldtype": "Data",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Grade"
+  },
+  {
+   "columns": 1,
+   "fieldname": "points",
+   "fieldtype": "Float",
+   "idx": 6,
+   "label": "Points"
+  },
+  {
+   "columns": 1,
+   "fieldname": "subject_position",
+   "fieldtype": "Data",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "Position"
+  },
+  {
+   "columns": 2,
+   "fieldname": "remark",
+   "fieldtype": "Data",
+   "idx": 8,
+   "in_list_view": 1,
+   "label": "Remark"
+  },
+  {
+   "fieldname": "teacher",
+   "fieldtype": "Data",
+   "idx": 9,
+   "label": "Teacher"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Report Card Subject",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_order": "DESC",
+ "states": []
+}

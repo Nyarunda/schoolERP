@@ -1,0 +1,194 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "exam_name",
+  "school_term",
+  "exam_type",
+  "cb1",
+  "grading_scale",
+  "max_marks",
+  "status",
+  "sb_scope",
+  "classes",
+  "subjects",
+  "sb_progress",
+  "progress_html",
+  "published_on"
+ ],
+ "fields": [
+  {
+   "description": "e.g. End of Term 3",
+   "fieldname": "exam_name",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Exam",
+   "reqd": 1
+  },
+  {
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Term",
+   "options": "School Term",
+   "reqd": 1
+  },
+  {
+   "default": "End-Term",
+   "fieldname": "exam_type",
+   "fieldtype": "Select",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Exam Type",
+   "options": "Opener\nCAT\nMid-Term\nEnd-Term\nMock"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "grading_scale",
+   "fieldtype": "Link",
+   "idx": 5,
+   "label": "Grading Scale",
+   "options": "Grading Scale",
+   "reqd": 1
+  },
+  {
+   "default": "100",
+   "fieldname": "max_marks",
+   "fieldtype": "Float",
+   "idx": 6,
+   "label": "Marks out of",
+   "reqd": 1
+  },
+  {
+   "default": "Marks Entry",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Marks Entry\nResults Ready\nPublished",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_scope",
+   "fieldtype": "Section Break",
+   "idx": 8,
+   "label": "Classes & Subjects"
+  },
+  {
+   "fieldname": "classes",
+   "fieldtype": "Table MultiSelect",
+   "idx": 9,
+   "label": "Classes",
+   "options": "Exam Class",
+   "reqd": 1
+  },
+  {
+   "description": "Leave blank for every subject",
+   "fieldname": "subjects",
+   "fieldtype": "Table MultiSelect",
+   "idx": 10,
+   "label": "Subjects",
+   "options": "Exam Subject"
+  },
+  {
+   "fieldname": "sb_progress",
+   "fieldtype": "Section Break",
+   "idx": 11,
+   "label": "Progress"
+  },
+  {
+   "fieldname": "progress_html",
+   "fieldtype": "HTML",
+   "idx": 12,
+   "label": "Progress Html"
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Datetime",
+   "idx": 13,
+   "label": "Published On",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Exam",
+ "naming_rule": "By script",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Teacher",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "exam_name",
+ "track_changes": 1
+}

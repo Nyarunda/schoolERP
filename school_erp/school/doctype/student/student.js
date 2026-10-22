@@ -86,3 +86,22 @@ function statement_dialog(frm) {
 		__("Download"),
 	);
 }
+
+frappe.ui.form.on("Student", {
+	refresh(frm) {
+		const mods = (frappe.boot.school_erp || {}).modules || [];
+		if (frm.is_new() || !mods.includes("portal")) return;
+		frm.add_custom_button(__("Give Parents Portal Access"), () =>
+			frappe.call({ method: "school_erp.api.portal.give_portal_access", args: { student: frm.doc.name }, freeze: true })
+				.then(({ message: m }) => {
+					const pw = (m.passwords || []).map((p) => `<li>${frappe.utils.escape_html(p.guardian)}: ${frappe.utils.escape_html(p.login)} / <b>${frappe.utils.escape_html(p.password)}</b></li>`).join("");
+					frappe.msgprint({
+						title: __("Parent portal"),
+						message: __("{0} new login(s), {1} linked.", [m.new_logins, m.linked]) +
+							(pw ? `<p>${__("New passwords (also sent by SMS):")}</p><ul>${pw}</ul>` : "") +
+							(m.without_contact ? `<p>${__("{0} guardian(s) have no phone or email.", [m.without_contact])}</p>` : ""),
+					});
+					frm.reload_doc();
+				}), __("Fees"));
+	},
+});

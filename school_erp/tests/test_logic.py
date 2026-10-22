@@ -281,3 +281,46 @@ def test_billing_run_summary_counts_only_ticked_students():
 	assert s["amount"] == 25000 + 6000 + 12500
 	assert [(r["fee_type"], r["students"], r["amount"]) for r in s["by_fee_type"]] == [("Tuition", 2, 37500), ("Lunch", 1, 6000)]
 	assert describe_lines(b) == "Tuition 12,500 (-50%)"
+
+
+# ------------------------------------------------------------------ exams & promotion
+from school_erp.logic import exams as ex  # noqa: E402
+from school_erp.logic import promotion as pr  # noqa: E402
+
+
+def test_grading_edges():
+	assert ex.grade_for(80, ex.KCSE_BANDS)["grade"] == "A"
+	assert ex.grade_for(79.995, ex.KCSE_BANDS)["grade"] == "A"  # rounds to 80
+	assert ex.grade_for(79.99, ex.KCSE_BANDS)["grade"] == "A-"
+	assert ex.grade_for(0, ex.KCSE_BANDS)["grade"] == "E"
+	assert ex.grade_for(55, ex.CBC_BANDS) == {"grade": "ME", "points": 3.0, "remark": "Meeting Expectations"}
+	assert ex.grade_for(None, ex.CBC_BANDS)["grade"] == ""
+
+
+def test_competition_rank_ties():
+	assert ex.competition_rank({"a": 90, "b": 80, "c": 80, "d": 70, "e": None}) == {"a": 1, "b": 2, "c": 2, "d": 4}
+
+
+def test_build_results_absent_and_means():
+	marks = {
+		"S1": {"Math": {"marks": 80}, "Eng": {"marks": 60}},
+		"S2": {"Math": {"marks": 40}, "Eng": {"absent": True}},
+		"S3": {"Math": {"absent": True}, "Eng": {"absent": True}},
+	}
+	r = ex.build_results(marks, {"Math": 100, "Eng": 100}, ex.KCSE_BANDS)
+	assert r["S1"]["mean_percent"] == 70 and r["S1"]["mean_grade"] == "B+"
+	assert r["S1"]["mean_points"] == (12 + 8) / 2
+	assert r["S2"]["mean_percent"] == 40 and r["S2"]["subjects"]["Eng"]["grade"] == "ABS"  # absent excluded
+	assert r["S3"]["mean_percent"] is None and r["S3"]["sat"] == 0
+	pos = ex.subject_positions(r)
+	assert pos["Math"] == {"S1": 1, "S2": 2}
+	assert "Improved by 5%" in ex.auto_remark(70, 65) and "Dropped" in ex.auto_remark(60, 70)
+
+
+def test_promotion_plan():
+	assert pr.plan_student("Grade 4", "Grade 4 East", "Grade 5") == {"action": "Promote", "new_class": "Grade 5", "new_stream": "Grade 5 East"}
+	assert pr.plan_student("Grade 9", "Grade 9 West", None)["action"] == "Graduate"
+	assert pr.apply_action("Repeat", "Grade 4", "Grade 4 East", "Grade 5") == {"action": "Repeat", "new_class": "Grade 4", "new_stream": "Grade 4 East"}
+	assert pr.apply_action("Promote", "Grade 9", "Grade 9 West", None)["action"] == "Graduate"
+	s = pr.summarize([{"action": "Promote", "balance": 5000}, {"action": "Graduate", "balance": 0}, {"action": "Repeat", "balance": 100}])
+	assert (s["promote"], s["graduate"], s["repeat"], s["with_balance"], s["balance"]) == (1, 1, 1, 2, 5100)

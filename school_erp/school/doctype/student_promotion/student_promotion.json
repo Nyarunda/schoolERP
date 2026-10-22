@@ -1,0 +1,238 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "PROM-.YYYY.-.###",
+ "creation": "2026-10-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "from_year",
+  "to_year",
+  "classes",
+  "cb1",
+  "create_streams",
+  "make_to_year_current",
+  "graduate_status",
+  "sb_totals",
+  "total_students",
+  "to_promote",
+  "to_graduate",
+  "cb2",
+  "to_repeat",
+  "with_balance",
+  "balance_total",
+  "sb_items",
+  "items",
+  "status",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "from_year",
+   "fieldtype": "Link",
+   "idx": 2,
+   "label": "From School Year",
+   "options": "School Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "to_year",
+   "fieldtype": "Link",
+   "idx": 3,
+   "label": "To School Year",
+   "options": "School Year",
+   "reqd": 1
+  },
+  {
+   "description": "Leave blank for the whole school",
+   "fieldname": "classes",
+   "fieldtype": "Table MultiSelect",
+   "idx": 4,
+   "label": "Classes",
+   "options": "Student Promotion Class"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "default": "1",
+   "description": "Grade 4 East moves to Grade 5 East; Grade 5 East is created if it doesn't exist",
+   "fieldname": "create_streams",
+   "fieldtype": "Check",
+   "idx": 6,
+   "label": "Create missing streams in the new class"
+  },
+  {
+   "default": "1",
+   "fieldname": "make_to_year_current",
+   "fieldtype": "Check",
+   "idx": 7,
+   "label": "Make the new year current"
+  },
+  {
+   "default": "Graduated",
+   "fieldname": "graduate_status",
+   "fieldtype": "Select",
+   "idx": 8,
+   "label": "Top class students become",
+   "options": "Graduated\nLeft"
+  },
+  {
+   "fieldname": "sb_totals",
+   "fieldtype": "Section Break",
+   "idx": 9,
+   "label": "Summary"
+  },
+  {
+   "bold": 1,
+   "fieldname": "total_students",
+   "fieldtype": "Int",
+   "idx": 10,
+   "label": "Total Students",
+   "read_only": 1
+  },
+  {
+   "fieldname": "to_promote",
+   "fieldtype": "Int",
+   "idx": 11,
+   "label": "To Promote",
+   "read_only": 1
+  },
+  {
+   "fieldname": "to_graduate",
+   "fieldtype": "Int",
+   "idx": 12,
+   "label": "To Graduate",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 13
+  },
+  {
+   "fieldname": "to_repeat",
+   "fieldtype": "Int",
+   "idx": 14,
+   "label": "To Repeat",
+   "read_only": 1
+  },
+  {
+   "description": "Balances stay on each student's account and show as 'Balance from earlier terms' on statements",
+   "fieldname": "with_balance",
+   "fieldtype": "Int",
+   "idx": 15,
+   "label": "Students with a Fee Balance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "balance_total",
+   "fieldtype": "Currency",
+   "idx": 16,
+   "label": "Total Balance Carried Forward",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_items",
+   "fieldtype": "Section Break",
+   "idx": 17,
+   "label": "Students"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "idx": 18,
+   "label": "Items",
+   "options": "Student Promotion Item"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 19,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nCompleted\nCompleted with Errors",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 20,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Student Promotion",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Student Promotion",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Bursar",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

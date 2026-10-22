@@ -1,0 +1,308 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "RC-.YYYY.-.#####",
+ "creation": "2026-10-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "exam",
+  "school_term",
+  "cb1",
+  "stream",
+  "school_class",
+  "status",
+  "sb_subjects",
+  "subjects",
+  "sb_summary",
+  "total_marks",
+  "total_out_of",
+  "mean_percent",
+  "mean_grade",
+  "mean_points",
+  "cb2",
+  "stream_position",
+  "stream_size",
+  "class_position",
+  "class_size",
+  "previous_mean",
+  "sb_remarks",
+  "class_teacher_remark",
+  "head_teacher_remark",
+  "published_on",
+  "sent_to_parents"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_standard_filter": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exam",
+   "fieldtype": "Link",
+   "idx": 3,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Exam",
+   "options": "Exam",
+   "reqd": 1
+  },
+  {
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 4,
+   "label": "Term",
+   "options": "School Term",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 6,
+   "in_standard_filter": 1,
+   "label": "Stream",
+   "options": "Stream",
+   "read_only": 1
+  },
+  {
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 7,
+   "in_standard_filter": 1,
+   "label": "Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 8,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nPublished",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_subjects",
+   "fieldtype": "Section Break",
+   "idx": 9,
+   "label": "Results"
+  },
+  {
+   "fieldname": "subjects",
+   "fieldtype": "Table",
+   "idx": 10,
+   "label": "Subjects",
+   "options": "Report Card Subject",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_summary",
+   "fieldtype": "Section Break",
+   "idx": 11,
+   "label": "Summary"
+  },
+  {
+   "fieldname": "total_marks",
+   "fieldtype": "Float",
+   "idx": 12,
+   "label": "Total Marks",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_out_of",
+   "fieldtype": "Float",
+   "idx": 13,
+   "label": "Total Out Of",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mean_percent",
+   "fieldtype": "Float",
+   "idx": 14,
+   "in_list_view": 1,
+   "label": "Mean %",
+   "precision": "1",
+   "read_only": 1
+  },
+  {
+   "bold": 1,
+   "fieldname": "mean_grade",
+   "fieldtype": "Data",
+   "idx": 15,
+   "in_list_view": 1,
+   "label": "Mean Grade",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mean_points",
+   "fieldtype": "Float",
+   "idx": 16,
+   "label": "Mean Points",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 17
+  },
+  {
+   "fieldname": "stream_position",
+   "fieldtype": "Int",
+   "idx": 18,
+   "in_list_view": 1,
+   "label": "Stream Position",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stream_size",
+   "fieldtype": "Int",
+   "idx": 19,
+   "label": "Stream Size",
+   "read_only": 1
+  },
+  {
+   "fieldname": "class_position",
+   "fieldtype": "Int",
+   "idx": 20,
+   "label": "Class Position",
+   "read_only": 1
+  },
+  {
+   "fieldname": "class_size",
+   "fieldtype": "Int",
+   "idx": 21,
+   "label": "Class Size",
+   "read_only": 1
+  },
+  {
+   "fieldname": "previous_mean",
+   "fieldtype": "Float",
+   "idx": 22,
+   "label": "Previous Exam Mean %",
+   "precision": "1",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_remarks",
+   "fieldtype": "Section Break",
+   "idx": 23,
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "class_teacher_remark",
+   "fieldtype": "Small Text",
+   "idx": 24,
+   "label": "Class Teacher Remark"
+  },
+  {
+   "fieldname": "head_teacher_remark",
+   "fieldtype": "Small Text",
+   "idx": 25,
+   "label": "Head Teacher Remark"
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Datetime",
+   "idx": 26,
+   "label": "Published On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sent_to_parents",
+   "fieldtype": "Check",
+   "idx": 27,
+   "label": "Sent To Parents",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Report Card",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Teacher",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "student,student_name,exam",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

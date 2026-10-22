@@ -65,6 +65,18 @@ for name, d in ours.items():
 	if d.get("is_submittable") and "amended_from" not in names:
 		errors.append(f"{name}: submittable without amended_from")
 
+# controller class names must follow Frappe's rule (spaces and hyphens removed, capitals kept)
+import re  # noqa: E402
+
+for name, d in ours.items():
+	folder = name.lower().replace(" ", "_").replace("-", "_")
+	py = os.path.join(ROOT, "school", "doctype", folder, folder + ".py")
+	if os.path.exists(py):
+		m = re.search(r"^class (\w+)\(", open(py).read(), re.M)
+		want = name.replace(" ", "").replace("-", "")
+		if not m or m.group(1) != want:
+			errors.append(f"{name}: controller class should be {want}")
+
 if errors:
 	print("\n".join(errors))
 	sys.exit(1)

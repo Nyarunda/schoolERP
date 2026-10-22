@@ -52,6 +52,8 @@ def notice_users(notice) -> set[str]:
 
 
 def publish(notice):
+	if notice.audience == "Parents":
+		return publish_to_parents(notice)
 	from school_erp.api.notify import notify
 
 	staff = audience_staff(notice.audience)
@@ -64,6 +66,34 @@ def publish(notice):
 		sms_text=f"{prefix}{notice.title}. {first_line}",
 	)
 	notice.db_set({"notified": 1, "audience_count": len(staff)}, update_modified=False)
+
+
+def publish_to_parents(notice):
+	"""Parents see it on the portal; with 'Also send by SMS', every guardian who accepts SMS gets a text."""
+	filters = {"status": "Active"}
+	if notice.parent_class:
+		filters["school_class"] = notice.parent_class
+	students = frappe.get_all("Student", filters=filters, pluck="name")
+	sent = 0
+	if notice.send_sms:
+		from school_erp import licensing
+
+		if licensing.is_enabled("messaging"):
+			from school_erp.api.messaging import send_sms
+
+			phones = set()
+			for g in frappe.get_all("Student Guardian", filters={"parent": ("in", students or [""]), "parenttype": "Student", "receive_sms": 1},
+									pluck="mobile_no"):
+				if g:
+					phones.add(g)
+			first_line = strip_html(notice.message or "").strip().split("\n")[0][:240]
+			prefix = {"Urgent": "URGENT: ", "Important": "Important: "}.get(notice.priority, "")
+			school = frappe.db.get_single_value("School Settings", "school_name") or ""
+			if phones:
+				send_sms(sorted(phones), f"{prefix}{notice.title}. {first_line} - {school}")
+				sent = len(phones)
+	notice.db_set({"notified": 1, "audience_count": len(students)}, update_modified=False)
+	return sent
 
 
 def publish_scheduled():

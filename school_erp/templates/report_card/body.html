@@ -1,0 +1,104 @@
+{%- set a = school.accent or "#1f6f5c" -%}
+<style>
+	.rcd { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #1d2433; font-size: 11.5px; line-height: 1.45; }
+	.rcd table { width: 100%; border-collapse: collapse; }
+	.rcd td, .rcd th { vertical-align: top; }
+	.rcd .bar { height: 6px; background: {{ a }}; border-radius: 3px; margin-bottom: 14px; }
+	.rcd .sn { font-size: 19px; font-weight: 700; color: {{ a }}; }
+	.rcd .motto { font-style: italic; color: #6b7280; font-size: 11px; }
+	.rcd .contact { color: #4b5563; font-size: 10.5px; margin-top: 3px; }
+	.rcd .dt { font-size: 21px; font-weight: 800; letter-spacing: 2px; text-align: right; }
+	.rcd .dm { text-align: right; color: #4b5563; font-size: 10.5px; margin-top: 2px; }
+	.rcd .logo { max-height: 60px; max-width: 78px; margin-right: 12px; }
+	.rcd .who { background: #f4f6f8; border-radius: 8px; margin: 14px 0 12px; }
+	.rcd .who td { padding: 10px 14px; }
+	.rcd .lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: .8px; color: #6b7280; }
+	.rcd .val { font-size: 12.5px; font-weight: 600; }
+	.rcd .big { font-size: 16px; font-weight: 700; }
+	.rcd .cards td.c { width: 25%; padding: 0 5px; }
+	.rcd .cards td.c:first-child { padding-left: 0; } .rcd .cards td.c:last-child { padding-right: 0; }
+	.rcd .ci { border: 1px solid #e3e7ec; border-radius: 8px; padding: 10px 12px; }
+	.rcd .cn { font-size: 18px; font-weight: 700; margin-top: 3px; }
+	.rcd .hl .ci { background: {{ a }}; border-color: {{ a }}; }
+	.rcd .hl .lbl, .rcd .hl .cn, .rcd .hl .sub { color: #fff; }
+	.rcd .sub { font-size: 10.5px; color: #6b7280; }
+	.rcd h3 { font-size: 12.5px; margin: 16px 0 6px; font-weight: 700; }
+	.rcd .g th { background: #f4f6f8; color: #4b5563; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .6px; padding: 7px 8px; text-align: left; border-bottom: 1px solid #e3e7ec; }
+	.rcd .g td { padding: 6px 8px; border-bottom: 1px solid #eef1f4; }
+	.rcd .g tr.z td { background: #fafbfc; }
+	.rcd .n { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.rcd .c { text-align: center !important; }
+	.rcd .gr { font-weight: 700; }
+	.rcd .meter { height: 6px; background: #eef1f4; border-radius: 3px; overflow: hidden; margin-top: 3px; }
+	.rcd .meter span { display: block; height: 100%; background: {{ a }}; }
+	.rcd .g tr.t td { border-top: 2px solid #1d2433; border-bottom: none; font-weight: 700; }
+	.rcd .rm { border: 1px solid #e3e7ec; border-radius: 8px; padding: 10px 14px; margin-top: 10px; }
+	.rcd .sig { margin-top: 18px; }
+	.rcd .sig td { width: 50%; padding-right: 20px; }
+	.rcd .line { border-bottom: 1px solid #9aa1ab; height: 26px; }
+	.rcd .key { margin-top: 14px; font-size: 10px; color: #4b5563; }
+	.rcd .key span { display: inline-block; margin: 0 10px 4px 0; }
+	.rcd .ft { margin-top: 14px; padding-top: 8px; border-top: 1px solid #e3e7ec; color: #6b7280; font-size: 10px; text-align: center; }
+</style>
+<div class="rcd">
+	<div class="bar"></div>
+	<table><tr>
+		<td style="width:60%"><table><tr>
+			{% if school.logo %}<td style="width:1%"><img class="logo" src="{{ school.logo }}"></td>{% endif %}
+			<td><div class="sn">{{ school.name or "" }}</div>
+				{% if school.motto %}<div class="motto">{{ school.motto }}</div>{% endif %}
+				<div class="contact">{{ (school.address or "") | replace("\n", ", ") }}{% if school.phone %} &middot; Tel {{ school.phone }}{% endif %}</div></td>
+		</tr></table></td>
+		<td style="width:40%"><div class="dt">REPORT CARD</div>
+			<div class="dm"><b>{{ exam.exam_name }}</b> &middot; {{ rc.school_term }}</div>
+			<div class="dm">Issued {{ issued }}</div></td>
+	</tr></table>
+
+	<table class="who"><tr>
+		<td style="width:38%"><div class="lbl">Student</div><div class="val big">{{ student.student_name }}</div></td>
+		<td style="width:20%"><div class="lbl">Student ID</div><div class="val">{{ student.name }}</div></td>
+		<td style="width:20%"><div class="lbl">Class</div><div class="val">{{ rc.stream or rc.school_class }}</div></td>
+		<td style="width:22%"><div class="lbl">Class Teacher</div><div class="val">{{ class_teacher or "-" }}</div></td>
+	</tr></table>
+
+	<table class="cards"><tr>
+		<td class="c hl"><div class="ci"><div class="lbl">Mean Grade</div><div class="cn">{{ rc.mean_grade or "-" }}</div>
+			<div class="sub">{{ "%.1f"|format(rc.mean_percent or 0) }}%{% if rc.mean_points %} &middot; {{ "%.2f"|format(rc.mean_points) }} pts{% endif %}</div></div></td>
+		<td class="c"><div class="ci"><div class="lbl">Position in Stream</div><div class="cn">{{ rc.stream_position or "-" }}<span class="sub"> / {{ rc.stream_size }}</span></div></div></td>
+		<td class="c"><div class="ci"><div class="lbl">Position in Class</div><div class="cn">{{ rc.class_position or "-" }}<span class="sub"> / {{ rc.class_size }}</span></div></div></td>
+		<td class="c"><div class="ci"><div class="lbl">Total Marks</div><div class="cn">{{ "%g"|format(rc.total_marks or 0) }}<span class="sub"> / {{ "%g"|format(rc.total_out_of or 0) }}</span></div>
+			{% if trend is not none %}<div class="sub">{% if trend > 0 %}&#9650; +{{ trend }}%{% elif trend < 0 %}&#9660; {{ trend }}%{% else %}No change{% endif %} vs last exam</div>{% endif %}</div></td>
+	</tr></table>
+
+	<h3>Subject results</h3>
+	<table class="g">
+		<thead><tr><th style="width:26%">Subject</th><th class="n" style="width:12%">Marks</th><th style="width:16%">Score</th>
+			<th class="c" style="width:8%">Grade</th><th class="c" style="width:10%">Position</th><th style="width:16%">Remark</th><th style="width:12%">Teacher</th></tr></thead>
+		<tbody>
+		{% for s in rc.subjects %}
+			<tr class="{{ 'z' if loop.index is even else '' }}">
+				<td>{{ s.subject }}</td>
+				<td class="n">{% if s.marks is not none and s.grade != "ABS" %}{{ "%g"|format(s.marks) }} / {{ "%g"|format(s.out_of) }}{% else %}&mdash;{% endif %}</td>
+				<td>{% if s.percent is not none and s.grade != "ABS" %}{{ "%.0f"|format(s.percent) }}%<div class="meter"><span style="width:{{ s.percent }}%"></span></div>{% else %}Absent{% endif %}</td>
+				<td class="c gr">{{ s.grade }}</td>
+				<td class="c">{{ s.subject_position or "" }}</td>
+				<td>{{ s.remark or "" }}</td>
+				<td style="font-size:10.5px;color:#4b5563">{{ s.teacher or "" }}</td>
+			</tr>
+		{% endfor %}
+			<tr class="t"><td>Total</td><td class="n">{{ "%g"|format(rc.total_marks or 0) }} / {{ "%g"|format(rc.total_out_of or 0) }}</td>
+				<td>{{ "%.1f"|format(rc.mean_percent or 0) }}%</td><td class="c">{{ rc.mean_grade }}</td><td></td><td></td><td></td></tr>
+		</tbody>
+	</table>
+
+	<div class="rm"><div class="lbl">Class Teacher's Remarks</div><div style="margin-top:4px">{{ rc.class_teacher_remark or "" }}</div></div>
+	<div class="rm"><div class="lbl">Head Teacher's Remarks</div><div style="margin-top:4px;min-height:16px">{{ rc.head_teacher_remark or "" }}</div></div>
+
+	<table class="sig"><tr>
+		<td><div class="line"></div><div class="lbl" style="margin-top:4px">Class Teacher</div></td>
+		<td><div class="line"></div><div class="lbl" style="margin-top:4px">Head Teacher &amp; School Stamp</div></td>
+	</tr></table>
+
+	<div class="key"><b>Grading key:</b> {% for b in bands %}<span>{{ b.grade }} {{ b.range }}%{% if b.remark %} ({{ b.remark }}){% endif %}</span>{% endfor %}</div>
+	<div class="ft">{{ school.name or "" }}{% if school.email %} &middot; {{ school.email }}{% endif %}</div>
+</div>

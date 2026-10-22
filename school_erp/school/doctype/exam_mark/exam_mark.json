@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-22 16:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "marks",
+  "absent",
+  "grade",
+  "comment"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "description": "Blank = not entered yet",
+   "fieldname": "marks",
+   "fieldtype": "Data",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Marks"
+  },
+  {
+   "columns": 1,
+   "fieldname": "absent",
+   "fieldtype": "Check",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Absent"
+  },
+  {
+   "columns": 1,
+   "fieldname": "grade",
+   "fieldtype": "Data",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Grade",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "comment",
+   "fieldtype": "Data",
+   "idx": 6,
+   "in_list_view": 1,
+   "label": "Comment"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Exam Mark",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_order": "DESC",
+ "states": []
+}

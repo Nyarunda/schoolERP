@@ -76,6 +76,9 @@
   "mpesa_check_ip",
   "mpesa_allowed_ips",
   "mpesa_registered_on",
+  "sb_stk",
+  "mpesa_stk_enabled",
+  "mpesa_passkey",
   "sb_mpesa_urls",
   "mpesa_urls_html",
   "operations_tab",
@@ -97,6 +100,12 @@
   "complaint_ack_sms",
   "complaint_resolved_sms",
   "complaint_daily_limit",
+  "portal_tab",
+  "portal_enabled",
+  "portal_welcome_sms",
+  "cb_portal",
+  "default_grading_scale",
+  "report_card_sms",
   "license_tab",
   "license_key",
   "license_status_html",
@@ -617,28 +626,49 @@
   },
   {
    "depends_on": "mpesa_enabled",
-   "fieldname": "sb_mpesa_urls",
+   "fieldname": "sb_stk",
    "fieldtype": "Section Break",
    "idx": 72,
+   "label": "Pay from the Parent Portal (STK Push)"
+  },
+  {
+   "fieldname": "mpesa_stk_enabled",
+   "fieldtype": "Check",
+   "idx": 73,
+   "label": "Allow parents to pay with an M-Pesa prompt (STK Push)"
+  },
+  {
+   "depends_on": "mpesa_stk_enabled",
+   "description": "From Safaricom when M-Pesa Express is enabled on the paybill (sandbox: from the Daraja test credentials page).",
+   "fieldname": "mpesa_passkey",
+   "fieldtype": "Password",
+   "idx": 74,
+   "label": "Lipa na M-Pesa Online Passkey"
+  },
+  {
+   "depends_on": "mpesa_enabled",
+   "fieldname": "sb_mpesa_urls",
+   "fieldtype": "Section Break",
+   "idx": 75,
    "label": "Callback URLs"
   },
   {
    "fieldname": "mpesa_urls_html",
    "fieldtype": "HTML",
-   "idx": 73,
+   "idx": 76,
    "label": "URLs"
   },
   {
    "fieldname": "operations_tab",
    "fieldtype": "Tab Break",
-   "idx": 74,
+   "idx": 77,
    "label": "Staff & Approvals"
   },
   {
    "description": "Approves leave for staff with no 'Reports To', and receives duty reports and alerts.",
    "fieldname": "head_teacher_user",
    "fieldtype": "Link",
-   "idx": 75,
+   "idx": 78,
    "label": "Head Teacher / Principal (login)",
    "options": "User"
   },
@@ -646,13 +676,13 @@
    "default": "1",
    "fieldname": "notify_staff_by_sms",
    "fieldtype": "Check",
-   "idx": 76,
+   "idx": 79,
    "label": "Also SMS staff about leave, relieving and alerts"
   },
   {
    "fieldname": "sb_expense_approval",
    "fieldtype": "Section Break",
-   "idx": 77,
+   "idx": 80,
    "label": "Expense Approvals"
   },
   {
@@ -660,14 +690,14 @@
    "description": "Expenses up to this amount need one approval; above it, a second (final) approval.",
    "fieldname": "expense_single_approval_limit",
    "fieldtype": "Currency",
-   "idx": 78,
+   "idx": 81,
    "label": "One approval up to"
   },
   {
    "description": "Blank = Bursar",
    "fieldname": "expense_first_approver_role",
    "fieldtype": "Link",
-   "idx": 79,
+   "idx": 82,
    "label": "First Approver Role",
    "options": "Role"
   },
@@ -675,21 +705,21 @@
    "description": "Blank = Head Teacher",
    "fieldname": "expense_final_approver_role",
    "fieldtype": "Link",
-   "idx": 80,
+   "idx": 83,
    "label": "Final Approver Role",
    "options": "Role"
   },
   {
    "fieldname": "sb_duty",
    "fieldtype": "Section Break",
-   "idx": 81,
+   "idx": 84,
    "label": "Teacher on Duty"
   },
   {
    "description": "Blank = Head Teacher",
    "fieldname": "duty_report_recipient",
    "fieldtype": "Link",
-   "idx": 82,
+   "idx": 85,
    "label": "Send duty reports to",
    "options": "User"
   },
@@ -697,19 +727,19 @@
    "default": "17:00:00",
    "fieldname": "duty_report_due_time",
    "fieldtype": "Time",
-   "idx": 83,
+   "idx": 86,
    "label": "Remind if no report by"
   },
   {
    "fieldname": "sb_transport_ops",
    "fieldtype": "Section Break",
-   "idx": 84,
+   "idx": 87,
    "label": "Driver Check-in"
   },
   {
    "fieldname": "transport_manager_user",
    "fieldtype": "Link",
-   "idx": 85,
+   "idx": 88,
    "label": "Transport Manager (login)",
    "options": "User"
   },
@@ -717,14 +747,14 @@
    "default": "06:30:00",
    "fieldname": "driver_checkin_deadline",
    "fieldtype": "Time",
-   "idx": 86,
+   "idx": 89,
    "label": "Drivers must check in by"
   },
   {
    "fieldname": "checkin_alert_sent_on",
    "fieldtype": "Date",
    "hidden": 1,
-   "idx": 87,
+   "idx": 90,
    "label": "Checkin Alert Sent On",
    "read_only": 1
   },
@@ -732,93 +762,133 @@
    "fieldname": "duty_alert_sent_on",
    "fieldtype": "Date",
    "hidden": 1,
-   "idx": 88,
+   "idx": 91,
    "label": "Duty Alert Sent On",
    "read_only": 1
   },
   {
    "fieldname": "sb_complaints",
    "fieldtype": "Section Break",
-   "idx": 89,
+   "idx": 92,
    "label": "Complaints"
   },
   {
    "default": "Dear {name}, your complaint has been received. Ref {ref}. Track it at {url}. {school_name}",
    "fieldname": "complaint_ack_sms",
    "fieldtype": "Small Text",
-   "idx": 90,
+   "idx": 93,
    "label": "Acknowledgement SMS"
   },
   {
    "default": "Dear {name}, your complaint {ref} has been resolved: {resolution}. {school_name}",
    "fieldname": "complaint_resolved_sms",
    "fieldtype": "Small Text",
-   "idx": 91,
+   "idx": 94,
    "label": "Resolved SMS"
   },
   {
    "default": "3",
    "fieldname": "complaint_daily_limit",
    "fieldtype": "Int",
-   "idx": 92,
+   "idx": 95,
    "label": "Max web complaints per phone per day"
+  },
+  {
+   "fieldname": "portal_tab",
+   "fieldtype": "Tab Break",
+   "idx": 96,
+   "label": "Parent Portal & Exams"
+  },
+  {
+   "default": "1",
+   "description": "Parents log in at /parent with their phone number to see balances, statements, receipts, report cards and notices.",
+   "fieldname": "portal_enabled",
+   "fieldtype": "Check",
+   "idx": 97,
+   "label": "Parent portal on"
+  },
+  {
+   "default": "Dear {name}, view {students} fees and report cards at {url}. Login: {login} Password: {password} - {school_name}",
+   "fieldname": "portal_welcome_sms",
+   "fieldtype": "Small Text",
+   "idx": 98,
+   "label": "Portal login SMS"
+  },
+  {
+   "fieldname": "cb_portal",
+   "fieldtype": "Column Break",
+   "idx": 99
+  },
+  {
+   "fieldname": "default_grading_scale",
+   "fieldtype": "Link",
+   "idx": 100,
+   "label": "Default Grading Scale",
+   "options": "Grading Scale"
+  },
+  {
+   "default": "Dear {name}, {student_name}'s {exam} results: mean {mean_grade} ({mean_percent}%), position {position}/{size}. View the report card at {url} - {school_name}",
+   "fieldname": "report_card_sms",
+   "fieldtype": "Small Text",
+   "idx": 101,
+   "label": "Report card SMS"
   },
   {
    "fieldname": "license_tab",
    "fieldtype": "Tab Break",
-   "idx": 93,
+   "idx": 102,
    "label": "License"
   },
   {
    "description": "Paste the license key supplied by your vendor. Modules switch on when you save.",
    "fieldname": "license_key",
    "fieldtype": "Long Text",
-   "idx": 94,
+   "idx": 103,
    "label": "License Key"
   },
   {
    "fieldname": "license_status_html",
    "fieldtype": "HTML",
-   "idx": 95,
+   "idx": 104,
    "label": "License Status"
   },
   {
    "fieldname": "cb_lic",
    "fieldtype": "Column Break",
-   "idx": 96
+   "idx": 105
   },
   {
    "fieldname": "license_status",
    "fieldtype": "Data",
-   "idx": 97,
+   "idx": 106,
    "label": "License Status",
    "read_only": 1
   },
   {
    "fieldname": "licensed_to",
    "fieldtype": "Data",
-   "idx": 98,
+   "idx": 107,
    "label": "Licensed To",
    "read_only": 1
   },
   {
    "fieldname": "licensed_modules",
    "fieldtype": "Small Text",
-   "idx": 99,
+   "idx": 108,
    "label": "Licensed Modules",
    "read_only": 1
   },
   {
    "fieldname": "license_expiry",
    "fieldtype": "Date",
-   "idx": 100,
+   "idx": 109,
    "label": "License Expiry",
    "read_only": 1
   },
   {
    "fieldname": "max_students",
    "fieldtype": "Int",
-   "idx": 101,
+   "idx": 110,
    "label": "Max Students",
    "read_only": 1
   }
@@ -826,7 +896,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-22 12:00:00.000000",
+ "modified": "2026-10-22 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Settings",

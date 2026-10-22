@@ -1,0 +1,128 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-22 16:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "current_stream",
+  "current_class",
+  "action",
+  "new_class",
+  "new_stream",
+  "balance",
+  "status",
+  "note"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "current_stream",
+   "fieldtype": "Link",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "From",
+   "options": "Stream",
+   "read_only": 1
+  },
+  {
+   "fieldname": "current_class",
+   "fieldtype": "Link",
+   "idx": 4,
+   "label": "Current Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "Promote",
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "idx": 5,
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "Promote\nRepeat\nGraduate\nLeft School"
+  },
+  {
+   "fieldname": "new_class",
+   "fieldtype": "Link",
+   "idx": 6,
+   "label": "New Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "new_stream",
+   "fieldtype": "Data",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "To",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "idx": 8,
+   "in_list_view": 1,
+   "label": "Fee Balance",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 9,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nDone\nError",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "note",
+   "fieldtype": "Data",
+   "idx": 10,
+   "label": "Note",
+   "no_copy": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Student Promotion Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_order": "DESC",
+ "states": []
+}

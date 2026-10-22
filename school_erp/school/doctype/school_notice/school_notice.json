@@ -14,6 +14,7 @@
   "expiry_date",
   "pinned",
   "send_sms",
+  "parent_class",
   "sb_msg",
   "message",
   "sb_reach",
@@ -41,7 +42,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Audience",
-   "options": "All Staff\nTeaching Staff\nNon-Teaching Staff\nDrivers\nManagement",
+   "options": "All Staff\nTeaching Staff\nNon-Teaching Staff\nDrivers\nManagement\nParents",
    "reqd": 1
   },
   {
@@ -82,22 +83,30 @@
    "label": "Pin to top"
   },
   {
-   "description": "Sends the title and first line to every staff member in the audience",
+   "description": "Sends the title and first line to everyone in the audience (staff, or for Parents: every guardian who accepts SMS)",
    "fieldname": "send_sms",
    "fieldtype": "Check",
    "idx": 8,
    "label": "Also send by SMS"
   },
   {
+   "depends_on": "eval:doc.audience=='Parents'",
+   "fieldname": "parent_class",
+   "fieldtype": "Link",
+   "idx": 9,
+   "label": "Only Parents of Class",
+   "options": "School Class"
+  },
+  {
    "fieldname": "sb_msg",
    "fieldtype": "Section Break",
-   "idx": 9,
+   "idx": 10,
    "label": "Message"
   },
   {
    "fieldname": "message",
    "fieldtype": "Text Editor",
-   "idx": 10,
+   "idx": 11,
    "label": "Message",
    "reqd": 1
   },
@@ -105,13 +114,13 @@
    "collapsible": 1,
    "fieldname": "sb_reach",
    "fieldtype": "Section Break",
-   "idx": 11,
+   "idx": 12,
    "label": "Reach"
   },
   {
    "fieldname": "posted_by",
    "fieldtype": "Link",
-   "idx": 12,
+   "idx": 13,
    "label": "Posted By",
    "options": "User",
    "read_only": 1
@@ -119,28 +128,28 @@
   {
    "fieldname": "notified",
    "fieldtype": "Check",
-   "idx": 13,
+   "idx": 14,
    "label": "Notified",
    "read_only": 1
   },
   {
    "fieldname": "audience_count",
    "fieldtype": "Int",
-   "idx": 14,
+   "idx": 15,
    "label": "Staff in Audience",
    "read_only": 1
   },
   {
    "fieldname": "acknowledged_count",
    "fieldtype": "Int",
-   "idx": 15,
+   "idx": 16,
    "label": "Acknowledged",
    "read_only": 1
   },
   {
    "fieldname": "acknowledgements",
    "fieldtype": "Table",
-   "idx": 16,
+   "idx": 17,
    "label": "Acknowledgements",
    "options": "Notice Acknowledgement",
    "read_only": 1
@@ -148,7 +157,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-22 08:00:00.000000",
+ "modified": "2026-10-22 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Notice",

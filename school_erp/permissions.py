@@ -6,6 +6,13 @@ import frappe
 MANAGERS = {"System Manager", "School Admin", "Head Teacher"}
 
 
+def has_app_permission():
+	"""Only staff (desk users) see the School app; parents are website users and go to /parent."""
+	if frappe.session.user == "Administrator":
+		return True
+	return frappe.get_cached_value("User", frappe.session.user, "user_type") == "System User"
+
+
 def _roles(user):
 	return set(frappe.get_roles(user))
 

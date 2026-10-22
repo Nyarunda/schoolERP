@@ -22,6 +22,13 @@ frappe.ui.form.on("School Settings", {
 		});
 		render_license(frm);
 		setup_mpesa(frm);
+		if (((frappe.boot.school_erp || {}).modules || []).includes("portal")) {
+			frm.add_custom_button(__("Give All Parents Portal Access"), () =>
+				frappe.confirm(__("Create parent portal logins for the guardians of every active student and SMS them their password?"), () =>
+					frappe.call({ method: "school_erp.api.portal.give_portal_access", args: { all_students: 1 }, freeze: true, freeze_message: __("Creating logins...") })
+						.then(({ message: m }) => frappe.msgprint(__("{0} new parent logins created, {1} guardians linked, {2} without a phone or email.", [m.new_logins, m.linked, m.without_contact])))),
+				__("Parent Portal"));
+		}
 	},
 	mpesa_callback_base_url: render_mpesa_urls,
 	mpesa_enabled: render_mpesa_urls,

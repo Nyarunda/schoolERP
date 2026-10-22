@@ -1,0 +1,243 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "MS-.YYYY.-.#####",
+ "creation": "2026-10-22 16:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "exam",
+  "school_term",
+  "stream",
+  "school_class",
+  "cb1",
+  "subject",
+  "teacher",
+  "max_marks",
+  "sb_marks",
+  "marks",
+  "sb_stats",
+  "entered",
+  "average",
+  "cb2",
+  "highest",
+  "lowest",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exam",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_standard_filter": 1,
+   "label": "Exam",
+   "options": "Exam",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "exam.school_term",
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 3,
+   "label": "Term",
+   "options": "School Term",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 4,
+   "in_standard_filter": 1,
+   "label": "Stream",
+   "options": "Stream",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "stream.school_class",
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 5,
+   "label": "Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break",
+   "idx": 6
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Link",
+   "idx": 7,
+   "in_standard_filter": 1,
+   "label": "Subject",
+   "options": "Subject",
+   "reqd": 1
+  },
+  {
+   "fieldname": "teacher",
+   "fieldtype": "Link",
+   "idx": 8,
+   "label": "Teacher",
+   "options": "Teacher"
+  },
+  {
+   "fetch_from": "exam.max_marks",
+   "fieldname": "max_marks",
+   "fieldtype": "Float",
+   "idx": 9,
+   "label": "Out of",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sb_marks",
+   "fieldtype": "Section Break",
+   "idx": 10,
+   "label": "Marks"
+  },
+  {
+   "fieldname": "marks",
+   "fieldtype": "Table",
+   "idx": 11,
+   "label": "Marks",
+   "options": "Exam Mark"
+  },
+  {
+   "fieldname": "sb_stats",
+   "fieldtype": "Section Break",
+   "idx": 12,
+   "label": "Summary"
+  },
+  {
+   "fieldname": "entered",
+   "fieldtype": "Int",
+   "idx": 13,
+   "label": "Marks Entered",
+   "read_only": 1
+  },
+  {
+   "fieldname": "average",
+   "fieldtype": "Float",
+   "idx": 14,
+   "label": "Class Average",
+   "precision": "1",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb2",
+   "fieldtype": "Column Break",
+   "idx": 15
+  },
+  {
+   "fieldname": "highest",
+   "fieldtype": "Float",
+   "idx": 16,
+   "label": "Highest",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lowest",
+   "fieldtype": "Float",
+   "idx": 17,
+   "label": "Lowest",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "idx": 18,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Exam Mark Sheet",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-22 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Exam Mark Sheet",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Teacher",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "exam,stream,subject",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

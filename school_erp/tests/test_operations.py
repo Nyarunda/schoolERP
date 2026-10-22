@@ -346,7 +346,7 @@ class TestOperations(TestCase):
 		self.assertEqual(frappe.db.get_value("Sales Invoice", rows[a].sales_invoice, "docstatus"), 1)
 		self.assertEqual(rows[c].status, "Pending")  # unticked: not invoiced
 		self.assertFalse(frappe.db.exists("Sales Invoice", {"student": c, "school_term": self.term}))
-		self.assertEqual(flt(run.total_billed), 40000 * sum(1 for r in run.students if r.status == "Invoiced"))
+		self.assertEqual(flt(run.total_billed), sum(flt(r.total) for r in run.students if r.status == "Invoiced"))
 
 		# a second run for the same term skips everyone already invoiced
 		run2 = frappe.get_doc({"doctype": "Fee Billing Run", "school_term": self.term, "posting_date": nowdate(),

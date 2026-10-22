@@ -12,7 +12,8 @@
   "email",
   "is_primary",
   "receive_sms",
-  "receive_email"
+  "receive_email",
+  "user"
  ],
  "fields": [
   {
@@ -74,12 +75,20 @@
    "fieldtype": "Check",
    "idx": 7,
    "label": "Email"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "idx": 8,
+   "label": "Portal Login",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "istable": 1,
  "links": [],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-22 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Student Guardian",

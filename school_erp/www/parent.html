@@ -1,0 +1,177 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("My Children") }} · {{ school.name or "" }}{% endblock %}
+
+{% block page_content %}
+{%- set a = school.accent or "#1f6f5c" -%}
+<style>
+	.pp, .pp-sheet { --pp-a: {{ a }}; --pp-line: #e3e7ec; --pp-muted: #6b7280; --pp-soft: #f4f6f8; color: #1d2433; }
+	.pp { max-width: 760px; margin: 8px auto 48px; }
+	.pp-sheet .pp-sub { color: var(--pp-muted); font-size: 13px; }
+	.pp * { box-sizing: border-box; }
+	.pp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+	.pp-head img { height: 46px; border-radius: 8px; }
+	.pp-head h1 { font-size: 22px; margin: 0; font-weight: 700; }
+	.pp-head small { color: var(--pp-muted); font-size: 13px; }
+	.pp-card { border: 1px solid var(--pp-line); border-radius: 14px; padding: 18px; margin-bottom: 16px; background: #fff; }
+	.pp-child-top { display: flex; align-items: center; gap: 12px; }
+	.pp-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--pp-a); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; flex: none; overflow: hidden; }
+	.pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+	.pp-name { font-size: 18px; font-weight: 700; }
+	.pp-sub { color: var(--pp-muted); font-size: 13px; }
+	.pp-bal { margin: 16px 0 12px; padding: 16px; border-radius: 12px; background: var(--pp-soft); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+	.pp-bal.due { background: var(--pp-a); color: #fff; }
+	.pp-bal.due .pp-sub { color: rgba(255,255,255,.85); }
+	.pp-bal .amt { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+	.pp-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .7px; opacity: .85; }
+	.pp-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+	.pp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; white-space: nowrap; border-radius: 10px; border: 1px solid var(--pp-line); background: #fff; color: #1d2433; font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: none !important; }
+	.pp-btn:hover { border-color: var(--pp-a); color: var(--pp-a); }
+	.pp-btn.primary { background: #fff; color: var(--pp-a); border-color: #fff; }
+	.pp-bal:not(.due) .pp-btn.primary { background: var(--pp-a); color: #fff; border-color: var(--pp-a); }
+	.pp h3 { font-size: 14px; margin: 18px 0 6px; font-weight: 700; }
+	.pp-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--pp-line); font-size: 14px; }
+	.pp-row:first-of-type { border-top: none; }
+	.pp-row a { color: var(--pp-a); font-weight: 600; font-size: 13px; white-space: nowrap; }
+	.pp-num { font-variant-numeric: tabular-nums; font-weight: 600; }
+	.pp-grade { display: inline-block; min-width: 34px; text-align: center; padding: 2px 8px; border-radius: 8px; background: var(--pp-soft); font-weight: 700; }
+	.pp-empty { color: var(--pp-muted); font-size: 13px; padding: 6px 0; }
+	.pp-paybill { font-size: 13px; color: var(--pp-muted); margin-top: 8px; }
+	.pp-notice { border-left: 3px solid var(--pp-line); padding: 4px 0 4px 12px; margin-bottom: 12px; }
+	.pp-notice.Urgent { border-color: #d03b3b; } .pp-notice.Important { border-color: #b07800; }
+	.pp-notice b { font-size: 14px; }
+	.pp-notice p { margin: 3px 0 0; font-size: 13px; white-space: pre-line; }
+	/* pay sheet */
+	.pp-sheet { position: fixed; inset: 0; background: rgba(15, 20, 30, .45); display: none; align-items: flex-end; justify-content: center; z-index: 1050; }
+	.pp-sheet.open { display: flex; }
+	.pp-sheet-in { background: #fff; width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 22px; }
+	@media (min-width: 600px) { .pp-sheet { align-items: center; } .pp-sheet-in { border-radius: 18px; } }
+	.pp-field { margin-top: 12px; }
+	.pp-field label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; }
+	.pp-field input { width: 100%; padding: 12px; border: 1px solid #d0d5dd; border-radius: 10px; font-size: 16px; }
+	.pp-status { margin-top: 14px; padding: 12px; border-radius: 10px; background: var(--pp-soft); font-size: 14px; display: none; }
+	.pp-status.ok { background: #e8f5ee; color: #17633b; } .pp-status.bad { background: #fdecec; color: #a12a2a; }
+	@media (max-width: 480px) { .pp-bal .amt { font-size: 22px; } .pp-btns { width: 100%; } .pp-btn { flex: 1; padding: 10px 12px; } }
+</style>
+
+<div class="pp">
+	<div class="pp-head">
+		{% if school.logo %}<img src="{{ school.logo }}" alt="">{% endif %}
+		<div><h1>{{ school.name or _("School") }}</h1><small>{{ _("Welcome") }}, {{ parent_name }}</small></div>
+	</div>
+
+	{% if notices %}
+	<div class="pp-card">
+		<div style="font-weight:700;margin-bottom:10px">{{ _("Notices from the school") }}</div>
+		{% for n in notices %}
+		<div class="pp-notice {{ n.priority }}"><b>{% if n.pinned %}📌 {% endif %}{{ n.title }}</b> <span class="pp-sub">· {{ n.date }}</span><p>{{ n.text }}</p></div>
+		{% endfor %}
+	</div>
+	{% endif %}
+
+	{% for c in children %}
+	<div class="pp-card">
+		<div class="pp-child-top">
+			<div class="pp-avatar">{% if c.photo %}<img src="{{ c.photo }}" alt="">{% else %}{{ c.first_name[:1] }}{% endif %}</div>
+			<div><div class="pp-name">{{ c.name }}</div><div class="pp-sub">{{ c.stream or "" }} · {{ c.id }}</div></div>
+		</div>
+
+		<div class="pp-bal {{ 'due' if c.balance > 0.5 else '' }}">
+			<div>
+				<div class="pp-lbl">{{ _("Fee balance") if c.balance > 0.5 else (_("Credit") if c.balance < -0.5 else _("Fully paid")) }}</div>
+				<div class="amt">{{ frappe.utils.fmt_money(c.balance if c.balance >= 0 else -c.balance, currency=currency) }}</div>
+				{% if c.balance > 0.5 and c.due %}<div class="pp-sub">{{ _("Due by") }} {{ c.due }}</div>{% endif %}
+			</div>
+			<div class="pp-btns">
+				{% if can_pay and c.balance > 0.5 %}<button class="pp-btn primary" data-pay="{{ c.id }}" data-name="{{ c.first_name }}" data-amount="{{ c.balance|round|int }}">{{ _("Pay with M-Pesa") }}</button>{% endif %}
+				<a class="pp-btn" href="/api/method/school_erp.api.portal.statement?student={{ c.id|urlencode }}" target="_blank">{{ _("Statement") }}</a>
+			</div>
+		</div>
+		{% if school.paybill %}<div class="pp-paybill">{{ _("Or pay via Paybill") }} <b>{{ school.paybill }}</b>, {{ _("Account No.") }} <b>{{ c.id }}</b></div>{% endif %}
+
+		{% if c.report_cards %}
+		<h3>{{ _("Report cards") }}</h3>
+		{% for r in c.report_cards %}
+		<div class="pp-row"><div><span class="pp-grade">{{ r.mean_grade }}</span>&nbsp; {{ r.exam_name or r.exam }}<div class="pp-sub">{{ "%.1f"|format(r.mean_percent or 0) }}% · {{ _("Position") }} {{ r.stream_position }} / {{ r.stream_size }}</div></div>
+			<a href="/api/method/school_erp.api.portal.report_card?name={{ r.name|urlencode }}" target="_blank">{{ _("View PDF") }}</a></div>
+		{% endfor %}
+		{% endif %}
+
+		<h3>{{ _("Recent payments") }}</h3>
+		{% for p in c.payments %}
+		<div class="pp-row"><div><span class="pp-num">{{ frappe.utils.fmt_money(p.amount, currency=currency) }}</span><div class="pp-sub">{{ p.date }} · {{ p.mode_of_payment }}{% if p.reference_no %} · {{ p.reference_no }}{% endif %}</div></div>
+			<a href="/api/method/school_erp.api.portal.receipt?payment={{ p.name|urlencode }}" target="_blank">{{ _("Receipt") }}</a></div>
+		{% else %}
+		<div class="pp-empty">{{ _("No payments yet") }}</div>
+		{% endfor %}
+	</div>
+	{% else %}
+	<div class="pp-card"><b>{{ _("No students are linked to your login yet.") }}</b>
+		<div class="pp-sub" style="margin-top:6px">{{ _("Please contact the school office") }}{% if school.phone %} ({{ school.phone }}){% endif %}.</div></div>
+	{% endfor %}
+</div>
+
+<div class="pp-sheet" id="pp-sheet">
+	<div class="pp-sheet-in">
+		<div style="font-size:18px;font-weight:700" id="pp-title">{{ _("Pay with M-Pesa") }}</div>
+		<div class="pp-sub">{{ _("You will get a prompt on your phone. Enter your M-Pesa PIN to complete the payment.") }}</div>
+		<div class="pp-field"><label>{{ _("Amount") }} ({{ currency }})</label><input id="pp-amount" type="number" min="1" inputmode="numeric"></div>
+		<div class="pp-field"><label>{{ _("M-Pesa phone number") }}</label><input id="pp-phone" type="tel" value="{{ phone }}" placeholder="07XX XXX XXX"></div>
+		<div class="pp-status" id="pp-status"></div>
+		<div class="pp-btns" style="margin-top:16px">
+			<button class="pp-btn" id="pp-cancel">{{ _("Close") }}</button>
+			<button class="pp-btn" id="pp-go" style="background:var(--pp-a);color:#fff;border-color:var(--pp-a)">{{ _("Send prompt") }}</button>
+		</div>
+	</div>
+</div>
+
+<script>
+(() => {
+	const $ = (s) => document.querySelector(s);
+	const sheet = $("#pp-sheet"), status = $("#pp-status"), go = $("#pp-go");
+	let student = null, timer = null;
+	const show = (msg, cls) => { status.style.display = "block"; status.className = "pp-status " + (cls || ""); status.textContent = msg; };
+	const call = async (method, args) => {
+		const r = await fetch("/api/method/school_erp.api.portal." + method, {
+			method: "POST", headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": frappe.csrf_token },
+			body: JSON.stringify(args),
+		});
+		const j = await r.json();
+		if (!r.ok) {
+			let m = "{{ _('Something went wrong') }}";
+			try { m = JSON.parse(JSON.parse(j._server_messages)[0]).message; } catch (e) { /* keep default */ }
+			throw new Error(m);
+		}
+		return j.message;
+	};
+	document.querySelectorAll("[data-pay]").forEach((b) => b.addEventListener("click", () => {
+		student = b.dataset.pay;
+		$("#pp-title").textContent = "{{ _('Pay fees for') }} " + b.dataset.name;
+		$("#pp-amount").value = b.dataset.amount;
+		status.style.display = "none"; go.disabled = false;
+		sheet.classList.add("open");
+	}));
+	$("#pp-cancel").addEventListener("click", () => { sheet.classList.remove("open"); clearInterval(timer); if (status.classList.contains("ok")) location.reload(); });
+	go.addEventListener("click", async () => {
+		go.disabled = true;
+		show("{{ _('Sending the prompt to your phone...') }}");
+		try {
+			const r = await call("pay", { student, amount: $("#pp-amount").value, phone: $("#pp-phone").value });
+			show("{{ _('Check your phone and enter your M-Pesa PIN.') }}");
+			let tries = 0;
+			timer = setInterval(async () => {
+				tries += 1;
+				try {
+					const s = await call("payment_status", { request: r.request });
+					if (s.status === "Paid") { clearInterval(timer); show("{{ _('Payment received. Thank you!') }} " + (s.receipt ? "(" + s.receipt + ")" : ""), "ok"); }
+					else if (s.status === "Cancelled" || s.status === "Failed") { clearInterval(timer); show((s.message || "{{ _('The payment was not completed.') }}"), "bad"); go.disabled = false; }
+				} catch (e) { /* keep polling */ }
+				if (tries > 30) { clearInterval(timer); show("{{ _('Still waiting. If you paid, the balance will update shortly.') }}"); go.disabled = false; }
+			}, 4000);
+		} catch (e) {
+			show(e.message, "bad"); go.disabled = false;
+		}
+	});
+})();
+</script>
+{% endblock %}

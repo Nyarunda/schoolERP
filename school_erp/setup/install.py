@@ -31,10 +31,13 @@ def fill_new_settings_defaults():
 			frappe.db.set_single_value("School Settings", df.fieldname, df.default, update_modified=False)
 
 
+PORTAL_ROLES = ["Parent"]  # website-only: no desk access
+
+
 def make_roles():
-	for role in ROLES:
+	for role in ROLES + PORTAL_ROLES:
 		if not frappe.db.exists("Role", role):
-			frappe.get_doc({"doctype": "Role", "role_name": role, "desk_access": 1}).insert(ignore_permissions=True)
+			frappe.get_doc({"doctype": "Role", "role_name": role, "desk_access": int(role not in PORTAL_ROLES)}).insert(ignore_permissions=True)
 
 
 def make_customer_group():

@@ -12,6 +12,7 @@ add_to_apps_screen = [
 		"logo": "/assets/school_erp/images/school.svg",
 		"title": "School",
 		"route": "/app/school",
+		"has_permission": "school_erp.permissions.has_app_permission",
 	}
 ]
 
@@ -26,11 +27,18 @@ app_include_css = ["/assets/school_erp/css/school_dashboard.css"]
 
 boot_session = "school_erp.licensing.boot_session"
 
+# Parents are website users: after login they land on the parent portal
+role_home_page = {"Parent": "parent"}
+standard_portal_menu_items = [
+	{"title": "My Children", "route": "/parent", "role": "Parent"},
+]
+
 # Jinja helpers available in print formats
 jinja = {
 	"methods": [
 		"school_erp.api.statement.render_fee_statement",
 		"school_erp.api.statement.get_statement_data",
+		"school_erp.api.exams.render_report_card",
 		"school_erp.api.timetable.get_timetable_grid",
 	]
 }
@@ -71,11 +79,12 @@ scheduler_events = {
 		"school_erp.school.doctype.school_notice.school_notice.publish_scheduled",
 		"school_erp.api.billing.auto_bill_terms",
 	],
-	"hourly": ["school_erp.api.paybill.retry_pending"],
 	"cron": {
 		"*/15 4-10 * * 1-6": ["school_erp.api.transport_ops.alert_missing_checkins"],
 		"*/30 15-20 * * 1-5": ["school_erp.api.staff.alert_missing_duty_reports"],
+		"*/5 * * * *": ["school_erp.api.stk.query_stale_requests"],
 	},
+	"hourly": ["school_erp.api.paybill.retry_pending"],
 }
 
 fixtures = []

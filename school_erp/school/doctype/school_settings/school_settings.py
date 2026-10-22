@@ -34,6 +34,14 @@ class SchoolSettings(Document):
 
 	def on_update(self):
 		licensing.clear_cache()
+		if self.has_value_changed("expense_first_approver_role") or self.has_value_changed("expense_final_approver_role"):
+			from school_erp.setup.workflows import make_workflows
+
+			make_workflows()  # approver roles are part of the expense workflow
+		if self.has_value_changed("head_teacher_user") and self.head_teacher_user:
+			from school_erp.setup.workflows import sync_leave_approvers
+
+			sync_leave_approvers()
 		frappe.publish_realtime("school_erp_license_changed", user=frappe.session.user)
 
 	def refresh_license_fields(self):

@@ -6,7 +6,7 @@ from frappe.utils import flt, fmt_money, now_datetime
 
 from school_erp import licensing
 from school_erp.api.notify import notify, users_for_role
-from school_erp.logic.operations import FINAL, FIRST, approval_error, levels_required, next_level, status_for
+from school_erp.logic.operations import FINAL, FIRST, levels_required
 
 
 def _settings():
@@ -28,74 +28,52 @@ def _money(v):
 	return fmt_money(v, currency=_settings().currency)
 
 
-def _approvals(doc):
-	return [{"level": a.level, "user": a.user, "action": a.action} for a in doc.approvals]
-
-
-def _notify_approvers(doc, level):
-	role = role_for(level)
-	users = [u for u in users_for_role(role) if u != doc.requested_by]
-	if not users:
-		return
-	notify(
-		_("Expense to approve ({0}): {1} for {2}").format(level.lower(), _money(doc.amount), doc.payee),
-		_("{0} requested {1} to {2} for: {3}").format(doc.requested_by, _money(doc.amount), doc.payee, doc.description),
-		users=users, doc=doc,
-		sms_text=f"Expense awaiting your {level.lower()} approval: {_money(doc.amount)} to {doc.payee} ({doc.expense_category}).",
-	)
+def notify_state(doc):
+	"""Called when an expense enters a new workflow state: tell whoever has to act, or the requester."""
+	level = {"Pending Approval": FIRST, "Pending Final Approval": FINAL}.get(doc.status)
+	if level:
+		users = [u for u in users_for_role(role_for(level)) if u != doc.requested_by]
+		notify(
+			_("Expense to approve ({0}): {1} for {2}").format(level.lower(), _money(doc.amount), doc.payee),
+			_("{0} requested {1} to {2} for: {3}").format(frappe.utils.get_fullname(doc.requested_by), _money(doc.amount), doc.payee, doc.description),
+			users=users, doc=doc,
+			sms_text=f"Expense awaiting your {level.lower()} approval: {_money(doc.amount)} to {doc.payee} ({doc.expense_category}).",
+		)
+	elif doc.status == "Approved":
+		notify(_("Expense approved: {0} to {1}").format(_money(doc.amount), doc.payee),
+			   _("Approved and posted to the accounts ({0}).").format(doc.journal_entry or ""), users=[doc.requested_by], doc=doc,
+			   sms=False, indicator="green")
+	elif doc.status == "Rejected":
+		notify(_("Expense rejected: {0} to {1}").format(_money(doc.amount), doc.payee),
+			   _("Reason: {0}. You can edit it and choose Resend.").format(doc.rejection_reason or "-"), users=[doc.requested_by], doc=doc,
+			   indicator="red")
 
 
 @frappe.whitelist()
 def request_approval(name):
+	"""Same as the workflow action 'Send for Approval' (or 'Resend' after a rejection)."""
+	from frappe.model.workflow import apply_workflow
+
 	licensing.require("expenses", "School Expense")
 	doc = frappe.get_doc("School Expense", name)
-	if doc.docstatus != 0 or doc.status not in ("Draft", "Rejected"):
-		frappe.throw(_("This expense is already {0}").format(doc.status))
-	if frappe.session.user not in (doc.owner, doc.requested_by) and not frappe.has_permission("School Expense", "submit"):
-		frappe.throw(_("Only the requester can send this for approval"), frappe.PermissionError)
-	doc.status = "Pending Approval"
-	doc.levels_required = required_levels(doc.amount)
-	doc.flags.ignore_permissions = True
-	doc.save()
-	_notify_approvers(doc, FIRST)
-	return doc.status
+	action = "Resend" if doc.status == "Rejected" else "Send for Approval"
+	return apply_workflow(doc, action).status
 
 
 @frappe.whitelist()
 def decide(name, action, comment=None):
-	"""action: 'Approved' or 'Rejected'."""
+	"""Same as the workflow actions Approve / Reject. action: 'Approved' or 'Rejected'."""
+	from frappe.model.workflow import apply_workflow
+
 	licensing.require("expenses", "School Expense")
 	if action not in ("Approved", "Rejected"):
 		frappe.throw(_("Unknown action"))
-	doc = frappe.get_doc("School Expense", name, for_update=True)
+	doc = frappe.get_doc("School Expense", name)
 	if doc.docstatus != 0 or doc.status not in ("Pending Approval", "Pending Final Approval"):
 		frappe.throw(_("This expense is not waiting for approval ({0})").format(doc.status))
-	level = next_level(doc.levels_required or required_levels(doc.amount), _approvals(doc))
-	user = frappe.session.user
-	roles = set(frappe.get_roles(user))
-	err = approval_error(user, doc.requested_by, level, roles, role_for(level), _approvals(doc),
-						 is_admin="System Manager" in roles and user == "Administrator")
-	if err:
-		frappe.throw(_(err), frappe.PermissionError)
-	if action == "Rejected" and not comment:
-		frappe.throw(_("Give a reason for rejecting"))
-
-	doc.append("approvals", {"level": level, "user": user, "action": action, "timestamp": now_datetime(), "comment": comment})
-	doc.status = status_for(doc.levels_required, _approvals(doc))
-	doc.flags.ignore_permissions = True
-	if doc.status == "Rejected":
-		doc.rejection_reason = comment
-		doc.submit()  # locked, no accounting
-		notify(_("Expense rejected: {0} to {1}").format(_money(doc.amount), doc.payee),
-			   _("Rejected by {0}: {1}").format(user, comment), users=[doc.requested_by], doc=doc)
-	elif doc.status == "Approved":
-		doc.submit()  # posts the Journal Entry
-		notify(_("Expense approved: {0} to {1}").format(_money(doc.amount), doc.payee),
-			   _("Approved and posted ({0}).").format(doc.journal_entry), users=[doc.requested_by], doc=doc, sms=False)
-	else:
-		doc.save()
-		_notify_approvers(doc, FINAL)
-	return doc.status
+	if action == "Rejected" and comment:
+		doc.db_set("rejection_reason", comment)  # apply_workflow reloads the doc from the database
+	return apply_workflow(doc, "Approve" if action == "Approved" else "Reject").status
 
 
 def make_journal_entry(doc):

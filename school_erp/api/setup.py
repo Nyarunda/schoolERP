@@ -161,6 +161,10 @@ def run_setup():
 	if not settings.mpesa_mode_of_payment:
 		settings.mpesa_mode_of_payment = "M-Pesa"
 
+	from school_erp.setup.workflows import make_workflows, sync_leave_approvers
+
+	make_workflows()
+	sync_leave_approvers()
 	settings.setup_complete = 1
 	settings.save()
 	return {

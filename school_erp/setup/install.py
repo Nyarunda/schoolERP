@@ -1,7 +1,7 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-ROLES = ["School Admin", "Bursar", "Teacher", "Head Teacher", "Staff", "Driver", "Transport Manager"]
+ROLES = ["School Admin", "Bursar", "Teacher", "Head Teacher", "Staff", "Driver", "Transport Manager", "Leave Approver"]
 
 
 def before_install():
@@ -13,12 +13,20 @@ def after_install():
 	make_custom_fields()
 	make_customer_group()
 	fill_new_settings_defaults()
+	make_workflows()
 
 
 def after_migrate():
 	make_roles()
 	make_custom_fields()
 	fill_new_settings_defaults()
+	make_workflows()
+
+
+def make_workflows():
+	from school_erp.setup.workflows import make_workflows as _make
+
+	_make()
 
 
 def fill_new_settings_defaults():

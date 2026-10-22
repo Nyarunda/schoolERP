@@ -694,7 +694,7 @@
    "label": "One approval up to"
   },
   {
-   "description": "Blank = Bursar",
+   "description": "Blank = Bursar. The role needs Submit permission on School Expense.",
    "fieldname": "expense_first_approver_role",
    "fieldtype": "Link",
    "idx": 82,
@@ -702,7 +702,7 @@
    "options": "Role"
   },
   {
-   "description": "Blank = Head Teacher",
+   "description": "Blank = Head Teacher. The role needs Submit permission on School Expense.",
    "fieldname": "expense_final_approver_role",
    "fieldtype": "Link",
    "idx": 83,
@@ -896,7 +896,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-22 16:00:00.000000",
+ "modified": "2026-10-22 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Settings",

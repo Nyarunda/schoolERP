@@ -399,3 +399,66 @@ class TestOperations(TestCase):
 			self.assertTrue(frappe.db.exists("Sales Invoice", {"school_term": tname, "docstatus": 1}))
 		finally:
 			frappe.db.set_single_value("School Settings", "auto_bill_terms", 0)
+
+	# ------------------------------------------------------------------ Frappe Workflow approvals
+	def test_workflows_installed(self):
+		for name, dt in (("School Leave Approval", "Leave Application"), ("School Expense Approval", "School Expense")):
+			wf = frappe.get_doc("Workflow", name)
+			self.assertEqual((wf.document_type, wf.is_active, wf.workflow_state_field), (dt, 1, "status"))
+		self.assertTrue(frappe.db.exists("Workflow State", "Pending Final Approval"))
+
+	def test_leave_workflow_only_own_approver_and_toasts(self):
+		from frappe.model.workflow import apply_workflow
+
+		frappe.db.set_value("Staff Member", self.teacher, "reports_to", self.reliever)
+		frappe.get_doc("Staff Member", self.teacher).save()  # grants Ruth the Leave Approver role
+		ruth = frappe.db.get_value("Staff Member", self.reliever, "user")
+		dan = frappe.db.get_value("Staff Member", self.driver, "user")
+		jane = frappe.db.get_value("Staff Member", self.teacher, "user")
+		self.assertIn("Leave Approver", frappe.get_roles(ruth))
+		start = add_days(next_monday(), 35)
+		la = frappe.get_doc({"doctype": "Leave Application", "staff_member": self.teacher, "leave_type": "Compassionate Leave",
+							 "from_date": start, "to_date": start, "reason": "Funeral"}).insert()
+		self.assertEqual(la.approver, ruth)
+		try:
+			frappe.set_user(dan)  # not the approver
+			with self.assertRaises((frappe.ValidationError, frappe.PermissionError)):
+				apply_workflow(frappe.get_doc("Leave Application", la.name), "Approve")
+			frappe.set_user(ruth)
+			doc = frappe.get_doc("Leave Application", la.name)
+			doc.decision_comment = None
+			with self.assertRaises(frappe.ValidationError):  # rejecting needs a reason
+				apply_workflow(doc, "Reject")
+			with patch("frappe.publish_realtime") as rt, patch(NOTIFY):
+				done = apply_workflow(frappe.get_doc("Leave Application", la.name), "Approve")
+			self.assertEqual((done.status, done.docstatus, done.approved_by), ("Approved", 1, ruth))
+			toasts = [c for c in rt.call_args_list if c.args and c.args[0] == "school_toast"]
+			self.assertTrue(any(c.kwargs.get("user") == jane and c.args[1]["indicator"] == "green" for c in toasts))
+		finally:
+			frappe.set_user("Administrator")
+			frappe.db.set_value("Staff Member", self.teacher, "reports_to", None)
+
+	def test_expense_workflow_no_self_approval(self):
+		from frappe.model.workflow import apply_workflow
+
+		email = "bursar.test@test.school"
+		if not frappe.db.exists("User", email):
+			frappe.get_doc({"doctype": "User", "email": email, "first_name": "Bursar", "send_welcome_email": 0}).insert(ignore_permissions=True)
+		frappe.get_doc("User", email).add_roles("Bursar", "Staff")
+		cat = frappe.get_all("Expense Category", limit=1, pluck="name")[0]
+		try:
+			frappe.set_user(email)
+			e = frappe.get_doc({"doctype": "School Expense", "expense_category": cat, "amount": 3000, "payee": "Shop",
+								"mode_of_payment": "_Test School Cash", "description": "Markers"}).insert()
+			self.assertEqual(e.status, "Draft")
+			e = apply_workflow(e, "Send for Approval")
+			self.assertEqual(e.status, "Pending Approval")
+			with self.assertRaises((frappe.ValidationError, frappe.PermissionError)):
+				apply_workflow(frappe.get_doc("School Expense", e.name), "Approve")  # own expense
+		finally:
+			frappe.set_user("Administrator")
+		with patch("frappe.publish_realtime") as rt, patch(NOTIFY):
+			done = apply_workflow(frappe.get_doc("School Expense", e.name), "Approve")
+		self.assertEqual((done.status, done.docstatus), ("Approved", 1))
+		self.assertTrue(done.journal_entry)
+		self.assertTrue(any(c.args[0] == "school_toast" and c.kwargs.get("user") == email for c in rt.call_args_list if c.args))

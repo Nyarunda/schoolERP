@@ -17,32 +17,24 @@ frappe.ui.form.on("Leave Application", {
 		if (!frm.is_new()) frm.page.set_indicator(__(frm.doc.status), colors[frm.doc.status]);
 		show_balance(frm);
 
-		const can_decide = frm.doc.docstatus === 0 && !frm.is_new() && frm.doc.status === "Pending Approval" &&
-			(frm.doc.approver === frappe.session.user || frappe.user.has_role(["Head Teacher", "School Admin", "System Manager"]));
-		if (can_decide) {
-			frm.page.clear_primary_action();
-			frm.add_custom_button(__("Approve"), () => decide(frm, "Approved")).addClass("btn-primary");
-			frm.add_custom_button(__("Reject"), () => decide(frm, "Rejected")).addClass("btn-danger");
-		} else if (frm.doc.docstatus === 0 && !frm.is_new()) {
-			frm.set_intro(__("Waiting for approval by {0}", [frm.doc.approver || __("the Head Teacher")]), "orange");
+		if (frm.doc.docstatus === 0 && !frm.is_new() && frm.doc.status === "Pending Approval") {
+			const mine = frm.doc.approver === frappe.session.user || frappe.user.has_role("Head Teacher");
+			frm.set_intro(mine ? __("Use the Actions menu to Approve or Reject. The applicant (and reliever) are notified immediately.")
+				: __("Waiting for approval by {0}", [frm.doc.approver || __("the Head Teacher")]), mine ? "blue" : "orange");
 		}
+	},
+
+	// Frappe Workflow hook: ask for the reason before a rejection
+	before_workflow_action(frm) {
+		return ask_reason(frm, "decision_comment");
 	},
 
 	staff_member: show_balance,
 	leave_type: show_balance,
 });
 
-function decide(frm, decision) {
-	frappe.prompt(
-		{ fieldname: "comment", label: decision === "Rejected" ? __("Reason") : __("Comment (optional)"), fieldtype: "Small Text", reqd: decision === "Rejected" },
-		(v) => frappe.call({ method: "school_erp.api.staff.decide_leave", args: { name: frm.doc.name, decision, comment: v.comment }, freeze: true })
-			.then(() => {
-				frappe.show_alert({ message: __("Leave {0}. The applicant (and reliever) have been notified.", [__(decision).toLowerCase()]), indicator: decision === "Approved" ? "green" : "red" });
-				frm.reload_doc();
-			}),
-		decision === "Approved" ? __("Approve leave") : __("Reject leave"),
-		__(decision === "Approved" ? "Approve" : "Reject"),
-	);
+function ask_reason(frm, field) {
+	return school_dash.reason_before_reject(frm, field);
 }
 
 function show_balance(frm) {

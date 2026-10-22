@@ -88,10 +88,15 @@ jobs:
       - name: Show errors as annotations
         if: failure()
         run: |
-          # surface the last lines as annotations so they are readable without downloading logs
-          for f in ~/site.log ~/tests.log; do
-            [ -f "$f" ] || continue
-            tail -n 40 "$f" | grep -v '^\s*$' | tail -n 25 | while IFS= read -r line; do
-              echo "::error title=$(basename $f)::${line//%/%25}"
+          # GitHub shows at most 10 annotations per step: send the test failures first, the site log only if tests never ran
+          if [ -f ~/tests.log ]; then
+            grep -E "✖|FAIL:|ERROR:|Error: |Exception: |AssertionError|tests/test_[a-z_]+\.py\", line" ~/tests.log | tail -n 10 | while IFS= read -r line; do
+              echo "::error title=tests::${line//%/%25}"
             done
-          done
+          elif [ -f ~/site.log ]; then
+            tail -n 10 ~/site.log | while IFS= read -r line; do echo "::error title=site::${line//%/%25}"; done
+          fi
+      - name: Test summary
+        if: always()
+        run: |
+          { echo '### Test output (last 80 lines)'; echo '```'; tail -n 80 ~/tests.log 2>/dev/null || tail -n 80 ~/site.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

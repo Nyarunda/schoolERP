@@ -2,7 +2,7 @@
 
 Four add-on modules. Each is switched on by the school's license key: `staff`, `expenses`, `transport_ops`, `welfare`.
 
-Everything sends **alerts** three ways: the bell in the desk (in-app), email (per each user's notification settings), and **SMS** if the `messaging` module is on and *School Settings → Staff & Approvals → Also SMS staff* is ticked. Staff need a phone number on their Staff Member record for SMS.
+Everything sends **alerts** four ways: a **live toast** (pop-up) for anyone logged in, the bell in the desk (in-app), email (per each user's notification settings), and **SMS** if the `messaging` module is on and *School Settings → Staff & Approvals → Also SMS staff* is ticked. Staff need a phone number on their Staff Member record for SMS.
 
 ## First-time setup
 
@@ -25,12 +25,12 @@ Everything sends **alerts** three ways: the bell in the desk (in-app), email (pe
 1. A staff member opens **Leave Application** (from their phone or desk), picks the leave type and dates, gives a reason, and chooses a **reliever** if required.
    * Working days are counted automatically, skipping weekends and the company holiday list (except types marked "count weekends", e.g. maternity).
    * It checks the yearly balance, gender (maternity/paternity), overlapping leave, that the reliever isn't on leave themselves, and that a document is attached when needed.
-2. The approver is alerted (bell + SMS). They open it and click **Approve** or **Reject** (a reason is required to reject).
+2. The approver is alerted (toast + bell + email + SMS). They open it and use the workflow **Actions** menu: **Approve** or **Reject** (a reason is asked for before rejecting). Only the applicant's own approver (their *Reports To*) or the Head Teacher sees these actions.
 3. On approval:
    * **the applicant** is told it is approved and who the reliever is;
    * **the reliever** is told whom they are covering, and for which dates.
 
-   On rejection the applicant gets the reason. Cancelling approved leave tells the reliever they're released.
+   The applicant also gets a **toast** — green for approved, red for rejected. On rejection the applicant gets the reason. Cancelling approved leave tells the reliever they're released.
 4. Staff status changes to *On Leave* automatically on the first day and back to *Active* afterwards.
 
 Reports: **Leave Balance** (entitled / taken / left per type for every staff member) and **Staff On Leave** (who's away on a given day, their reliever and the reliever's phone).
@@ -42,11 +42,12 @@ Reports: **Leave Balance** (entitled / taken / left per type for every staff mem
 * **Duty Reports Register** shows every school day: who was on duty and whether they reported (missing ones in red).
 
 ## Finance: expenses & approvals
-1. Anyone with the *Staff* role can raise a **School Expense**: category, amount, who was paid, which cash/bank/M-Pesa account it came from, receipt number, and a photo of the receipt. Then they click **Send for Approval**.
+1. Anyone with the *Staff* role can raise a **School Expense**: category, amount, who was paid, which cash/bank/M-Pesa account it came from, receipt number, and a photo of the receipt. Then they choose **Actions → Send for Approval**.
 2. **Up to the limit:** one approval by the first-level role (Bursar).
    **Above the limit:** the Bursar approves first, then the final role (Head Teacher).
    * Nobody can approve their own expense, and the same person can't give both approvals.
-   * Each approver is alerted when it's their turn.
+   * Each approver is alerted (toast + bell + email + SMS) when it's their turn and decides from the **Actions** menu.
+   * The requester gets a toast when it is approved (green) or rejected (red, with the reason), and can edit and **Resend** a rejected one.
 3. When fully approved, the expense is **posted automatically** as a Journal Entry: debit the category's expense account, credit the payment account. Rejecting requires a reason and posts nothing. Cancelling an approved expense reverses its Journal Entry.
 4. Reports: **Expense Register** (by date, category, status, with approved vs awaiting totals) and **Income vs Expenses** (per month: fees billed, fees collected, expenses, and the difference).
 
@@ -92,3 +93,10 @@ The School sidebar is arranged in sections: **Students & Welfare, Fees, Finance,
 | Head Teacher | Everything above: approves leave and final expenses, receives duty reports, complaints, serious incidents |
 | Transport Manager | All driver logs and vehicles, check-in alerts |
 | School Admin | Everything |
+
+## Approvals run on Frappe Workflows
+Leave and expense approvals use Frappe's built-in **Workflow** engine: *School Leave Approval* and *School Expense Approval* (see **Workflow** list). They are created on install/migrate and rebuilt when you change the approver roles in School Settings.
+
+* States show on the form and in list views; the **Actions** button only shows what the current user may do.
+* Anyone set as someone's **Reports To** automatically gets the *Leave Approver* role, and can only decide their own team's leave.
+* You can deactivate a workflow (untick *Is Active*); the app won't recreate it on migrate. A custom first/final expense approver role needs **Submit** permission on School Expense.

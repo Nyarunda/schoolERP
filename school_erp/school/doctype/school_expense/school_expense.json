@@ -159,12 +159,11 @@
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
+   "description": "Approvers: write the reason here before choosing Reject",
    "fieldname": "rejection_reason",
    "fieldtype": "Small Text",
    "idx": 18,
-   "label": "Rejection Reason",
-   "read_only": 1
+   "label": "Rejection Reason"
   },
   {
    "fieldname": "sb_log",
@@ -196,7 +195,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-21 20:00:00.000000",
+ "modified": "2026-10-22 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Expense",

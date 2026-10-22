@@ -19,8 +19,8 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 | `activities` | Games & activities (swimming, football...) each with a fee per term |
 | `timetable` | Subjects, periods, class timetables with teacher clash checks, printable grid |
 | `messaging` | SMS and email to parents: billing notices, payment receipts, reminders, PDF statements |
-| `staff` | Staff members (teachers, drivers, support), **leave** with types, balances, approvals, approval + **reliever notifications**, **duty roster & daily Teacher-on-Duty reports**. See [docs/STAFF_AND_OPERATIONS.md](docs/STAFF_AND_OPERATIONS.md) |
-| `expenses` | **Expense posting with amount-based approvals** (one or two levels), posted to the accounts automatically |
+| `staff` | Staff members (teachers, drivers, support), **leave** with types, balances, workflow approvals, approval + **reliever notifications** and live toasts, **duty roster & daily Teacher-on-Duty reports**. See [docs/STAFF_AND_OPERATIONS.md](docs/STAFF_AND_OPERATIONS.md) |
+| `expenses` | **Expense posting with amount-based approvals** (one or two levels, on a Frappe Workflow), posted to the accounts automatically |
 | `transport_ops` | **Driver morning check-in** (safety checklist, fitness, odometer, fuel), alerts for failed checks and missed check-ins, vehicles and document expiry |
 | `welfare` | **Discipline incidents** (SMS parent) and **complaints** (staff + public web form with SMS tracking) |
 | `exams` | **Exams & report cards**: marks entry per stream/subject, CBC and 8-4-4 grading, positions, remarks, PDF report cards sent to parents, merit list and subject analysis. See [docs/EXAMS_PORTAL_PROMOTION.md](docs/EXAMS_PORTAL_PROMOTION.md) |

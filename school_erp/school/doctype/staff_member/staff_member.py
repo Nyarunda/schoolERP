@@ -19,6 +19,10 @@ class StaffMember(Document):
 	def on_update(self):
 		self.sync_teacher()
 		self.grant_roles()
+		if self.reports_to:
+			from school_erp.setup.workflows import sync_leave_approvers
+
+			sync_leave_approvers()
 
 	def sync_teacher(self):
 		"""Teaching staff get a Teacher record so they can be put on the timetable."""

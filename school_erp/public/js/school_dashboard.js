@@ -86,6 +86,23 @@ frappe.provide("school_dash");
 		});
 	};
 
+	// Used by forms on a Frappe Workflow: ask why before "Reject", store it, then let the workflow continue
+	school_dash.reason_before_reject = (frm, field) => {
+		if (frm.selected_workflow_action !== "Reject") return Promise.resolve();
+		return new Promise((resolve, reject) => {
+			let done = false;
+			const d = frappe.prompt(
+				{ fieldname: "reason", label: __("Reason for rejecting"), fieldtype: "Small Text", reqd: 1, default: frm.doc[field] },
+				(v) => frappe.call({
+					method: "school_erp.setup.workflows.save_rejection_reason",
+					args: { doctype: frm.doctype, name: frm.docname, reason: v.reason },
+				}).then(() => { done = true; frm.doc[field] = v.reason; resolve(); }, reject),
+				__("Reject"), __("Reject"),
+			);
+			d.onhide = () => { if (!done) setTimeout(() => !done && reject(), 300); };
+		});
+	};
+
 	school_dash.notices = (rows, { management = false } = {}) => {
 		if (!rows || !rows.length) return `<div class="sd-empty">${__("No notices right now")}</div>`;
 		return rows.map((n) => {

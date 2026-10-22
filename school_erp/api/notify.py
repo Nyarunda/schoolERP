@@ -19,8 +19,11 @@ def staff_for_user(user: str | None = None) -> str | None:
 	return frappe.db.get_value("Staff Member", {"user": user or frappe.session.user, "status": ("!=", "Left")})
 
 
-def notify(subject: str, message: str = "", users=None, staff=None, doc=None, sms: bool = True, sms_text: str | None = None):
-	"""users: user ids; staff: Staff Member names (their login gets the bell alert, their phone the SMS)."""
+def notify(subject: str, message: str = "", users=None, staff=None, doc=None, sms: bool = True, sms_text: str | None = None,
+		   indicator: str = "blue"):
+	"""users: user ids; staff: Staff Member names (their login gets the bell alert, their phone the SMS).
+	Every recipient gets: a bell notification (emailed per their notification settings), a live toast if they are
+	logged in, and an SMS when SMS is on."""
 	users = set(u for u in (users or []) if u)
 	phones = []
 	for s in staff or []:
@@ -44,6 +47,11 @@ def notify(subject: str, message: str = "", users=None, staff=None, doc=None, sm
 			enqueue_create_notification(sorted(users), payload)
 		except Exception:
 			frappe.log_error(title="School notification failed")
+		toast = {"title": subject, "message": (message or "")[:220], "indicator": indicator}
+		if doc is not None:
+			toast.update(doctype=doc.doctype, name=doc.name)
+		for u in users:
+			frappe.publish_realtime("school_toast", toast, user=u, after_commit=True)
 
 	settings = frappe.get_cached_doc("School Settings")
 	if sms and phones and settings.notify_staff_by_sms and licensing.is_enabled("messaging"):

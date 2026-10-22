@@ -92,24 +92,18 @@ def can_decide(doc, user=None) -> bool:
 
 @frappe.whitelist()
 def decide_leave(name, decision, comment=None):
-	"""Approver button: decision = 'Approved' or 'Rejected'."""
+	"""Approve/Reject through the Frappe Workflow (same rules as the Actions menu on the form)."""
+	from frappe.model.workflow import apply_workflow
+
 	licensing.require("staff")
 	if decision not in ("Approved", "Rejected"):
 		frappe.throw(_("Unknown decision"))
 	doc = frappe.get_doc("Leave Application", name)
 	if doc.docstatus != 0 or doc.status != "Pending Approval":
 		frappe.throw(_("This application has already been decided ({0})").format(doc.status))
-	if not can_decide(doc):
-		frappe.throw(_("Only {0} or the Head Teacher can decide this leave").format(doc.approver), frappe.PermissionError)
-	if decision == "Rejected" and not comment:
-		frappe.throw(_("Give a reason for rejecting"))
-	doc.status = decision
-	doc.approved_by = frappe.session.user
-	doc.decision_date = now_datetime()
-	doc.decision_comment = comment
-	doc.flags.ignore_permissions = True
-	doc.flags.via_decision = True
-	doc.submit()
+	if comment:
+		doc.db_set("decision_comment", comment)  # apply_workflow reloads the doc from the database
+	doc = apply_workflow(doc, "Approve" if decision == "Approved" else "Reject")
 	return doc.status
 
 
@@ -126,7 +120,7 @@ def notify_leave_decision(doc):
 			_("Your {0} ({1} day(s)) for {2} has been approved.{3}").format(
 				doc.leave_type, doc.total_days, period,
 				f" Your reliever is {doc.reliever_name}." if doc.reliever else ""),
-			staff=[doc.staff_member], doc=doc,
+			staff=[doc.staff_member], doc=doc, indicator="green",
 			sms_text=f"Your {doc.leave_type} for {period} has been APPROVED." + (f" Reliever: {doc.reliever_name}." if doc.reliever else ""),
 		)
 		if doc.reliever:
@@ -141,7 +135,7 @@ def notify_leave_decision(doc):
 		notify(
 			_("Leave not approved: {0}, {1}").format(doc.leave_type, period),
 			_("Your {0} for {1} was not approved. Reason: {2}").format(doc.leave_type, period, doc.decision_comment or "-"),
-			staff=[doc.staff_member], doc=doc,
+			staff=[doc.staff_member], doc=doc, indicator="red",
 			sms_text=f"Your {doc.leave_type} for {period} was NOT approved. Reason: {doc.decision_comment or '-'}",
 		)
 

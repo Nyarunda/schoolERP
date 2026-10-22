@@ -15,15 +15,20 @@ class LeaveApplication(Document):
 	def validate(self):
 		if not self.staff_member:
 			self.staff_member = staff_for_user()
-		self.check_applicant()
+		# applicants edit their own request; the approver only changes the status through the workflow
+		if self.is_new() or (self.status == "Pending Approval" and frappe.session.user != self.approver):
+			self.check_applicant()
 		self.total_days = staff_api.count_days(self.leave_type, self.from_date, self.to_date)
 		year = getdate(self.from_date).year
 		taken = staff_api.days_taken(self.staff_member, self.leave_type, year, exclude=self.name)
 		entitled = frappe.db.get_value("Leave Type", self.leave_type, "days_per_year") or 0
 		self.balance_before = (entitled - taken) if entitled else 0
-		self.approver = staff_api.approver_for(self.staff_member)
 		if self.docstatus == 0:
+			self.approver = staff_api.approver_for(self.staff_member)
+		if not self.status:
 			self.status = "Pending Approval"
+		if self.status == "Rejected" and not (self.decision_comment or "").strip():
+			frappe.throw(_("Give a reason for rejecting (Comment)"), title=_("Reason required"))
 
 		lt = frappe.get_cached_doc("Leave Type", self.leave_type).as_dict()
 		staff = frappe.db.get_value("Staff Member", self.staff_member, ["name", "gender", "staff_type", "status"], as_dict=True)
@@ -72,20 +77,19 @@ class LeaveApplication(Document):
 			)
 
 	def before_submit(self):
-		if not self.flags.via_decision:
-			# the standard Submit button counts as approval by an authorised person
-			if not staff_api.can_decide(self):
-				frappe.throw(_("Leave is approved or rejected by the approver using the buttons on the form"))
-			self.status = "Approved"
-			self.approved_by = frappe.session.user
-			self.decision_date = frappe.utils.now_datetime()
+		# reached through the Workflow's Approve / Reject actions
+		if self.status not in ("Approved", "Rejected"):
+			frappe.throw(_("Use the Approve or Reject action"))
+		self.approved_by = frappe.session.user
+		self.decision_date = frappe.utils.now_datetime()
 
 	def on_submit(self):
 		staff_api.notify_leave_decision(self)
 		staff_api.update_staff_leave_status()
 
 	def on_cancel(self):
-		was_approved = self.status == "Approved"
+		before = self.get_doc_before_save()
+		was_approved = bool(before and before.status == "Approved")
 		self.db_set("status", "Cancelled")
 		staff_api.update_staff_leave_status()
 		if was_approved and self.reliever:

@@ -183,6 +183,7 @@
   },
   {
    "allow_on_submit": 1,
+   "description": "Approver: required when rejecting",
    "fieldname": "decision_comment",
    "fieldtype": "Small Text",
    "idx": 21,
@@ -202,7 +203,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-21 20:00:00.000000",
+ "modified": "2026-10-22 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Leave Application",
@@ -312,6 +313,18 @@
    "report": 1,
    "role": "Transport Manager",
    "share": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Leave Approver",
+   "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],

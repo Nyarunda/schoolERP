@@ -26,6 +26,8 @@ app_include_js = ["/assets/school_erp/js/school_erp.js", "/assets/school_erp/js/
 app_include_css = ["school_dashboard.bundle.css"]
 
 boot_session = "school_erp.licensing.boot_session"
+# workspaces hide what the school has not licensed (the sidebar is filtered in school_erp.js)
+override_whitelisted_methods = {"frappe.desk.desktop.get_desktop_page": "school_erp.licensing.get_desktop_page"}
 
 # Parents are website users: after login they land on the parent portal
 role_home_page = {"Parent": "parent"}

@@ -1,3 +1,15 @@
+// Keep modules the school has not licensed out of the sidebar. Runs before the desk draws it; workspaces are
+// filtered on the server (school_erp.licensing.get_desktop_page).
+(() => {
+	const lic = frappe.boot && frappe.boot.school_erp;
+	const shell = frappe.boot && frappe.boot.module_sidebars && frappe.boot.module_sidebars.School;
+	if (!lic || !shell || !(lic.hidden_doctypes || []).length) return;
+	const hidden = { DocType: new Set(lic.hidden_doctypes), Report: new Set(lic.hidden_reports || []) };
+	const kept = shell.items.filter((i) => !(i.type === "Link" && hidden[i.link_type] && hidden[i.link_type].has(i.link_to)));
+	// a section heading with nothing left under it goes too
+	shell.items = kept.filter((i, n) => i.type !== "Section Break" || (kept[n + 1] && kept[n + 1].child));
+})();
+
 // Global: license banner for admins
 $(document).on("app_ready", () => {
 	const lic = frappe.boot.school_erp;

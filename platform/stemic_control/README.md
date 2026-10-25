@@ -4,9 +4,9 @@ A dedicated **Frappe v16** app for the separate `admin.stemischools.com` managem
 
 ## Delivered
 
-Seven DocTypes: SaaS Tenant (named by slug), SaaS Domain (named by hostname), SaaS Plan (by plan name), SaaS Subscription (`SUB-`), SaaS Agent (`AGT-`), SaaS License (`LIC-`), SaaS Provisioning Job (`JOB-`). Administrative endpoints for tenant registration, domain claims and DNS verification, idempotent provisioning requests, job results, suspend/resume and a dashboard overview. Only System Manager and Stemic Platform Admin can invoke them. Agents (role **Stemic Agent**, linked from a SaaS Agent record) can read only the schools and subscriptions carrying their agent, and their own agent record. Each application site continues to have a separate database.
+Seven DocTypes: SaaS Tenant (named by slug), SaaS Domain (named by hostname), SaaS Plan (by plan name), SaaS Subscription (`SUB-`), SaaS Agent (`AGT-`), SaaS License (`LIC-`), SaaS Provisioning Job (`JOB-`). Administrative endpoints for tenant registration, domain claims and DNS verification, idempotent per-tenant provisioning requests, guarded job results, suspend/resume and a dashboard overview. Only System Manager and Stemic Platform Admin can invoke them. Agents (role **Stemic Agent**, linked from a SaaS Agent record) can read only the schools and subscriptions carrying their agent, and their own agent record. Each application site continues to have a separate database.
 
-**Important:** This is a reviewable **control-plane foundation**, not an operational production SaaS. Provisioning jobs are recorded and their results reported through the API, but nothing here executes Bench, creates databases, changes DNS, provisions TLS, or issues licenses. Subscription invoicing, agent commissions, secret storage, signed-license issuance and the privileged provisioner (with its own credentials) are not yet implemented. No live school should be onboarded automatically with this branch.
+**Important:** This is a reviewable **control-plane foundation**, not an operational production SaaS. Provisioning jobs are recorded and their results reported through the API, but nothing here executes Bench, creates databases, changes DNS, provisions TLS, or issues licenses. **Create Site jobs cannot be marked Succeeded until a trusted infrastructure provisioner with independent site-readiness checks exists; this prevents false Active tenants.** Subscription invoicing, agent commissions, secret storage, signed-license issuance and the privileged provisioner (with its own credentials) are not yet implemented. No live school should be onboarded automatically with this branch.
 
 ## Configuration (admin site `site_config.json`)
 
@@ -18,7 +18,7 @@ Seven DocTypes: SaaS Tenant (named by slug), SaaS Domain (named by hostname), Sa
 ## Status model
 
 - **Tenant:** Draft -> Pending (job queued) -> Provisioning (job running) -> Active, or Failed; Active <-> Suspended. Any other change is refused when the tenant is saved.
-- **Provisioning job:** Queued -> Running -> Succeeded or Failed. A failed job is retried with a new idempotency key. A job's result moves its tenant (Create Site: Provisioning / Active / Failed; Suspend / Resume jobs: Suspended / Active).
+- **Provisioning job:** Queued -> Running -> Failed for Create Site until the provisioner is built. The transition to Succeeded is deliberately blocked for Create Site. A failed job is retried with a new idempotency key. A job's result moves its tenant (Create Site: Provisioning / Failed). Active activation is withheld until a verified provisioner is implemented.
 - **Domain:** the school's own `<slug>.<platform domain>` is Verified when claimed (the platform owns that DNS). A custom domain stays Pending Verification until `verify_domain` finds a TXT record `_stemic-verification.<hostname>` holding the token returned when it was claimed.
 
 ## Installation on a separate admin Bench
@@ -66,3 +66,12 @@ Verified on Frappe/ERPNext 16.52: install-app, migrate, uninstall-app, 6 framewo
 5. Queue a provisioning request twice with the same key and confirm it creates only one job.
 6. Confirm no jobs execute shell commands or create databases.
 7. Before activating tenants: build the provisioner with its own credentials (calling `record_job_result`), secret storage and signed-license issuance.
+
+## Review hardening (post-4d15e81)
+
+- A verified domain cannot be reassigned and domain verification cannot be forged by a direct document save. Custom domains still require the DNS verification API.
+- Provisioning job state and immutable identifiers cannot be edited using a normal document save; the API governs transitions.
+- A per-tenant database row lock serializes Create Site requests; different active idempotency keys for one tenant are rejected.
+- Subscriptions require their agent assignment to match the tenant agent. A future commission ledger must preserve historical attributions.
+- Manual Create Site success is refused: a queued/running record is **not** proof that a site exists. There is currently no production-ready infrastructure provisioner.
+- Integration tests added for domain status forgery, tenant reassignment, competing provisioning keys and direct job-state changes. Tests were **not rerun by the assistant**; please rerun on a disposable admin site.

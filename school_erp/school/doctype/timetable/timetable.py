@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
-from school_erp.logic.timetable import find_duplicate_slots, find_teacher_clashes
+from school_erp.logic.timetable import find_duplicate_slots, find_teacher_clashes, session_labels
 
 
 class Timetable(Document):
@@ -28,6 +28,7 @@ class Timetable(Document):
 		errors += find_teacher_clashes(slots, self.other_slots())
 		if errors:
 			frappe.throw("<br>".join(errors), title=_("Timetable problems"))
+		set_session_times(self)
 
 	def other_slots(self):
 		return frappe.db.sql(
@@ -39,3 +40,12 @@ class Timetable(Document):
 			(self.school_term, self.name or ""),
 			as_dict=True,
 		)
+
+
+def set_session_times(doc):
+	"""Fill each lesson's Time (the whole session for a double) and Session ('Double 1/2')."""
+	periods = frappe.get_all("Period", fields=["name", "sequence", "start_time", "end_time"])
+	rows = [s.as_dict() for s in doc.slots]
+	labels = session_labels(rows, periods)
+	for row, d in zip(doc.slots, rows):
+		row.time, row.session = labels[id(d)]

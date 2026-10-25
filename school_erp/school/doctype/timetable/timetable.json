@@ -10,6 +10,8 @@
   "cb1",
   "school_term",
   "copy_from",
+  "sb_chart",
+  "week_chart",
   "sb_slots",
   "slots",
   "notes"
@@ -58,28 +60,41 @@
    "options": "Timetable"
   },
   {
-   "fieldname": "sb_slots",
+   "depends_on": "eval:(doc.slots || []).length",
+   "fieldname": "sb_chart",
    "fieldtype": "Section Break",
    "idx": 6,
+   "label": "Week at a glance"
+  },
+  {
+   "fieldname": "week_chart",
+   "fieldtype": "HTML",
+   "idx": 7,
+   "label": "Week Chart"
+  },
+  {
+   "fieldname": "sb_slots",
+   "fieldtype": "Section Break",
+   "idx": 8,
    "label": "Lessons"
   },
   {
    "fieldname": "slots",
    "fieldtype": "Table",
-   "idx": 7,
+   "idx": 9,
    "label": "Slots",
    "options": "Timetable Slot"
   },
   {
    "fieldname": "notes",
    "fieldtype": "Small Text",
-   "idx": 8,
+   "idx": 10,
    "label": "Notes"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-25 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Timetable",

@@ -1,6 +1,6 @@
 import frappe
 
-from school_erp.logic.timetable import build_grid
+from school_erp.logic.timetable import build_grid, hm
 
 
 def get_timetable_grid(timetable):
@@ -28,14 +28,8 @@ def get_timetable_grid(timetable):
 			}
 		)
 	for p in periods:
-		p["time"] = f"{_hm(p.start_time)}-{_hm(p.end_time)}"
+		p["time"] = f"{hm(p.start_time)}-{hm(p.end_time)}"
 	return build_grid(slots, periods)
-
-
-def _hm(t):
-	"""timedelta / time / 'H:MM:SS' -> 'HH:MM'"""
-	parts = str(t or "0:00").split(":")
-	return f"{int(parts[0]):02d}:{parts[1][:2]}"
 
 
 @frappe.whitelist()

@@ -66,6 +66,24 @@ def url_problems(url: str) -> list[str]:
 	return problems
 
 
+def valid_confirmation(data: dict, expected_shortcode: str | None, require_transaction_id: bool = True) -> bool:
+	"""Minimal envelope validation before storing a C2B payment.
+
+	This is not cryptographic origin verification. Reconcile with provider statements.
+	"""
+	from decimal import Decimal, InvalidOperation
+
+	if not expected_shortcode or str(data.get("business_shortcode") or "").strip() != str(expected_shortcode).strip():
+		return False
+	if require_transaction_id and not str(data.get("trans_id") or "").strip():
+		return False
+	try:
+		amount = Decimal(str(data.get("amount")))
+		return amount.is_finite() and amount > 0 and amount.as_tuple().exponent >= -2
+	except (InvalidOperation, TypeError, ValueError):
+		return False
+
+
 def payer_name(payload: dict) -> str:
 	return " ".join(p for p in (payload.get("FirstName"), payload.get("MiddleName"), payload.get("LastName")) if p).title()
 

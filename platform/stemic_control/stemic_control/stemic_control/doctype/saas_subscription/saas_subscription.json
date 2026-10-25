@@ -1,0 +1,87 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Subscription",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "format:ST-{#######}",
+  "engine": "InnoDB",
+  "field_order": [
+    "tenant",
+    "plan",
+    "status",
+    "starts_on",
+    "ends_on",
+    "external_payment_ref",
+    "agent"
+  ],
+  "fields": [
+    {
+      "fieldtype": "Link",
+      "fieldname": "tenant",
+      "label": "Tenant",
+      "options": "SaaS Tenant",
+      "reqd": 1
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "plan",
+      "label": "Plan",
+      "options": "SaaS Plan",
+      "reqd": 1
+    },
+    {
+      "fieldtype": "Select",
+      "fieldname": "status",
+      "label": "Status",
+      "options": "Trial\nActive\nPast Due\nGrace\nSuspended\nCancelled",
+      "default": "Trial",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Date",
+      "fieldname": "starts_on",
+      "label": "Starts On",
+      "reqd": 1
+    },
+    {
+      "fieldtype": "Date",
+      "fieldname": "ends_on",
+      "label": "Ends On"
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "external_payment_ref",
+      "label": "Subscription Payment Reference",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "agent",
+      "label": "Sales Agent",
+      "options": "SaaS Agent"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

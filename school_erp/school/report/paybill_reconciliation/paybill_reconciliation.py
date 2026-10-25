@@ -28,6 +28,6 @@ def execute(filters=None):
 	totals = {}
 	for r in rows:
 		totals[r.status] = totals.get(r.status, 0) + flt(r.amount)
-	colors = {"Posted": "Green", "Unmatched": "Orange", "Failed": "Red"}
+	colors = {"Posted": "Green", "Unmatched": "Orange", "Needs Review": "Orange", "Failed": "Red"}
 	summary = [{"label": s, "value": v, "datatype": "Currency", "indicator": colors.get(s, "Grey")} for s, v in totals.items()]
 	return columns, rows, None, None, summary

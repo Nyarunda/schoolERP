@@ -326,16 +326,19 @@ def test_promotion_plan():
 	assert (s["promote"], s["graduate"], s["repeat"], s["with_balance"], s["balance"]) == (1, 1, 1, 2, 5100)
 
 
+def test_paybill_confirmation_envelope_checks():
+	base = {"TransID": "ABC1234567", "TransAmount": "15000.00", "BusinessShortCode": "600000"}
+	assert pb.envelope_problems(base, "600000") == []
+	assert pb.envelope_problems(base, "600001") == ["shortcode"]
+	assert pb.envelope_problems(base, None) == ["shortcode"]
+	assert pb.envelope_problems({**base, "BusinessShortCode": ""}, "600000") == ["shortcode"]
+	for bad in ("0", "-1", "NaN", "inf", "1.001", "abc", "", None):
+		assert pb.envelope_problems({**base, "TransAmount": bad}, "600000") == ["amount"], bad
+	assert pb.envelope_problems({**base, "TransID": " "}, "600000") == ["transaction_id"]
+	assert pb.envelope_problems({**base, "TransID": ""}, "600000", require_transaction_id=False) == []
+	assert pb.parse_amount("1e3") == 1000.0 and pb.parse_amount(" 10.10 ") == 10.1
 
-def test_paybill_confirmation_envelope_validation():
-	base = {"trans_id": "ABC1234567", "amount": 15000.0, "business_shortcode": "600000"}
-	assert pb.valid_confirmation(base, "600000")
-	assert not pb.valid_confirmation(base, "600001")
-	assert not pb.valid_confirmation({**base, "business_shortcode": ""}, "600000")
-	assert not pb.valid_confirmation({**base, "amount": 0}, "600000")
-	assert not pb.valid_confirmation({**base, "amount": -1}, "600000")
-	assert not pb.valid_confirmation({**base, "amount": float("nan")}, "600000")
-	assert not pb.valid_confirmation({**base, "amount": float("inf")}, "600000")
-	assert not pb.valid_confirmation({**base, "amount": 1.001}, "600000")
-	assert not pb.valid_confirmation({**base, "trans_id": ""}, "600000")
-	assert pb.valid_confirmation({**base, "trans_id": ""}, "600000", require_transaction_id=False)
+
+def test_paybill_normalize_never_raises_on_bad_numbers():
+	data = pb.normalize_payload({"TransID": "X1", "TransAmount": "abc", "OrgAccountBalance": "n/a"})
+	assert data["amount"] == 0.0 and data["org_account_balance"] == 0.0

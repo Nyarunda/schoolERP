@@ -138,7 +138,7 @@ def _fees(t, today):
 	if licensing.is_enabled("mpesa"):
 		p = frappe.db.sql(
 			"""select coalesce(sum(case when status='Posted' and date(trans_time)=%s then amount end),0),
-				sum(status in ('Unmatched','Failed')), coalesce(sum(case when status in ('Unmatched','Failed') then amount end),0)
+				sum(status in ('Unmatched','Needs Review','Failed')), coalesce(sum(case when status in ('Unmatched','Needs Review','Failed') then amount end),0)
 			from `tabM-Pesa Transaction`""", today)[0]
 		paybill = {"today": flt(p[0]), "unmatched": cint(p[1]), "unmatched_amount": flt(p[2])}
 	return {
@@ -243,10 +243,10 @@ def _management_attention(mods, today):
 		if n2:
 			items.append(_attention(_("Expenses awaiting final approval"), n2, ["List", "School Expense", {"status": "Pending Final Approval"}]))
 	if "mpesa" in mods:
-		n = frappe.db.count("M-Pesa Transaction", {"status": ("in", ["Unmatched", "Failed"])})
+		n = frappe.db.count("M-Pesa Transaction", {"status": ("in", ["Unmatched", "Needs Review", "Failed"])})
 		if n:
-			items.append(_attention(_("Paybill payments not matched to a student"), n,
-									["List", "M-Pesa Transaction", {"status": "Unmatched"}], "serious"))
+			items.append(_attention(_("Paybill payments waiting for the bursar"), n,
+									["List", "M-Pesa Transaction", {"status": ["in", ["Unmatched", "Needs Review", "Failed"]]}], "serious"))
 	if "welfare" in mods:
 		n = frappe.db.count("Complaint", {"status": ("in", ["Open", "In Progress"]), "priority": ("in", ["High", "Urgent"])})
 		if n:

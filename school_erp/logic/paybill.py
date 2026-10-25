@@ -3,6 +3,7 @@
 import ipaddress
 import re
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
 ACCEPT = {"ResultCode": "0", "ResultDesc": "Accepted"}
 REJECT_ACCOUNT = {"ResultCode": "C2B00012", "ResultDesc": "Rejected"}  # invalid account number
@@ -66,22 +67,45 @@ def url_problems(url: str) -> list[str]:
 	return problems
 
 
-def valid_confirmation(data: dict, expected_shortcode: str | None, require_transaction_id: bool = True) -> bool:
-	"""Minimal envelope validation before storing a C2B payment.
+# Why a confirmation was held for the bursar instead of being posted
+ENVELOPE_PROBLEMS = {
+	"shortcode": "Business short code does not match the one in School Settings",
+	"transaction_id": "No M-Pesa transaction code (TransID)",
+	"amount": "Amount is not a positive number with at most 2 decimals",
+}
+
+
+def parse_amount(value) -> float | None:
+	"""Daraja TransAmount -> float, or None unless it is a positive, finite amount with at most 2 decimals."""
+	try:
+		amount = Decimal(str(value).strip())
+	except (InvalidOperation, TypeError, ValueError):
+		return None
+	if not amount.is_finite() or amount <= 0 or amount.as_tuple().exponent < -2:
+		return None
+	return float(amount)
+
+
+def envelope_problems(payload: dict, expected_shortcode: str | None, require_transaction_id: bool = True) -> list[str]:
+	"""Minimal checks on a raw Daraja C2B payload. Returns ENVELOPE_PROBLEMS keys; empty when it looks right.
 
 	This is not cryptographic origin verification. Reconcile with provider statements.
 	"""
-	from decimal import Decimal, InvalidOperation
+	problems = []
+	if not expected_shortcode or str(payload.get("BusinessShortCode") or "").strip() != str(expected_shortcode).strip():
+		problems.append("shortcode")
+	if require_transaction_id and not str(payload.get("TransID") or "").strip():
+		problems.append("transaction_id")
+	if parse_amount(payload.get("TransAmount")) is None:
+		problems.append("amount")
+	return problems
 
-	if not expected_shortcode or str(data.get("business_shortcode") or "").strip() != str(expected_shortcode).strip():
-		return False
-	if require_transaction_id and not str(data.get("trans_id") or "").strip():
-		return False
+
+def _number(value) -> float:
 	try:
-		amount = Decimal(str(data.get("amount")))
-		return amount.is_finite() and amount > 0 and amount.as_tuple().exponent >= -2
-	except (InvalidOperation, TypeError, ValueError):
-		return False
+		return float(value or 0)
+	except (TypeError, ValueError):
+		return 0.0
 
 
 def payer_name(payload: dict) -> str:
@@ -93,11 +117,11 @@ def normalize_payload(payload: dict) -> dict:
 	return {
 		"trans_id": (payload.get("TransID") or "").strip().upper(),
 		"trans_time": parse_trans_time(payload.get("TransTime")),
-		"amount": float(payload.get("TransAmount") or 0),
+		"amount": parse_amount(payload.get("TransAmount")) or 0.0,  # never raises: a bad amount is held for review
 		"bill_ref_number": clean_ref(payload.get("BillRefNumber")),
 		"msisdn": str(payload.get("MSISDN") or ""),
 		"payer_name": payer_name(payload),
 		"business_shortcode": str(payload.get("BusinessShortCode") or ""),
 		"transaction_type": payload.get("TransactionType") or "",
-		"org_account_balance": float(payload.get("OrgAccountBalance") or 0),
+		"org_account_balance": _number(payload.get("OrgAccountBalance")),
 	}

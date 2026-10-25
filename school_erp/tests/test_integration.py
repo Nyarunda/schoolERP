@@ -244,3 +244,57 @@ class TestSchoolFlow(TestCase):
 			self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "status"), "Failed")
 		finally:
 			set_license(ALL_MODULES)
+
+	def call_callback(self, endpoint, payload):
+		"""Call a Safaricom endpoint as Daraja would, past the token/IP check."""
+		import json
+
+		from school_erp.api import paybill
+
+		with patch.object(paybill, "_authorised", return_value=None), patch.object(paybill, "_payload", return_value=payload):
+			r = getattr(paybill, endpoint)()
+		return r.status_code, json.loads(r.get_data())
+
+	def test_paybill_confirmation_that_looks_wrong_is_kept_for_review(self):
+		from school_erp.api.paybill import assign_and_post, retry_pending
+
+		s = self.make_student()
+		payload = {**self.paybill_payload(s.name, 2500), "BusinessShortCode": "999999"}
+		status, body = self.call_callback("confirm", payload)
+		self.assertEqual((status, body["ResultCode"]), (200, "0"))  # stored, so acknowledged
+		tx = frappe.get_doc("M-Pesa Transaction", payload["TransID"])
+		self.assertEqual(tx.status, "Needs Review")
+		self.assertIn("short code", tx.error)
+		self.assertFalse(frappe.db.exists("Fee Payment", {"reference_no": payload["TransID"]}))
+
+		retry_pending()  # the hourly job leaves it for the bursar
+		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", tx.name, "status"), "Needs Review")
+		self.assertEqual(assign_and_post(tx.name, s.name)["status"], "Posted")
+
+	def test_paybill_bad_amount_is_kept_and_missing_code_is_refused(self):
+		from school_erp.logic import paybill as pb
+
+		payload = {**self.paybill_payload("ANY123", 100), "TransAmount": "abc"}
+		status, _body = self.call_callback("confirm", payload)
+		self.assertEqual(status, 200)
+		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", payload["TransID"], ["status", "amount"]), ("Needs Review", 0))
+
+		status, body = self.call_callback("confirm", {**self.paybill_payload("ANY123", 100), "TransID": ""})
+		self.assertEqual((status, body), (400, pb.REJECT_OTHER))
+
+	def test_paybill_validation_result_codes(self):
+		from school_erp.logic import paybill as pb
+
+		for amount in ("0", "abc"):
+			self.assertEqual(self.call_callback("validate", {**self.paybill_payload("ANY123", 100), "TransAmount": amount})[1], pb.REJECT_AMOUNT)
+		self.assertEqual(self.call_callback("validate", {**self.paybill_payload("ANY123", 100), "BusinessShortCode": "1"})[1], pb.REJECT_OTHER)
+
+	def test_paybill_storage_failure_is_not_acknowledged(self):
+		from school_erp.api import paybill
+
+		# confirm() rolls back the failed request; keep that from undoing other tests' uncommitted setup
+		with patch.object(paybill, "record_confirmation", side_effect=RuntimeError("database unavailable")), \
+				patch.object(frappe.db, "rollback") as rollback:
+			status, _body = self.call_callback("confirm", self.paybill_payload("ANY123", 100))
+		self.assertEqual(status, 503)
+		rollback.assert_called_once()

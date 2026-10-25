@@ -7,6 +7,8 @@ Flow
   -> a background job matches the Student and submits a Fee Payment
      (Payment Entry posted, balance reduced, parent gets the receipt SMS)
   -> payments with an unknown account number wait as "Unmatched" for the bursar to assign.
+  -> confirmations that fail the envelope checks (wrong short code, odd amount) are stored as
+     "Needs Review" and never auto-posted: the money has already been received, so it is never dropped.
 
 The endpoint path deliberately avoids the word "mpesa": Safaricom rejects such callback URLs.
 """
@@ -86,11 +88,13 @@ def validate():
 	if reason:
 		frappe.log_error(title="Paybill validation refused", message=reason)
 		return _json_response(pb.REJECT_OTHER)
-	data = pb.normalize_payload(_payload())
-	if not pb.valid_confirmation(data, settings.mpesa_shortcode, require_transaction_id=False):
-		return _json_response(pb.REJECT_OTHER)
-	if data["amount"] <= 0:
+	raw = _payload()
+	problems = pb.envelope_problems(raw, settings.mpesa_shortcode, require_transaction_id=False)
+	if "amount" in problems:
 		return _json_response(pb.REJECT_AMOUNT)
+	if problems:
+		return _json_response(pb.REJECT_OTHER)
+	data = pb.normalize_payload(raw)
 	if settings.mpesa_validate_account and not find_student(data["bill_ref_number"]):
 		return _json_response(pb.REJECT_ACCOUNT)
 	return _json_response(pb.ACCEPT)
@@ -105,11 +109,14 @@ def confirm():
 	if reason:
 		frappe.log_error(title="Paybill confirmation refused", message=f"{reason}\n{json.dumps(raw)[:2000]}")
 		return _json_response(pb.REJECT_OTHER, status=403)
+	problems = pb.envelope_problems(raw, settings.mpesa_shortcode)
+	if "transaction_id" in problems:
+		# Nothing to key a record on. Keep the payload for statement reconciliation.
+		frappe.log_error(title="Paybill confirmation without TransID", message=json.dumps(raw, default=str)[:4000])
+		return _json_response(pb.REJECT_OTHER, status=400)
 	try:
-		data = pb.normalize_payload(raw)
-		if not pb.valid_confirmation(data, settings.mpesa_shortcode):
-			return _json_response(pb.REJECT_OTHER, status=400)
-		record_confirmation(raw, source="Safaricom")
+		# The money has already reached the paybill: store it even when it looks wrong, held for review
+		record_confirmation(raw, source="Safaricom", review="; ".join(pb.ENVELOPE_PROBLEMS[p] for p in problems))
 	except Exception:
 		frappe.db.rollback()
 		frappe.log_error(title="Paybill confirmation could not be stored", message=frappe.get_traceback())
@@ -119,8 +126,10 @@ def confirm():
 	return _json_response(pb.ACCEPT)
 
 
-def record_confirmation(raw: dict, source: str = "Safaricom") -> str:
-	"""Store the transaction (idempotent) and queue posting. Returns the M-Pesa code."""
+def record_confirmation(raw: dict, source: str = "Safaricom", review: str | None = None) -> str:
+	"""Store the transaction (idempotent) and queue posting. Returns the M-Pesa code.
+
+	With `review` (why it looks wrong) it is stored as "Needs Review" and not posted until the bursar does it."""
 	data = pb.normalize_payload(raw)
 	if not data["trans_id"]:
 		frappe.throw(_("Missing TransID"))
@@ -132,7 +141,8 @@ def record_confirmation(raw: dict, source: str = "Safaricom") -> str:
 			"doctype": "M-Pesa Transaction",
 			**data,
 			"trans_time": data["trans_time"] or now_datetime(),
-			"status": "Received",
+			"status": "Needs Review" if review else "Received",
+			"error": review or None,
 			"source": source,
 			"raw_payload": json.dumps(raw, indent=1, default=str),
 		}
@@ -140,6 +150,10 @@ def record_confirmation(raw: dict, source: str = "Safaricom") -> str:
 	doc.flags.ignore_permissions = True
 	doc.insert()
 	frappe.db.commit()
+	if review:
+		frappe.log_error(title=f"Paybill payment {doc.name} needs review", message=review)
+		frappe.publish_realtime("paybill_unmatched", {"name": doc.name, "amount": doc.amount})
+		return doc.name
 	frappe.enqueue(
 		"school_erp.api.paybill.post_transaction",
 		queue="short",
@@ -217,7 +231,7 @@ def _post(name, student=None):
 
 @frappe.whitelist()
 def assign_and_post(name, student=None):
-	"""Bursar button: post an Unmatched/Failed payment (optionally to a chosen student)."""
+	"""Bursar button: post an Unmatched/Failed/Needs Review payment (optionally to a chosen student)."""
 	frappe.has_permission("M-Pesa Transaction", "write", name, throw=True)
 	frappe.has_permission("Fee Payment", "submit", throw=True)
 	if student:

@@ -21,15 +21,25 @@ frappe.provide("school_dash");
 		return format_number(v, null, 0);
 	};
 
+	// Central route handler: Frappe's new-document flow must use new_doc(),
+	// not /app/<doctype>/new, and filters belong in route_options.
 	school_dash.go = (route) => {
-		if (!route) return;
-		const [kind, ...rest] = route;
-		if (kind === "List" && rest[1]) {
-			frappe.route_options = rest[1];
-			frappe.set_route("List", rest[0]);
-		} else {
-			frappe.set_route(kind, ...rest);
+		if (!Array.isArray(route) || !route.length) return;
+		const [kind, target, option] = route;
+		if (kind === "Form" && (!option || option === "new")) {
+			if (target) frappe.new_doc(target);
+			return;
 		}
+		if (kind === "List" && target) {
+			frappe.route_options = option && typeof option === "object" ? option : null;
+			frappe.set_route("List", target);
+			return;
+		}
+		if (kind === "Page" && target) {
+			frappe.set_route(target);
+			return;
+		}
+		frappe.set_route(...route);
 	};
 
 	school_dash.card = (title, body, opts = {}) => `

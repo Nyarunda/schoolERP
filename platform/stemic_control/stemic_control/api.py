@@ -121,9 +121,19 @@ def queue_provisioning(tenant, request_key):
             frappe.throw("Key already allocated to another tenant", frappe.PermissionError)
         return row.name if row else None
 
+    # Serialize provisioning for one tenant, including distinct idempotency keys.
+    # The lock is held until the request transaction commits.
+    frappe.db.sql("SELECT name FROM `tabSaaS Tenant` WHERE name = %s FOR UPDATE", (tenant,))
     name = existing_job()
     if name:
         return name
+    active = frappe.db.get_value(
+        "SaaS Provisioning Job",
+        {"tenant": tenant, "action": "Create Site", "status": ["in", ["Queued", "Running"]]},
+        "name",
+    )
+    if active:
+        frappe.throw(f"An active provisioning job already exists: {active}", frappe.ValidationError)
     try:
         job = frappe.get_doc({"doctype": "SaaS Provisioning Job", "tenant": tenant,
             "idempotency_key": request_key, "action": "Create Site", "status": "Queued"}).insert()
@@ -149,6 +159,11 @@ def record_job_result(job, status, error=None):
     doc.check_permission("write")
     if not policy.can_move(policy.JOB_TRANSITIONS, doc.status, status):
         frappe.throw(f"A {doc.status} job cannot become {status}", frappe.ValidationError)
+    if doc.action == "Create Site" and status == "Succeeded":
+        frappe.throw(
+            "Site activation requires the infrastructure provisioner; completion is disabled until verified provisioning is implemented",
+            frappe.ValidationError,
+        )
     updates = {"status": status}
     if status == "Running":
         updates["attempts"] = (doc.attempts or 0) + 1

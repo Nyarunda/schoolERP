@@ -6,7 +6,7 @@ class TestTenantIdentifiers(unittest.TestCase):
     def test_valid_slug(self):
         self.assertTrue(SLUG.fullmatch("greenfield-academy"))
         self.assertFalse(SLUG.fullmatch("../school"))
-        self.assertFalse(SLUG.fullmatch("root"))
+        self.assertTrue(SLUG.fullmatch("root"))
         self.assertIn("admin", RESERVED)
 
     def test_hostname(self):

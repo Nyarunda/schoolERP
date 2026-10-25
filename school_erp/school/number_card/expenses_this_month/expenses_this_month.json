@@ -1,0 +1,22 @@
+{
+ "aggregate_function_based_on": "amount",
+ "creation": "2026-10-25 18:30:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "School Expense",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"School Expense\", \"docstatus\", \"=\", 1], [\"School Expense\", \"posting_date\", \"Timespan\", \"this month\"]]",
+ "function": "Sum",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Expenses This Month",
+ "modified": "2026-10-25 18:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Expenses This Month",
+ "owner": "Administrator",
+ "show_percentage_stats": 1,
+ "stats_time_interval": "Monthly",
+ "type": "Document Type"
+}

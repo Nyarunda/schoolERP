@@ -1,0 +1,21 @@
+{
+ "creation": "2026-10-25 18:30:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Driver Daily Log",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"Driver Daily Log\", \"docstatus\", \"=\", 1], [\"Driver Daily Log\", \"has_issues\", \"=\", 1], [\"Driver Daily Log\", \"log_date\", \"Timespan\", \"this month\"]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Trips with Issues This Month",
+ "modified": "2026-10-25 18:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Trips with Issues This Month",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Monthly",
+ "type": "Document Type"
+}

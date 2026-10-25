@@ -8,7 +8,7 @@ from school_erp.logic.allocation import allocate_payment, per_invoice_totals, sp
 from school_erp.logic.billing import compute_fee_lines, net_amount
 from school_erp.logic.statement import breakdown_rows, build_ledger
 from school_erp.logic.text import normalize_phone, render
-from school_erp.logic.timetable import find_duplicate_slots, find_teacher_clashes
+from school_erp.logic.timetable import find_duplicate_slots, find_teacher_clashes, session_blocks, session_labels
 
 ALL = ["core", "fees", "transport", "lunch", "activities", "messaging", "timetable"]
 
@@ -172,6 +172,30 @@ def test_timetable_clashes():
 	other = [{"day": "Monday", "period": "P1", "teacher": "T1", "timetable": "Grade 5 East - Term 1 2026", "teacher_name": "Mr Otieno"}]
 	errs = find_teacher_clashes(slots[:1], other)
 	assert errs and "Mr Otieno" in errs[0]
+
+
+def test_double_lessons_merge_only_when_back_to_back():
+	periods = [
+		{"name": "P1", "sequence": 1, "start_time": "8:00:00", "end_time": "8:40:00"},
+		{"name": "P2", "sequence": 2, "start_time": "8:40:00", "end_time": "9:20:00"},
+		{"name": "Break", "sequence": 3, "start_time": "9:20:00", "end_time": "9:30:00"},
+		{"name": "P3", "sequence": 4, "start_time": "9:30:00", "end_time": "10:10:00"},
+	]
+	slots = [
+		{"day": "Monday", "period": "P2", "subject": "Maths", "teacher": "T1"},
+		{"day": "Monday", "period": "P1", "subject": "Maths", "teacher": "T1"},
+		{"day": "Monday", "period": "P3", "subject": "Maths", "teacher": "T1"},  # after the break: its own session
+		{"day": "Tuesday", "period": "P1", "subject": "English", "teacher": "T2"},
+		{"day": "Tuesday", "period": "P2", "subject": "English", "teacher": "T3"},  # other teacher: not a double
+	]
+	blocks = session_blocks(slots, periods)
+	assert [(b["day"], b["size"], b["start"], b["end"]) for b in blocks] == [
+		("Monday", 2, "08:00", "09:20"), ("Monday", 1, "09:30", "10:10"),
+		("Tuesday", 1, "08:00", "08:40"), ("Tuesday", 1, "08:40", "09:20")]
+	labels = session_labels(slots, periods)
+	assert labels[id(slots[0])] == ("08:00-09:20", "Double 2/2")
+	assert labels[id(slots[1])] == ("08:00-09:20", "Double 1/2")
+	assert labels[id(slots[2])] == ("09:30-10:10", "")
 
 
 # ------------------------------------------------------------------ paybill

@@ -8,13 +8,15 @@
  "field_order": [
   "day",
   "period",
+  "time",
   "subject",
   "teacher",
-  "room"
+  "room",
+  "session"
  ],
  "fields": [
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "day",
    "fieldtype": "Select",
    "idx": 1,
@@ -24,7 +26,7 @@
    "reqd": 1
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "period",
    "fieldtype": "Link",
    "idx": 2,
@@ -35,9 +37,19 @@
   },
   {
    "columns": 2,
+   "description": "Whole session for a double lesson",
+   "fieldname": "time",
+   "fieldtype": "Data",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Time",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
    "fieldname": "subject",
    "fieldtype": "Link",
-   "idx": 3,
+   "idx": 4,
    "in_list_view": 1,
    "label": "Subject",
    "options": "Subject"
@@ -46,24 +58,33 @@
    "columns": 2,
    "fieldname": "teacher",
    "fieldtype": "Link",
-   "idx": 4,
+   "idx": 5,
    "in_list_view": 1,
    "label": "Teacher",
    "options": "Teacher"
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "room",
    "fieldtype": "Data",
-   "idx": 5,
+   "idx": 6,
    "in_list_view": 1,
    "label": "Room"
+  },
+  {
+   "columns": 1,
+   "fieldname": "session",
+   "fieldtype": "Data",
+   "idx": 7,
+   "in_list_view": 1,
+   "label": "Session",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "istable": 1,
  "links": [],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-25 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Timetable Slot",

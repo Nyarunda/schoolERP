@@ -234,6 +234,24 @@ class TestSchoolFlow(TestCase):
 		self.assertEqual(result["status"], "Posted", result.get("error"))
 		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "student"), s.name)
 
+	def test_paybill_callback_token_read_from_url_of_json_post(self):
+		"""Safaricom posts JSON with the token in the query string; Frappe leaves it out of form_dict."""
+		from werkzeug.test import EnvironBuilder
+		from werkzeug.wrappers import Request
+
+		from school_erp.api.paybill import _authorised
+
+		settings = frappe.get_doc("School Settings")
+		settings.mpesa_callback_token = "callback-test-token"
+		previous = getattr(frappe.local, "request", None), frappe.local.form_dict
+		try:
+			for token, expected in (("callback-test-token", None), ("wrong", "bad token")):
+				frappe.local.request = Request(EnvironBuilder(method="POST", query_string={"token": token}, json={"TransID": "X"}).get_environ())
+				frappe.local.form_dict = frappe._dict({"TransID": "X"})  # what make_form_dict gives for a JSON body
+				self.assertEqual(_authorised(settings), expected)
+		finally:
+			frappe.local.request, frappe.local.form_dict = previous
+
 	def test_paybill_needs_license(self):
 		from school_erp.api.paybill import record_confirmation
 

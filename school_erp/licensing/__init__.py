@@ -1,5 +1,7 @@
 """License enforcement inside Frappe. Rules live in school_erp.logic.license."""
 
+import json
+
 import frappe
 from frappe import _
 from frappe.utils import getdate, nowdate
@@ -56,16 +58,97 @@ def check_student_limit():
 		)
 
 
+def hidden_entities(state=None) -> dict[str, set[str]]:
+	"""DocTypes and reports of modules the school has not licensed, kept out of the sidebar and workspaces."""
+	modules = set((state or get_state())["modules"])
+	doctypes = {dt for dt, module in lic.DOCTYPE_MODULE.items() if module not in modules}
+	reports = set(frappe.get_all("Report", filters={"ref_doctype": ("in", list(doctypes))}, pluck="name")) if doctypes else set()
+	return {"DocType": doctypes, "Report": reports}
+
+
 def boot_session(bootinfo):
 	if frappe.session.user == "Guest":
 		return
 	state = get_state()
+	hidden = hidden_entities(state)
 	bootinfo.school_erp = {
 		"modules": state["modules"],
 		"status": state["status"],
 		"message": state["message"],
 		"days_left": state["days_left"],
+		"hidden_doctypes": sorted(hidden["DocType"]),
+		"hidden_reports": sorted(hidden["Report"]),
 	}
+	if hidden["DocType"]:
+		_drop_hidden_blocks(bootinfo, hidden)
+
+
+# A workspace's layout names its widgets; drop the ones get_desktop_page leaves out so no empty slot remains
+LAYOUT_KEYS = {"card": "card_name", "shortcut": "shortcut_name", "chart": "chart_name", "number_card": "number_card_name"}
+
+
+def _hidden_widgets(workspace, hidden) -> dict[str, set[str]]:
+	doc = frappe.get_cached_doc("Workspace", workspace)
+	gone = {"card": set(), "shortcut": set(), "chart": set(), "number_card": set()}
+	card, links = None, []
+	for row in [*doc.links, None]:
+		if row is None or row.type == "Card Break":
+			if card and links and all(link.link_to in hidden.get(link.link_type, ()) for link in links):
+				gone["card"].add(card)
+			card, links = (row.label if row else None), []
+		else:
+			links.append(row)
+	gone["shortcut"] = {s.label for s in doc.shortcuts if s.link_to in hidden.get(s.type, ())}
+	for c in doc.charts:
+		if frappe.db.get_value("Dashboard Chart", c.chart_name, "document_type", cache=True) in hidden["DocType"]:
+			gone["chart"].add(c.chart_name)
+	for c in doc.number_cards:
+		if frappe.db.get_value("Number Card", c.number_card_name, "document_type", cache=True) in hidden["DocType"]:
+			gone["number_card"].add(c.number_card_name)
+	return gone
+
+
+def _drop_hidden_blocks(bootinfo, hidden):
+	for page in (bootinfo.get("workspaces") or {}).get("pages") or []:
+		if page.get("module") != "School" or not isinstance(page.get("content"), str):
+			continue
+		gone = _hidden_widgets(page["name"], hidden)
+		if not any(gone.values()):
+			continue
+		blocks = json.loads(page["content"] or "[]")
+		page["content"] = json.dumps(
+			[b for b in blocks if (b.get("data") or {}).get(LAYOUT_KEYS.get(b.get("type"), "")) not in gone.get(b.get("type"), ())]
+		)
+
+
+@frappe.whitelist()
+def get_desktop_page(page):
+	"""frappe.desk.desktop.get_desktop_page without links, shortcuts, charts and number cards of unlicensed modules."""
+	from frappe.desk.desktop import get_desktop_page as standard
+
+	data = standard(page)
+	hidden = hidden_entities()
+	if not data or not hidden["DocType"]:
+		return data
+
+	def shown(link_type, link_to):
+		return link_to not in hidden.get(link_type, ())
+
+	def source_shown(doctype, name):
+		return frappe.db.get_value(doctype, name, "document_type", cache=True) not in hidden["DocType"]
+
+	cards = []
+	for card in data["cards"]["items"]:
+		card["links"] = [link for link in card.get("links", []) if shown(link.get("link_type"), link.get("link_to"))]
+		if card["links"]:
+			cards.append(card)
+	data["cards"]["items"] = cards
+	data["shortcuts"]["items"] = [s for s in data["shortcuts"]["items"] if shown(s.get("type"), s.get("link_to"))]
+	data["charts"]["items"] = [c for c in data["charts"]["items"] if source_shown("Dashboard Chart", c.get("chart_name"))]
+	data["number_cards"]["items"] = [
+		c for c in data["number_cards"]["items"] if source_shown("Number Card", c.get("number_card_name"))
+	]
+	return data
 
 
 def daily_license_check():

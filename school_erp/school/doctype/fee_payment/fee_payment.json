@@ -3,17 +3,21 @@
  "allow_rename": 0,
  "autoname": "RCPT-.YYYY.-.#####",
  "creation": "2026-10-21 10:00:00.000000",
+ "default_print_format": "Fee Receipt",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "sb_student",
   "student",
   "student_name",
   "school_class",
-  "balance_before",
   "cb1",
-  "posting_date",
-  "mode_of_payment",
+  "balance_html",
+  "sb_payment",
   "amount",
+  "mode_of_payment",
+  "posting_date",
+  "cb_pay",
   "reference_no",
   "payer_name",
   "payer_phone",
@@ -21,22 +25,31 @@
   "allocation_method",
   "target_fee_types",
   "apply_remainder",
+  "cb_alloc",
   "manual_allocation",
-  "allocations",
   "allocated_total",
   "unallocated_amount",
+  "sb_alloc_table",
+  "allocations",
+  "remarks",
   "sb_result",
   "payment_entry",
-  "balance_after",
+  "balance_before",
   "cb2",
-  "remarks",
+  "balance_after",
   "amended_from"
  ],
  "fields": [
   {
+   "fieldname": "sb_student",
+   "fieldtype": "Section Break",
+   "idx": 1,
+   "label": "Student"
+  },
+  {
    "fieldname": "student",
    "fieldtype": "Link",
-   "idx": 1,
+   "idx": 2,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Student",
@@ -47,7 +60,8 @@
    "fetch_from": "student.student_name",
    "fieldname": "student_name",
    "fieldtype": "Data",
-   "idx": 2,
+   "hidden": 1,
+   "idx": 3,
    "in_list_view": 1,
    "label": "Student Name",
    "read_only": 1
@@ -56,16 +70,9 @@
    "fetch_from": "student.school_class",
    "fieldname": "school_class",
    "fieldtype": "Link",
-   "idx": 3,
+   "idx": 4,
    "label": "Class",
    "options": "School Class",
-   "read_only": 1
-  },
-  {
-   "fieldname": "balance_before",
-   "fieldtype": "Currency",
-   "idx": 4,
-   "label": "Balance Before",
    "read_only": 1
   },
   {
@@ -74,21 +81,16 @@
    "idx": 5
   },
   {
-   "default": "Today",
-   "fieldname": "posting_date",
-   "fieldtype": "Date",
+   "fieldname": "balance_html",
+   "fieldtype": "HTML",
    "idx": 6,
-   "in_list_view": 1,
-   "label": "Posting Date",
-   "reqd": 1
+   "label": "Balance"
   },
   {
-   "fieldname": "mode_of_payment",
-   "fieldtype": "Link",
+   "fieldname": "sb_payment",
+   "fieldtype": "Section Break",
    "idx": 7,
-   "label": "Mode Of Payment",
-   "options": "Mode of Payment",
-   "reqd": 1
+   "label": "Payment"
   },
   {
    "bold": 1,
@@ -100,36 +102,58 @@
    "reqd": 1
   },
   {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "idx": 9,
+   "label": "Mode Of Payment",
+   "options": "Mode of Payment",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "idx": 10,
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cb_pay",
+   "fieldtype": "Column Break",
+   "idx": 11
+  },
+  {
    "fieldname": "reference_no",
    "fieldtype": "Data",
-   "idx": 9,
+   "idx": 12,
    "in_standard_filter": 1,
    "label": "Reference / M-Pesa Code"
   },
   {
    "fieldname": "payer_name",
    "fieldtype": "Data",
-   "idx": 10,
+   "idx": 13,
    "label": "Paid By"
   },
   {
    "fieldname": "payer_phone",
    "fieldtype": "Data",
-   "idx": 11,
+   "idx": 14,
    "label": "Payer Phone",
    "options": "Phone"
   },
   {
    "fieldname": "sb_alloc",
    "fieldtype": "Section Break",
-   "idx": 12,
+   "idx": 15,
    "label": "What is this payment for?"
   },
   {
    "default": "Oldest balance first",
    "fieldname": "allocation_method",
    "fieldtype": "Select",
-   "idx": 13,
+   "idx": 16,
    "label": "Allocation Method",
    "options": "Oldest balance first\nSpecific fee types"
   },
@@ -137,7 +161,7 @@
    "depends_on": "eval:doc.allocation_method=='Specific fee types'",
    "fieldname": "target_fee_types",
    "fieldtype": "Table MultiSelect",
-   "idx": 14,
+   "idx": 17,
    "label": "Pay Towards",
    "mandatory_depends_on": "eval:doc.allocation_method=='Specific fee types'",
    "options": "Fee Payment Target"
@@ -147,76 +171,96 @@
    "depends_on": "eval:doc.allocation_method=='Specific fee types'",
    "fieldname": "apply_remainder",
    "fieldtype": "Check",
-   "idx": 15,
+   "idx": 18,
    "label": "Apply any remainder to other balances"
+  },
+  {
+   "fieldname": "cb_alloc",
+   "fieldtype": "Column Break",
+   "idx": 19
   },
   {
    "fieldname": "manual_allocation",
    "fieldtype": "Check",
-   "idx": 16,
+   "idx": 20,
    "label": "Edit allocation manually"
-  },
-  {
-   "fieldname": "allocations",
-   "fieldtype": "Table",
-   "idx": 17,
-   "label": "Allocations",
-   "options": "Fee Payment Allocation"
   },
   {
    "fieldname": "allocated_total",
    "fieldtype": "Currency",
-   "idx": 18,
+   "idx": 21,
    "label": "Allocated Total",
    "read_only": 1
   },
   {
    "fieldname": "unallocated_amount",
    "fieldtype": "Currency",
-   "idx": 19,
+   "idx": 22,
    "label": "Advance (not yet billed)",
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.manual_allocation || (doc.allocations || []).length",
+   "fieldname": "sb_alloc_table",
+   "fieldtype": "Section Break",
+   "idx": 23
+  },
+  {
+   "depends_on": "eval:doc.manual_allocation || (doc.allocations || []).length",
+   "fieldname": "allocations",
+   "fieldtype": "Table",
+   "idx": 24,
+   "label": "Allocations",
+   "options": "Fee Payment Allocation"
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "idx": 25,
+   "label": "Remarks"
+  },
+  {
+   "collapsible": 1,
    "fieldname": "sb_result",
    "fieldtype": "Section Break",
-   "idx": 20,
+   "idx": 26,
    "label": "Accounting"
   },
   {
    "allow_on_submit": 1,
    "fieldname": "payment_entry",
    "fieldtype": "Link",
-   "idx": 21,
+   "idx": 27,
    "label": "Payment Entry",
    "no_copy": 1,
    "options": "Payment Entry",
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "balance_after",
+   "fieldname": "balance_before",
    "fieldtype": "Currency",
-   "idx": 22,
-   "label": "Balance After",
-   "no_copy": 1,
+   "idx": 28,
+   "label": "Balance Before",
    "read_only": 1
   },
   {
    "fieldname": "cb2",
    "fieldtype": "Column Break",
-   "idx": 23
+   "idx": 29
   },
   {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "idx": 24,
-   "label": "Remarks"
+   "allow_on_submit": 1,
+   "fieldname": "balance_after",
+   "fieldtype": "Currency",
+   "idx": 30,
+   "label": "Balance After",
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
    "fieldtype": "Link",
-   "idx": 25,
+   "idx": 31,
    "label": "Amended From",
    "no_copy": 1,
    "options": "Fee Payment",
@@ -227,7 +271,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-21 10:00:00.000000",
+ "modified": "2026-10-25 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Fee Payment",

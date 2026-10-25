@@ -10,14 +10,18 @@ This branch applies a small, reviewable first tranche of the payment audit, spec
 
 ## Changes implemented
 
-1. **C2B confirmation envelope validation** (`school_erp/logic/paybill.py`, `school_erp/api/paybill.py`). Require configured paybill shortcode to match incoming `BusinessShortCode`; require a transaction ID for confirmation; reject zero, negative, non-finite, and greater-than-two-decimal amounts. Validation-stage requests do not require a transaction ID.
+1. **C2B envelope checks** (`school_erp/logic/paybill.py`, `school_erp/api/paybill.py`). `envelope_problems()` checks the raw Daraja payload: `BusinessShortCode` must match School Settings, a confirmation needs a `TransID`, and `TransAmount` must be a positive, finite amount with at most 2 decimals (parsed as a string, so malformed values never raise).
+   - **Validation** (before the payment completes): a bad amount returns `C2B00013` (invalid amount); any other problem returns `C2B00016`.
+   - **Confirmation** (money already received): a payment that fails the checks is **stored as `Needs Review`** with the reason, logged, never auto-posted or retried by the hourly job, and acknowledged. The bursar posts it with *Post to Student* after checking. Only a confirmation with no `TransID` (nothing to key a record on) is refused with HTTP 400, with the full payload in the Error Log for statement reconciliation.
+   - `Needs Review` is shown in the transaction list/form, the Paybill Reconciliation report and the management dashboard's attention list.
 2. **Failed persistence is no longer acknowledged as success** (`school_erp/api/paybill.py`). Unexpected failures while recording the confirmation now return HTTP 503, log a traceback, and roll back the request transaction.
-3. **Framework-free regression tests** (`school_erp/tests/test_logic.py`). Added checks for valid records, wrong/missing shortcode, missing reference, zero/negative/NaN/infinite amounts, excess decimal precision, and validation requests before an ID exists.
+3. **Tests.** Framework-free (`test_logic.py`): envelope checks for shortcode, missing reference, zero/negative/NaN/infinite/over-precise/non-numeric amounts, and payload normalisation never raising. Integration (`test_integration.py`): a wrong-shortcode confirmation is stored for review, skipped by the retry job and postable by the bursar; a non-numeric amount is stored for review; a missing TransID returns 400; validation result codes; a storage failure returns 503 and rolls back.
 
 ## Verification status
 
-- Files were changed and committed on this branch using the GitHub repository integration.
-- **Not executed here:** `bash scripts/check.sh` and `bench --site test.localhost run-tests --app school_erp`.
+- `bash scripts/check.sh`: passed (27 logic tests, 56 DocTypes valid).
+- `bench --site test.localhost run-tests --module school_erp.tests.test_integration` on Frappe/ERPNext 16.52: 11 tests passed.
+- **Not executed:** Daraja Sandbox callbacks (reviewer checklist item 4).
 - CI configuration exists in `.github/workflows/ci.yml`; review the new branch's Actions run before merge.
 - No claim is made that Safaricom retries unsuccessful confirmation requests. HTTP 503 makes our failure visible; external reconciliation is mandatory even if a provider does not retry.
 

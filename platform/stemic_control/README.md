@@ -77,3 +77,18 @@ Verified on Frappe/ERPNext 16.52: install-app, migrate, uninstall-app, 6 framewo
 - Integration tests added for domain status forgery, tenant reassignment, competing provisioning keys and direct job-state changes.
 - The competing-job check ignores a job under the same key, so a concurrent retry still gets its job back.
 - Verified on Frappe/ERPNext 16.52: 10 integration and 6 framework-free tests pass, `scripts/check.sh` passes.
+
+## KPI dashboard (new review page)
+
+Open `/app/stemic-overview` on the **admin** site after updating the app, migrating, clearing cache and building assets.
+
+- Overview: Total Schools, Active Schools, Active Subscriptions, Pending Provisioning.
+- Schools: Total, Active, Trial, Pending Provisioning, Failed Provisioning, Pending Domains.
+- Billing: Active, Trial, Past Due, Expiring Within 30 Days.
+- Agents: Total, Active, Referred Schools, Active Referrals.
+
+The dashboard uses one role-checked read-only `dashboard_metrics` API. It uses 4/2/1-column responsive card grids and only enables clickthrough where exact list filters are available. No fictional MRR, paid invoices or commissions are displayed. The `Active Schools` count reflects an *administrative status*, not confirmed infrastructure readiness.
+
+**Important:** This page is separate from the four local Workspaces and seeded Number Cards described in the operator's report. Those local uncommitted assets were not accessible through the GitHub connector and have not been modified or inspected. Merge their layouts only after those files are committed or provided for review.
+
+No Bench runtime tests have been run for this change; verify `/app/stemic-overview`, agent/guest denial, responsive widths and filtered card links locally.

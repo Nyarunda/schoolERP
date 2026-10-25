@@ -1,0 +1,75 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS License",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "format:ST-{#######}",
+  "engine": "InnoDB",
+  "field_order": [
+    "tenant",
+    "subscription",
+    "signed_key",
+    "expires_on",
+    "status"
+  ],
+  "fields": [
+    {
+      "fieldtype": "Link",
+      "fieldname": "tenant",
+      "label": "Tenant",
+      "options": "SaaS Tenant",
+      "reqd": 1
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "subscription",
+      "label": "Subscription",
+      "options": "SaaS Subscription",
+      "reqd": 1
+    },
+    {
+      "fieldtype": "Long Text",
+      "fieldname": "signed_key",
+      "label": "Signed License Key",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldtype": "Date",
+      "fieldname": "expires_on",
+      "label": "Expires On",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Select",
+      "fieldname": "status",
+      "label": "Status",
+      "options": "Pending\nIssued\nRevoked",
+      "default": "Pending",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

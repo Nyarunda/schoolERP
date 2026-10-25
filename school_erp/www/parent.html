@@ -2,125 +2,350 @@
 
 {% block title %}{{ _("My Children") }} · {{ school.name or "" }}{% endblock %}
 
+{% macro icon(name) -%}
+<svg class="pp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+	{%- if name == "phone" -%}<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>
+	{%- elif name == "doc" -%}<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>
+	{%- elif name == "award" -%}<circle cx="12" cy="9" r="6"/><path d="M8.5 14 7 22l5-3 5 3-1.5-8"/>
+	{%- elif name == "receipt" -%}<path d="M5 3v18l2.5-1.5L10 21l2-1.5 2 1.5 2.5-1.5L19 21V3l-2.5 1.5L14 3l-2 1.5L10 3 7.5 4.5z"/><path d="M9 9h6M9 13h6"/>
+	{%- elif name == "bell" -%}<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+	{%- elif name == "pin" -%}<path d="M12 17v5M9 3h6l-1 6 3 4H7l3-4z"/>
+	{%- elif name == "copy" -%}<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+	{%- elif name == "check" -%}<path d="M20 6 9 17l-5-5"/>
+	{%- elif name == "arrow" -%}<path d="M7 17 17 7M8 7h9v9"/>
+	{%- elif name == "card" -%}<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/>
+	{%- elif name == "help" -%}<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>
+	{%- endif -%}
+</svg>
+{%- endmacro %}
+
 {% block page_content %}
 {%- set a = school.accent or "#1f6f5c" -%}
+{%- set ns = namespace(due=0, n_due=0) -%}
+{%- for c in children %}{% if c.balance > 0.5 %}{% set ns.due = ns.due + c.balance %}{% set ns.n_due = ns.n_due + 1 %}{% endif %}{% endfor -%}
 <style>
-	.pp, .pp-sheet { --pp-a: {{ a }}; --pp-line: #e3e7ec; --pp-muted: #6b7280; --pp-soft: #f4f6f8; color: #1d2433; }
-	.pp { max-width: 760px; margin: 8px auto 48px; }
-	.pp-sheet .pp-sub { color: var(--pp-muted); font-size: 13px; }
-	.pp * { box-sizing: border-box; }
-	.pp-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-	.pp-head img { height: 46px; border-radius: 8px; }
-	.pp-head h1 { font-size: 22px; margin: 0; font-weight: 700; }
-	.pp-head small { color: var(--pp-muted); font-size: 13px; }
-	.pp-card { border: 1px solid var(--pp-line); border-radius: 14px; padding: 18px; margin-bottom: 16px; background: #fff; }
-	.pp-child-top { display: flex; align-items: center; gap: 12px; }
-	.pp-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--pp-a); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; flex: none; overflow: hidden; }
-	.pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
-	.pp-name { font-size: 18px; font-weight: 700; }
+	.pp, .pp-sheet {
+		--pp-a: {{ a }};
+		--pp-a-soft: color-mix(in srgb, var(--pp-a) 10%, #fff);
+		--pp-a-mid: color-mix(in srgb, var(--pp-a) 22%, #fff);
+		--pp-a-deep: color-mix(in srgb, var(--pp-a) 70%, #000);
+		--pp-ink: #141a26; --pp-muted: #667085; --pp-line: #e8ebf0; --pp-bg: #f6f7f9; --pp-card: #fff;
+		--pp-red: #c8372d; --pp-amber: #a86a00; --pp-green: #16794a;
+		--pp-r: 18px; --pp-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.12);
+		color: var(--pp-ink); font-feature-settings: "tnum" 1;
+	}
+	.pp *, .pp-sheet * { box-sizing: border-box; }
+	.pp { max-width: 820px; margin: 4px auto 64px; }
+	.pp-ic { width: 18px; height: 18px; flex: none; }
 	.pp-sub { color: var(--pp-muted); font-size: 13px; }
-	.pp-bal { margin: 16px 0 12px; padding: 16px; border-radius: 12px; background: var(--pp-soft); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-	.pp-bal.due { background: var(--pp-a); color: #fff; }
-	.pp-bal.due .pp-sub { color: rgba(255,255,255,.85); }
-	.pp-bal .amt { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-	.pp-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .7px; opacity: .85; }
+	.pp-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+
+	/* hero */
+	.pp-hero { position: relative; overflow: hidden; border-radius: 24px; padding: 26px 26px 22px; color: #fff;
+		background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--pp-a) 60%, #fff) 0%, transparent 55%),
+			linear-gradient(135deg, var(--pp-a) 0%, var(--pp-a-deep) 100%); box-shadow: var(--pp-shadow); }
+	.pp-hero::after { content: ""; position: absolute; width: 260px; height: 260px; right: -80px; bottom: -120px; border-radius: 50%;
+		border: 40px solid rgba(255,255,255,.07); }
+	.pp-hero-top { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+	.pp-logo { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,.95); padding: 5px; display: flex; align-items: center; justify-content: center; flex: none; }
+	.pp-logo img { max-width: 100%; max-height: 100%; }
+	.pp-school { font-weight: 700; font-size: 15px; line-height: 1.2; }
+	.pp-school small { display: block; font-weight: 500; opacity: .8; font-size: 12px; }
+	.pp-greet { position: relative; z-index: 1; margin: 22px 0 18px; }
+	.pp-greet h1 { color: #fff; font-size: 26px; font-weight: 750; margin: 0; letter-spacing: -.01em; }
+	.pp-greet p { margin: 4px 0 0; opacity: .85; font-size: 14px; }
+	.pp-stats { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+	.pp-stat { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16); border-radius: 14px; padding: 12px 14px; backdrop-filter: blur(4px); }
+	.pp-stat .pp-lbl { opacity: .8; font-size: 10px; }
+	.pp-stat b { display: block; font-size: 18px; margin-top: 3px; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+	/* child switcher */
+	.pp-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 18px 2px 4px; scrollbar-width: none; }
+	.pp-tabs::-webkit-scrollbar { display: none; }
+	.pp-tab { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 999px; border: 1px solid var(--pp-line);
+		background: var(--pp-card); font-weight: 600; font-size: 14px; color: var(--pp-ink); cursor: pointer; white-space: nowrap; transition: .15s; }
+	.pp-tab .pp-av { width: 28px; height: 28px; font-size: 12px; }
+	.pp-tab.on { background: var(--pp-ink); color: #fff; border-color: var(--pp-ink); }
+	.pp-tab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pp-red); }
+
+	/* sections */
+	.pp-sec { margin-top: 18px; }
+	.pp-card { background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: var(--pp-r); padding: 20px; box-shadow: var(--pp-shadow); }
+	.pp-card + .pp-card { margin-top: 14px; }
+	.pp-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+	.pp-h h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; margin: 0; }
+	.pp-h h3 .pp-ic { color: var(--pp-a); }
+	.pp-count { font-size: 12px; color: var(--pp-muted); font-weight: 600; }
+
+	/* profile */
+	.pp-profile { display: flex; align-items: center; gap: 14px; }
+	.pp-av { width: 58px; height: 58px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; overflow: hidden;
+		background: var(--pp-a-mid); color: var(--pp-a-deep); font-weight: 800; font-size: 22px; }
+	.pp-av img { width: 100%; height: 100%; object-fit: cover; }
+	.pp-profile .pp-av { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--pp-a-mid); }
+	.pp-name { font-size: 20px; font-weight: 750; letter-spacing: -.01em; }
+	.pp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
+	.pp-chip { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--pp-bg); color: var(--pp-muted); }
+	.pp-chip.a { background: var(--pp-a-soft); color: var(--pp-a-deep); }
+
+	/* balance */
+	.pp-bal { margin-top: 18px; border-radius: 16px; padding: 18px; display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; flex-wrap: wrap;
+		background: var(--pp-bg); border: 1px solid var(--pp-line); }
+	.pp-bal.due { background: linear-gradient(135deg, #fff5f3, #fff); border-color: #f6d4cf; }
+	.pp-bal.paid { background: linear-gradient(135deg, #ecf8f1, #fff); border-color: #cdebd9; }
+	.pp-bal .pp-lbl { color: var(--pp-muted); }
+	.pp-bal.due .pp-lbl { color: var(--pp-red); } .pp-bal.paid .pp-lbl { color: var(--pp-green); }
+	.pp-amt { font-size: 32px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-top: 4px; }
+	.pp-due { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--pp-red); }
 	.pp-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-	.pp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; white-space: nowrap; border-radius: 10px; border: 1px solid var(--pp-line); background: #fff; color: #1d2433; font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: none !important; }
-	.pp-btn:hover { border-color: var(--pp-a); color: var(--pp-a); }
-	.pp-btn.primary { background: #fff; color: var(--pp-a); border-color: #fff; }
-	.pp-bal:not(.due) .pp-btn.primary { background: var(--pp-a); color: #fff; border-color: var(--pp-a); }
-	.pp h3 { font-size: 14px; margin: 18px 0 6px; font-weight: 700; }
-	.pp-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--pp-line); font-size: 14px; }
-	.pp-row:first-of-type { border-top: none; }
-	.pp-row a { color: var(--pp-a); font-weight: 600; font-size: 13px; white-space: nowrap; }
-	.pp-num { font-variant-numeric: tabular-nums; font-weight: 600; }
-	.pp-grade { display: inline-block; min-width: 34px; text-align: center; padding: 2px 8px; border-radius: 8px; background: var(--pp-soft); font-weight: 700; }
-	.pp-empty { color: var(--pp-muted); font-size: 13px; padding: 6px 0; }
-	.pp-paybill { font-size: 13px; color: var(--pp-muted); margin-top: 8px; }
-	.pp-notice { border-left: 3px solid var(--pp-line); padding: 4px 0 4px 12px; margin-bottom: 12px; }
-	.pp-notice.Urgent { border-color: #d03b3b; } .pp-notice.Important { border-color: #b07800; }
-	.pp-notice b { font-size: 14px; }
-	.pp-notice p { margin: 3px 0 0; font-size: 13px; white-space: pre-line; }
+	.pp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border-radius: 12px; white-space: nowrap;
+		border: 1px solid var(--pp-line); background: #fff; color: var(--pp-ink) !important; font-weight: 650; font-size: 14px; cursor: pointer;
+		text-decoration: none !important; transition: transform .1s, box-shadow .15s, border-color .15s; }
+	.pp-btn:hover { border-color: var(--pp-a); box-shadow: 0 4px 14px -6px var(--pp-a); }
+	.pp-btn:active { transform: scale(.98); }
+	.pp-btn.primary { background: var(--pp-a); border-color: var(--pp-a); color: #fff !important; }
+	.pp-btn.mpesa { background: #2f9e44; border-color: #2f9e44; color: #fff !important; }
+	.pp-btn:disabled { opacity: .55; cursor: default; transform: none; }
+
+	/* paybill */
+	.pp-paybill { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+	.pp-pb { border: 1px dashed var(--pp-line); border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+	.pp-pb .pp-lbl { color: var(--pp-muted); font-size: 10px; }
+	.pp-pb b { font-size: 16px; letter-spacing: .02em; }
+	.pp-copy { border: 0; background: var(--pp-bg); color: var(--pp-muted); width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+	.pp-copy:hover { color: var(--pp-a); } .pp-copy.done { color: var(--pp-green); }
+
+	/* quick actions */
+	.pp-quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+	.pp-q { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; border: 1px solid var(--pp-line); background: #fff;
+		color: var(--pp-ink) !important; text-decoration: none !important; font-weight: 650; font-size: 14px; transition: .15s; }
+	.pp-q:hover { border-color: var(--pp-a); transform: translateY(-1px); }
+	.pp-q span.ib { width: 36px; height: 36px; border-radius: 10px; background: var(--pp-a-soft); color: var(--pp-a); display: flex; align-items: center; justify-content: center; }
+	.pp-q small { display: block; font-weight: 500; color: var(--pp-muted); font-size: 12px; margin-top: 2px; }
+
+	/* report cards */
+	.pp-rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+	.pp-rc { position: relative; border: 1px solid var(--pp-line); border-radius: 14px; padding: 14px; text-decoration: none !important; color: var(--pp-ink) !important; transition: .15s; display: block; }
+	.pp-rc:hover { border-color: var(--pp-a); box-shadow: var(--pp-shadow); }
+	.pp-rc-top { display: flex; align-items: center; gap: 12px; }
+	.pp-grade { width: 48px; height: 48px; border-radius: 12px; background: var(--pp-a); color: #fff; font-weight: 800; font-size: 18px; display: flex; align-items: center; justify-content: center; flex: none; }
+	.pp-rc:not(:first-child) .pp-grade { background: var(--pp-a-soft); color: var(--pp-a-deep); }
+	.pp-rc-name { font-weight: 700; font-size: 14px; line-height: 1.25; }
+	.pp-bar { height: 6px; border-radius: 99px; background: var(--pp-bg); margin-top: 12px; overflow: hidden; }
+	.pp-bar i { display: block; height: 100%; border-radius: 99px; background: var(--pp-a); }
+	.pp-rc-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--pp-muted); font-weight: 600; }
+	.pp-trend { font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 6px; margin-left: auto; align-self: flex-start; }
+	.pp-trend.up { color: var(--pp-green); background: #e7f6ee; } .pp-trend.down { color: var(--pp-red); background: #fdecea; }
+	.pp-rc .pp-ext { position: absolute; top: 12px; right: 12px; color: var(--pp-muted); opacity: 0; transition: .15s; }
+	.pp-rc:hover .pp-ext { opacity: 1; }
+
+	/* payments */
+	.pp-pay { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--pp-line); }
+	.pp-pay:first-child { border-top: 0; padding-top: 2px; }
+	.pp-pay .ib { width: 38px; height: 38px; border-radius: 50%; background: #e7f6ee; color: var(--pp-green); display: flex; align-items: center; justify-content: center; flex: none; }
+	.pp-pay .amt { font-weight: 750; font-size: 15px; }
+	.pp-pay a { margin-left: auto; font-size: 13px; font-weight: 650; color: var(--pp-a) !important; padding: 6px 10px; border-radius: 8px; white-space: nowrap; }
+	.pp-pay a:hover { background: var(--pp-a-soft); text-decoration: none; }
+	.pp-empty { text-align: center; padding: 22px 10px; color: var(--pp-muted); font-size: 14px; }
+	.pp-empty .pp-ic { width: 28px; height: 28px; opacity: .5; margin-bottom: 6px; }
+
+	/* notices */
+	.pp-notice { display: flex; gap: 12px; padding: 14px; border-radius: 14px; background: var(--pp-bg); }
+	.pp-notice + .pp-notice { margin-top: 8px; }
+	.pp-notice .ib { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--pp-a); display: flex; align-items: center; justify-content: center; flex: none; }
+	.pp-notice.Urgent { background: #fdf0ee; } .pp-notice.Urgent .ib { color: var(--pp-red); }
+	.pp-notice.Important { background: #fdf6e7; } .pp-notice.Important .ib { color: var(--pp-amber); }
+	.pp-notice-t { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+	.pp-notice-t b { font-size: 14px; }
+	.pp-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 6px; background: #fff; }
+	.pp-notice.Urgent .pp-badge { color: var(--pp-red); } .pp-notice.Important .pp-badge { color: var(--pp-amber); }
+	.pp-notice p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: #3b4352; white-space: pre-line; }
+	.pp-notice.clamp p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+	.pp-more { border: 0; background: none; padding: 0; margin-top: 4px; font-size: 12px; font-weight: 700; color: var(--pp-a); cursor: pointer; }
+
+	.pp-help { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 16px 18px; border-radius: var(--pp-r); background: var(--pp-a-soft); color: var(--pp-a-deep); font-size: 14px; }
+	.pp-help a { color: inherit !important; font-weight: 700; }
+
+	.pp-child { display: none; } .pp-child.on { display: block; animation: pp-in .25s ease; }
+	@keyframes pp-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
 	/* pay sheet */
-	.pp-sheet { position: fixed; inset: 0; background: rgba(15, 20, 30, .45); display: none; align-items: flex-end; justify-content: center; z-index: 1050; }
+	.pp-sheet { position: fixed; inset: 0; background: rgba(12, 17, 28, .5); backdrop-filter: blur(3px); display: none; align-items: flex-end; justify-content: center; z-index: 1050; }
 	.pp-sheet.open { display: flex; }
-	.pp-sheet-in { background: #fff; width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 22px; }
-	@media (min-width: 600px) { .pp-sheet { align-items: center; } .pp-sheet-in { border-radius: 18px; } }
-	.pp-field { margin-top: 12px; }
-	.pp-field label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; }
-	.pp-field input { width: 100%; padding: 12px; border: 1px solid #d0d5dd; border-radius: 10px; font-size: 16px; }
-	.pp-status { margin-top: 14px; padding: 12px; border-radius: 10px; background: var(--pp-soft); font-size: 14px; display: none; }
-	.pp-status.ok { background: #e8f5ee; color: #17633b; } .pp-status.bad { background: #fdecec; color: #a12a2a; }
-	@media (max-width: 480px) { .pp-bal .amt { font-size: 22px; } .pp-btns { width: 100%; } .pp-btn { flex: 1; padding: 10px 12px; } }
+	.pp-sheet-in { background: #fff; width: 100%; max-width: 460px; border-radius: 22px 22px 0 0; padding: 24px; animation: pp-up .25s ease; }
+	@keyframes pp-up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+	@media (min-width: 600px) { .pp-sheet { align-items: center; } .pp-sheet-in { border-radius: 22px; } }
+	.pp-sheet-h { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+	.pp-sheet-h .ib { width: 42px; height: 42px; border-radius: 12px; background: #e7f6ee; color: #2f9e44; display: flex; align-items: center; justify-content: center; }
+	.pp-sheet-h b { font-size: 18px; }
+	.pp-field { margin-top: 14px; }
+	.pp-field label { font-size: 13px; font-weight: 650; display: block; margin-bottom: 6px; }
+	.pp-field input { width: 100%; padding: 13px 14px; border: 1px solid #d0d5dd; border-radius: 12px; font-size: 17px; font-weight: 600; outline: none; }
+	.pp-field input:focus { border-color: var(--pp-a); box-shadow: 0 0 0 3px var(--pp-a-mid); }
+	.pp-presets { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+	.pp-preset { border: 1px solid var(--pp-line); background: #fff; border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+	.pp-preset:hover { border-color: var(--pp-a); color: var(--pp-a); }
+	.pp-status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--pp-bg); font-size: 14px; display: none; }
+	.pp-status.ok { background: #e7f6ee; color: #17633b; } .pp-status.bad { background: #fdecea; color: #a12a2a; }
+	.pp-sheet .pp-btns { margin-top: 18px; } .pp-sheet .pp-btn { flex: 1; }
+
+	@media (max-width: 600px) {
+		.pp-hero { border-radius: 20px; padding: 20px 18px 18px; }
+		.pp-greet h1 { font-size: 22px; }
+		.pp-stats { grid-template-columns: 1fr 1fr; } .pp-stat:last-child { grid-column: span 2; }
+		.pp-card { padding: 16px; }
+		.pp-amt { font-size: 28px; }
+		.pp-bal .pp-btns { width: 100%; } .pp-bal .pp-btn { flex: 1; }
+		.pp-paybill { grid-template-columns: 1fr; }
+		.pp-quick { grid-template-columns: 1fr 1fr 1fr; gap: 8px; } .pp-q { padding: 12px 10px; font-size: 13px; } .pp-q small { display: none; }
+	}
 </style>
 
 <div class="pp">
-	<div class="pp-head">
-		{% if school.logo %}<img src="{{ school.logo }}" alt="">{% endif %}
-		<div><h1>{{ school.name or _("School") }}</h1><small>{{ _("Welcome") }}, {{ parent_name }}</small></div>
+	<header class="pp-hero">
+		<div class="pp-hero-top">
+			{% if school.logo %}<div class="pp-logo"><img src="{{ school.logo }}" alt=""></div>{% endif %}
+			<div class="pp-school">{{ school.name or _("School") }}<small>{{ _("Parent Portal") }}</small></div>
+		</div>
+		<div class="pp-greet">
+			<h1><span id="pp-hello">{{ _("Welcome") }}</span>, {{ (parent_name or "").split(" ")[0] }}</h1>
+			<p>{% if ns.n_due %}{{ _("You have fees due for {0} of {1} children.").format(ns.n_due, children|length) if children|length > 1 else _("There is a fee balance due.") }}{% elif children %}{{ _("All fees are up to date. Thank you!") }}{% else %}{{ _("Here's everything about your children at school.") }}{% endif %}</p>
+		</div>
+		{% if children %}
+		<div class="pp-stats">
+			<div class="pp-stat"><div class="pp-lbl">{{ _("Children") }}</div><b>{{ children|length }}</b></div>
+			<div class="pp-stat"><div class="pp-lbl">{{ _("Total due") }}</div><b>{{ frappe.utils.fmt_money(ns.due, currency=currency) }}</b></div>
+			<div class="pp-stat"><div class="pp-lbl">{{ _("Notices") }}</div><b>{{ notices|length }}</b></div>
+		</div>
+		{% endif %}
+	</header>
+
+	{% if children|length > 1 %}
+	<nav class="pp-tabs" role="tablist">
+		{% for c in children %}
+		<button class="pp-tab {{ 'on' if loop.first }}" data-tab="{{ loop.index0 }}" role="tab">
+			<span class="pp-av">{% if c.photo %}<img src="{{ c.photo }}" alt="">{% else %}{{ c.first_name[:1] }}{% endif %}</span>
+			{{ c.first_name }}{% if c.balance > 0.5 %}<span class="dot" title="{{ _('Fees due') }}"></span>{% endif %}
+		</button>
+		{% endfor %}
+	</nav>
+	{% endif %}
+
+	{% for c in children %}
+	{%- set stmt = "/api/method/school_erp.api.portal.statement?student=" ~ (c.id|urlencode) -%}
+	<section class="pp-child {{ 'on' if loop.first }}" data-child="{{ loop.index0 }}">
+		<div class="pp-sec pp-card">
+			<div class="pp-profile">
+				<div class="pp-av">{% if c.photo %}<img src="{{ c.photo }}" alt="">{% else %}{{ c.first_name[:1] }}{% endif %}</div>
+				<div>
+					<div class="pp-name">{{ c.name }}</div>
+					<div class="pp-chips">{% if c.stream %}<span class="pp-chip a">{{ c.stream }}</span>{% endif %}<span class="pp-chip">{{ _("Adm.") }} {{ c.id }}</span></div>
+				</div>
+			</div>
+
+			<div class="pp-bal {{ 'due' if c.balance > 0.5 else ('paid' if c.balance <= 0.5 else '') }}">
+				<div>
+					<div class="pp-lbl">{{ _("Fee balance") if c.balance > 0.5 else (_("Credit on account") if c.balance < -0.5 else _("Fully paid")) }}</div>
+					<div class="pp-amt">{{ frappe.utils.fmt_money(c.balance if c.balance >= 0 else -c.balance, currency=currency) }}</div>
+					{% if c.balance > 0.5 and c.due %}<div class="pp-due">{{ _("Due by") }} {{ c.due }}</div>{% endif %}
+				</div>
+				<div class="pp-btns">
+					{% if can_pay and c.balance > 0.5 %}<button class="pp-btn mpesa" data-pay="{{ c.id }}" data-name="{{ c.first_name }}" data-amount="{{ c.balance|round|int }}">{{ icon("phone") }}{{ _("Pay with M-Pesa") }}</button>{% endif %}
+					<a class="pp-btn" href="{{ stmt }}" target="_blank">{{ icon("doc") }}{{ _("Statement") }}</a>
+				</div>
+			</div>
+
+			{% if school.paybill %}
+			<div class="pp-paybill">
+				<div class="pp-pb"><div><div class="pp-lbl">{{ _("Paybill No.") }}</div><b>{{ school.paybill }}</b></div><button class="pp-copy" data-copy="{{ school.paybill }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
+				<div class="pp-pb"><div><div class="pp-lbl">{{ _("Account No.") }}</div><b>{{ c.id }}</b></div><button class="pp-copy" data-copy="{{ c.id }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
+			</div>
+			{% endif %}
+
+			<div class="pp-quick">
+				<a class="pp-q" href="{{ stmt }}" target="_blank"><span class="ib">{{ icon("doc") }}</span><div>{{ _("Statement") }}<small>{{ _("Full fee history") }}</small></div></a>
+				<a class="pp-q" href="#rc-{{ loop.index0 }}"><span class="ib">{{ icon("award") }}</span><div>{{ _("Results") }}<small>{{ c.report_cards|length }} {{ _("report cards") }}</small></div></a>
+				<a class="pp-q" href="#pay-{{ loop.index0 }}"><span class="ib">{{ icon("receipt") }}</span><div>{{ _("Receipts") }}<small>{{ c.payments|length }} {{ _("recent") }}</small></div></a>
+			</div>
+		</div>
+
+		{% if c.report_cards %}
+		<div class="pp-sec pp-card" id="rc-{{ loop.index0 }}">
+			<div class="pp-h"><h3>{{ icon("award") }}{{ _("Report cards") }}</h3><span class="pp-count">{{ c.report_cards|length }}</span></div>
+			<div class="pp-rc-grid">
+				{% for r in c.report_cards %}
+				{%- set pct = (r.mean_percent or 0)|float -%}
+				{%- set prev = c.report_cards[loop.index] if not loop.last else None -%}
+				<a class="pp-rc" href="/api/method/school_erp.api.portal.report_card?name={{ r.name|urlencode }}" target="_blank">
+					<span class="pp-ext">{{ icon("arrow") }}</span>
+					<div class="pp-rc-top">
+						<div class="pp-grade">{{ r.mean_grade or "–" }}</div>
+						<div class="pp-rc-name">{{ r.exam_name or r.exam }}<div class="pp-sub">{{ "%.1f"|format(pct) }}%</div></div>
+						{% if prev and prev.mean_percent is not none %}{% set d = pct - (prev.mean_percent|float) %}
+						{% if d >= 0.05 %}<span class="pp-trend up">▲ {{ "%.1f"|format(d) }}</span>{% elif d <= -0.05 %}<span class="pp-trend down">▼ {{ "%.1f"|format(-d) }}</span>{% endif %}
+						{% endif %}
+					</div>
+					<div class="pp-bar"><i style="width: {{ [[pct, 0]|max, 100]|min }}%"></i></div>
+					<div class="pp-rc-meta"><span>{{ _("Position") }} {{ r.stream_position or "–" }} / {{ r.stream_size or "–" }}</span><span>{{ _("View PDF") }}</span></div>
+				</a>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %}
+
+		<div class="pp-sec pp-card" id="pay-{{ loop.index0 }}">
+			<div class="pp-h"><h3>{{ icon("receipt") }}{{ _("Recent payments") }}</h3>{% if c.payments %}<a class="pp-count" href="{{ stmt }}" target="_blank">{{ _("See all") }} →</a>{% endif %}</div>
+			{% for p in c.payments %}
+			<div class="pp-pay">
+				<span class="ib">{{ icon("check") }}</span>
+				<div><div class="amt">{{ frappe.utils.fmt_money(p.amount, currency=currency) }}</div><div class="pp-sub">{{ p.date }} · {{ p.mode_of_payment }}{% if p.reference_no %} · {{ p.reference_no }}{% endif %}</div></div>
+				<a href="/api/method/school_erp.api.portal.receipt?payment={{ p.name|urlencode }}" target="_blank">{{ _("Receipt") }}</a>
+			</div>
+			{% else %}
+			<div class="pp-empty">{{ icon("card") }}<div>{{ _("No payments yet") }}</div></div>
+			{% endfor %}
+		</div>
+	</section>
+	{% else %}
+	<div class="pp-sec pp-card pp-empty" style="padding:36px 20px">
+		{{ icon("help") }}
+		<div style="font-weight:700;color:var(--pp-ink);font-size:16px">{{ _("No students are linked to your login yet.") }}</div>
+		<div style="margin-top:6px">{{ _("Please contact the school office") }}{% if school.phone %} ({{ school.phone }}){% endif %}.</div>
 	</div>
+	{% endfor %}
 
 	{% if notices %}
-	<div class="pp-card">
-		<div style="font-weight:700;margin-bottom:10px">{{ _("Notices from the school") }}</div>
+	<div class="pp-sec pp-card">
+		<div class="pp-h"><h3>{{ icon("bell") }}{{ _("Notices from the school") }}</h3><span class="pp-count">{{ notices|length }}</span></div>
 		{% for n in notices %}
-		<div class="pp-notice {{ n.priority }}"><b>{% if n.pinned %}📌 {% endif %}{{ n.title }}</b> <span class="pp-sub">· {{ n.date }}</span><p>{{ n.text }}</p></div>
+		<div class="pp-notice {{ n.priority }} {{ 'clamp' if (n.text or '')|length > 220 }}">
+			<span class="ib">{{ icon("pin" if n.pinned else "bell") }}</span>
+			<div>
+				<div class="pp-notice-t"><b>{{ n.title }}</b>{% if n.priority in ("Urgent", "Important") %}<span class="pp-badge">{{ _(n.priority) }}</span>{% endif %}<span class="pp-sub">{{ n.date }}</span></div>
+				<p>{{ n.text }}</p>
+				{% if (n.text or '')|length > 220 %}<button class="pp-more">{{ _("Read more") }}</button>{% endif %}
+			</div>
+		</div>
 		{% endfor %}
 	</div>
 	{% endif %}
 
-	{% for c in children %}
-	<div class="pp-card">
-		<div class="pp-child-top">
-			<div class="pp-avatar">{% if c.photo %}<img src="{{ c.photo }}" alt="">{% else %}{{ c.first_name[:1] }}{% endif %}</div>
-			<div><div class="pp-name">{{ c.name }}</div><div class="pp-sub">{{ c.stream or "" }} · {{ c.id }}</div></div>
-		</div>
-
-		<div class="pp-bal {{ 'due' if c.balance > 0.5 else '' }}">
-			<div>
-				<div class="pp-lbl">{{ _("Fee balance") if c.balance > 0.5 else (_("Credit") if c.balance < -0.5 else _("Fully paid")) }}</div>
-				<div class="amt">{{ frappe.utils.fmt_money(c.balance if c.balance >= 0 else -c.balance, currency=currency) }}</div>
-				{% if c.balance > 0.5 and c.due %}<div class="pp-sub">{{ _("Due by") }} {{ c.due }}</div>{% endif %}
-			</div>
-			<div class="pp-btns">
-				{% if can_pay and c.balance > 0.5 %}<button class="pp-btn primary" data-pay="{{ c.id }}" data-name="{{ c.first_name }}" data-amount="{{ c.balance|round|int }}">{{ _("Pay with M-Pesa") }}</button>{% endif %}
-				<a class="pp-btn" href="/api/method/school_erp.api.portal.statement?student={{ c.id|urlencode }}" target="_blank">{{ _("Statement") }}</a>
-			</div>
-		</div>
-		{% if school.paybill %}<div class="pp-paybill">{{ _("Or pay via Paybill") }} <b>{{ school.paybill }}</b>, {{ _("Account No.") }} <b>{{ c.id }}</b></div>{% endif %}
-
-		{% if c.report_cards %}
-		<h3>{{ _("Report cards") }}</h3>
-		{% for r in c.report_cards %}
-		<div class="pp-row"><div><span class="pp-grade">{{ r.mean_grade }}</span>&nbsp; {{ r.exam_name or r.exam }}<div class="pp-sub">{{ "%.1f"|format(r.mean_percent or 0) }}% · {{ _("Position") }} {{ r.stream_position }} / {{ r.stream_size }}</div></div>
-			<a href="/api/method/school_erp.api.portal.report_card?name={{ r.name|urlencode }}" target="_blank">{{ _("View PDF") }}</a></div>
-		{% endfor %}
-		{% endif %}
-
-		<h3>{{ _("Recent payments") }}</h3>
-		{% for p in c.payments %}
-		<div class="pp-row"><div><span class="pp-num">{{ frappe.utils.fmt_money(p.amount, currency=currency) }}</span><div class="pp-sub">{{ p.date }} · {{ p.mode_of_payment }}{% if p.reference_no %} · {{ p.reference_no }}{% endif %}</div></div>
-			<a href="/api/method/school_erp.api.portal.receipt?payment={{ p.name|urlencode }}" target="_blank">{{ _("Receipt") }}</a></div>
-		{% else %}
-		<div class="pp-empty">{{ _("No payments yet") }}</div>
-		{% endfor %}
-	</div>
-	{% else %}
-	<div class="pp-card"><b>{{ _("No students are linked to your login yet.") }}</b>
-		<div class="pp-sub" style="margin-top:6px">{{ _("Please contact the school office") }}{% if school.phone %} ({{ school.phone }}){% endif %}.</div></div>
-	{% endfor %}
+	{% if school.phone %}
+	<div class="pp-help">{{ icon("help") }}<div>{{ _("Questions about fees or your child?") }} {{ _("Call the school office on") }} <a href="tel:{{ school.phone }}">{{ school.phone }}</a></div></div>
+	{% endif %}
 </div>
 
 <div class="pp-sheet" id="pp-sheet">
-	<div class="pp-sheet-in">
-		<div style="font-size:18px;font-weight:700" id="pp-title">{{ _("Pay with M-Pesa") }}</div>
+	<div class="pp-sheet-in" role="dialog" aria-modal="true">
+		<div class="pp-sheet-h"><span class="ib">{{ icon("phone") }}</span><b id="pp-title">{{ _("Pay with M-Pesa") }}</b></div>
 		<div class="pp-sub">{{ _("You will get a prompt on your phone. Enter your M-Pesa PIN to complete the payment.") }}</div>
-		<div class="pp-field"><label>{{ _("Amount") }} ({{ currency }})</label><input id="pp-amount" type="number" min="1" inputmode="numeric"></div>
+		<div class="pp-field"><label>{{ _("Amount") }} ({{ currency }})</label><input id="pp-amount" type="number" min="1" inputmode="numeric">
+			<div class="pp-presets" id="pp-presets"></div></div>
 		<div class="pp-field"><label>{{ _("M-Pesa phone number") }}</label><input id="pp-phone" type="tel" value="{{ phone }}" placeholder="07XX XXX XXX"></div>
 		<div class="pp-status" id="pp-status"></div>
-		<div class="pp-btns" style="margin-top:16px">
+		<div class="pp-btns">
 			<button class="pp-btn" id="pp-cancel">{{ _("Close") }}</button>
-			<button class="pp-btn" id="pp-go" style="background:var(--pp-a);color:#fff;border-color:var(--pp-a)">{{ _("Send prompt") }}</button>
+			<button class="pp-btn mpesa" id="pp-go">{{ _("Send prompt") }}</button>
 		</div>
 	</div>
 </div>
@@ -128,7 +353,19 @@
 <script>
 (() => {
 	const $ = (s) => document.querySelector(s);
-	const sheet = $("#pp-sheet"), status = $("#pp-status"), go = $("#pp-go");
+	const h = new Date().getHours();
+	$("#pp-hello").textContent = h < 12 ? "{{ _('Good morning') }}" : h < 17 ? "{{ _('Good afternoon') }}" : "{{ _('Good evening') }}";
+
+	document.querySelectorAll("[data-tab]").forEach((t) => t.addEventListener("click", () => {
+		document.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("on", x === t));
+		document.querySelectorAll("[data-child]").forEach((x) => x.classList.toggle("on", x.dataset.child === t.dataset.tab));
+	}));
+	document.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
+		try { await navigator.clipboard.writeText(b.dataset.copy); b.classList.add("done"); setTimeout(() => b.classList.remove("done"), 1500); } catch (e) { /* clipboard blocked */ }
+	}));
+	document.querySelectorAll(".pp-more").forEach((b) => b.addEventListener("click", () => { b.closest(".pp-notice").classList.remove("clamp"); b.remove(); }));
+
+	const sheet = $("#pp-sheet"), status = $("#pp-status"), go = $("#pp-go"), amount = $("#pp-amount");
 	let student = null, timer = null;
 	const show = (msg, cls) => { status.style.display = "block"; status.className = "pp-status " + (cls || ""); status.textContent = msg; };
 	const call = async (method, args) => {
@@ -146,17 +383,28 @@
 	};
 	document.querySelectorAll("[data-pay]").forEach((b) => b.addEventListener("click", () => {
 		student = b.dataset.pay;
+		const full = parseInt(b.dataset.amount, 10);
 		$("#pp-title").textContent = "{{ _('Pay fees for') }} " + b.dataset.name;
-		$("#pp-amount").value = b.dataset.amount;
+		amount.value = full;
+		const presets = $("#pp-presets");
+		presets.innerHTML = "";
+		[[full, "{{ _('Full balance') }}"], [Math.ceil(full / 2), "{{ _('Half') }}"]].forEach(([v, label]) => {
+			if (v < 1) return;
+			const p = document.createElement("button");
+			p.className = "pp-preset"; p.type = "button"; p.textContent = label + " · " + v.toLocaleString();
+			p.addEventListener("click", () => { amount.value = v; });
+			presets.appendChild(p);
+		});
 		status.style.display = "none"; go.disabled = false;
 		sheet.classList.add("open");
 	}));
+	sheet.addEventListener("click", (e) => { if (e.target === sheet) $("#pp-cancel").click(); });
 	$("#pp-cancel").addEventListener("click", () => { sheet.classList.remove("open"); clearInterval(timer); if (status.classList.contains("ok")) location.reload(); });
 	go.addEventListener("click", async () => {
 		go.disabled = true;
 		show("{{ _('Sending the prompt to your phone...') }}");
 		try {
-			const r = await call("pay", { student, amount: $("#pp-amount").value, phone: $("#pp-phone").value });
+			const r = await call("pay", { student, amount: amount.value, phone: $("#pp-phone").value });
 			show("{{ _('Check your phone and enter your M-Pesa PIN.') }}");
 			let tries = 0;
 			timer = setInterval(async () => {

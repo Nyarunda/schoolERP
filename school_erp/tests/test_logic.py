@@ -324,3 +324,18 @@ def test_promotion_plan():
 	assert pr.apply_action("Promote", "Grade 9", "Grade 9 West", None)["action"] == "Graduate"
 	s = pr.summarize([{"action": "Promote", "balance": 5000}, {"action": "Graduate", "balance": 0}, {"action": "Repeat", "balance": 100}])
 	assert (s["promote"], s["graduate"], s["repeat"], s["with_balance"], s["balance"]) == (1, 1, 1, 2, 5100)
+
+
+
+def test_paybill_confirmation_envelope_validation():
+	base = {"trans_id": "ABC1234567", "amount": 15000.0, "business_shortcode": "600000"}
+	assert pb.valid_confirmation(base, "600000")
+	assert not pb.valid_confirmation(base, "600001")
+	assert not pb.valid_confirmation({**base, "business_shortcode": ""}, "600000")
+	assert not pb.valid_confirmation({**base, "amount": 0}, "600000")
+	assert not pb.valid_confirmation({**base, "amount": -1}, "600000")
+	assert not pb.valid_confirmation({**base, "amount": float("nan")}, "600000")
+	assert not pb.valid_confirmation({**base, "amount": float("inf")}, "600000")
+	assert not pb.valid_confirmation({**base, "amount": 1.001}, "600000")
+	assert not pb.valid_confirmation({**base, "trans_id": ""}, "600000")
+	assert pb.valid_confirmation({**base, "trans_id": ""}, "600000", require_transaction_id=False)

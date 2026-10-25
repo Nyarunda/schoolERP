@@ -23,7 +23,7 @@ after_migrate = "school_erp.setup.install.after_migrate"
 before_tests = "school_erp.tests.utils.before_tests"
 
 app_include_js = ["/assets/school_erp/js/school_erp.js", "/assets/school_erp/js/school_dashboard.js"]
-app_include_css = ["/assets/school_erp/css/school_dashboard.css"]
+app_include_css = ["school_dashboard.bundle.css"]
 
 boot_session = "school_erp.licensing.boot_session"
 

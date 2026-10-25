@@ -63,12 +63,32 @@ class TestControlPlane(TestCase):
         self.assertRaises(frappe.ValidationError, api.record_job_result, job, "Succeeded")  # must run first
         api.record_job_result(job, "Running")
         self.assertEqual(frappe.db.get_value("SaaS Tenant", t, "status"), "Provisioning")
-        api.record_job_result(job, "Succeeded")
-        self.assertEqual(frappe.db.get_value("SaaS Tenant", t, "status"), "Active")
-        self.assertRaises(frappe.ValidationError, api.queue_provisioning, t, "another-key-123")
+        self.assertRaises(frappe.ValidationError, api.record_job_result, job, "Succeeded")
+        api.record_job_result(job, "Failed", "Provisioner is not installed")
+        self.assertEqual(frappe.db.get_value("SaaS Tenant", t, "status"), "Failed")
+        self.assertEqual(frappe.db.get_value("SaaS Provisioning Job", job, "status"), "Failed")
 
-        self.assertEqual(api.set_tenant_status(t, "Suspended")["status"], "Suspended")
-        self.assertEqual(api.set_tenant_status(t, "Active")["status"], "Active")
+    def test_competing_job_keys_rejected(self):
+        t = self.tenant()
+        api.queue_provisioning(t, "primary-" + frappe.generate_hash(length=12))
+        self.assertRaises(frappe.ValidationError, api.queue_provisioning, t, "secondary-" + frappe.generate_hash(length=12))
+
+    def test_cannot_forge_custom_domain_verification(self):
+        t = self.tenant()
+        data = api.request_domain(t, f"portal.{t}.ac.test")
+        doc = frappe.get_doc("SaaS Domain", data["domain"])
+        doc.status = "Verified"
+        self.assertRaises(frappe.PermissionError, doc.save)
+        doc.reload()
+        doc.tenant = "someone-else"
+        self.assertRaises(frappe.ValidationError, doc.save)
+
+    def test_job_status_cannot_be_edited_directly(self):
+        t = self.tenant()
+        name = api.queue_provisioning(t, "secure-" + frappe.generate_hash(length=12))
+        doc = frappe.get_doc("SaaS Provisioning Job", name)
+        doc.status = "Succeeded"
+        self.assertRaises(frappe.PermissionError, doc.save)
 
     def test_same_key_in_a_race_returns_the_winner(self):
         t = self.tenant()

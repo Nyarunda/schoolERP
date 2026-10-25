@@ -202,3 +202,40 @@ def overview():
             "active_subscriptions": frappe.db.count("SaaS Subscription", {"status": "Active"}),
             "agents": frappe.db.count("SaaS Agent", {"status": "Active"}),
             "queued_jobs": frappe.db.count("SaaS Provisioning Job", {"status": "Queued"})}
+
+
+@frappe.whitelist(methods=["GET"])
+def dashboard_metrics():
+    """Real counts for the four admin dashboard views; never expose global counts to agents."""
+    _admin()
+    count = frappe.db.count
+    return {
+        "home": {
+            "total_schools": count("SaaS Tenant"),
+            "active_schools": count("SaaS Tenant", {"status": "Active"}),
+            "active_subscriptions": count("SaaS Subscription", {"status": "Active"}),
+            "pending_provisioning": count("SaaS Provisioning Job", {"status": ["in", ["Queued", "Running"]]}),
+        },
+        "schools": {
+            "total_schools": count("SaaS Tenant"),
+            "active_schools": count("SaaS Tenant", {"status": "Active"}),
+            "trial_schools": count("SaaS Subscription", {"status": "Trial"}),
+            "pending_provisioning": count("SaaS Provisioning Job", {"status": ["in", ["Queued", "Running"]]}),
+            "failed_provisioning": count("SaaS Provisioning Job", {"status": "Failed"}),
+            "pending_domains": count("SaaS Domain", {"status": "Pending Verification"}),
+        },
+        "billing": {
+            "active_subscriptions": count("SaaS Subscription", {"status": "Active"}),
+            "trial_subscriptions": count("SaaS Subscription", {"status": "Trial"}),
+            "past_due": count("SaaS Subscription", {"status": "Past Due"}),
+            "expiring_soon": count("SaaS Subscription", {"ends_on": ["between", [
+                frappe.utils.today(), frappe.utils.add_days(frappe.utils.today(), 30)
+            ]], "status": ["in", ["Active", "Trial", "Grace"]]}),
+        },
+        "agents": {
+            "total_agents": count("SaaS Agent"),
+            "active_agents": count("SaaS Agent", {"status": "Active"}),
+            "referred_schools": count("SaaS Tenant", {"agent": ["is", "set"]}),
+            "referred_active_schools": count("SaaS Tenant", {"agent": ["is", "set"], "status": "Active"}),
+        },
+    }

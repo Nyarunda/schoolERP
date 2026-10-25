@@ -87,6 +87,8 @@ def validate():
 		frappe.log_error(title="Paybill validation refused", message=reason)
 		return _json_response(pb.REJECT_OTHER)
 	data = pb.normalize_payload(_payload())
+	if not pb.valid_confirmation(data, settings.mpesa_shortcode, require_transaction_id=False):
+		return _json_response(pb.REJECT_OTHER)
 	if data["amount"] <= 0:
 		return _json_response(pb.REJECT_AMOUNT)
 	if settings.mpesa_validate_account and not find_student(data["bill_ref_number"]):
@@ -104,10 +106,16 @@ def confirm():
 		frappe.log_error(title="Paybill confirmation refused", message=f"{reason}\n{json.dumps(raw)[:2000]}")
 		return _json_response(pb.REJECT_OTHER, status=403)
 	try:
+		data = pb.normalize_payload(raw)
+		if not pb.valid_confirmation(data, settings.mpesa_shortcode):
+			return _json_response(pb.REJECT_OTHER, status=400)
 		record_confirmation(raw, source="Safaricom")
 	except Exception:
-		# The money is already received; never make Safaricom think we lost it. Log loudly.
-		frappe.log_error(title="Paybill confirmation could not be stored", message=json.dumps(raw)[:4000])
+		frappe.db.rollback()
+		frappe.log_error(title="Paybill confirmation could not be stored", message=frappe.get_traceback())
+		# Never acknowledge a notification that was not durably stored.
+		# A separate statement reconciliation process is still required.
+		return _json_response(pb.REJECT_OTHER, status=503)
 	return _json_response(pb.ACCEPT)
 
 

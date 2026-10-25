@@ -1,0 +1,17 @@
+{
+  "doctype": "Page",
+  "name": "stemic-overview",
+  "page_name": "stemic-overview",
+  "module": "Stemic Control",
+  "standard": "Yes",
+  "system_page": 0,
+  "title": "Stemic Overview",
+  "roles": [
+    {
+      "role": "System Manager"
+    },
+    {
+      "role": "Stemic Platform Admin"
+    }
+  ]
+}

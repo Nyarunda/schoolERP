@@ -48,7 +48,8 @@ def _authorised(settings) -> str | None:
 	"""Return a reason string if the callback must be refused."""
 	if not settings.mpesa_enabled:
 		return "auto-posting disabled"
-	token = frappe.form_dict.get("token")
+	# Safaricom posts JSON, and Frappe builds form_dict from a JSON body alone, so the ?token= has to be read off the URL
+	token = frappe.form_dict.get("token") or (frappe.request.args.get("token") if getattr(frappe.local, "request", None) else None)
 	if not settings.mpesa_callback_token or token != settings.mpesa_callback_token:
 		return "bad token"
 	if settings.mpesa_check_ip and not pb.ip_allowed(frappe.local.request_ip, settings.mpesa_allowed_ips):

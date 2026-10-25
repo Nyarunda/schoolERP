@@ -1,0 +1,72 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Plan",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "format:ST-{#######}",
+  "engine": "InnoDB",
+  "field_order": [
+    "plan_name",
+    "enabled",
+    "monthly_price",
+    "student_limit",
+    "modules"
+  ],
+  "fields": [
+    {
+      "fieldtype": "Data",
+      "fieldname": "plan_name",
+      "label": "Plan Name",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldtype": "Check",
+      "fieldname": "enabled",
+      "label": "Enabled",
+      "default": 1
+    },
+    {
+      "fieldtype": "Currency",
+      "fieldname": "monthly_price",
+      "label": "Monthly Price",
+      "default": 0
+    },
+    {
+      "fieldtype": "Int",
+      "fieldname": "student_limit",
+      "label": "Student Limit",
+      "default": 0
+    },
+    {
+      "fieldtype": "Code",
+      "fieldname": "modules",
+      "label": "Enabled Modules JSON",
+      "options": "JSON",
+      "default": "[]"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

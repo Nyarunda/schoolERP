@@ -1,4 +1,4 @@
 from frappe.model.document import Document
 
-class SaasProvisioningJob(Document):
+class SaaSProvisioningJob(Document):
     pass

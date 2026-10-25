@@ -1,4 +1,4 @@
 from frappe.model.document import Document
 
-class SaasPlan(Document):
+class SaaSPlan(Document):
     pass

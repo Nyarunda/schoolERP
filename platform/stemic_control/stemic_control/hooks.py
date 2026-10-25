@@ -7,3 +7,15 @@ app_license = "mit"
 
 # Install only on admin.stemischools.com, never on school tenant sites.
 after_install = "stemic_control.setup.install"
+
+# Agents only see the schools and subscriptions they brought in
+permission_query_conditions = {
+    "SaaS Tenant": "stemic_control.permissions.tenant_query",
+    "SaaS Subscription": "stemic_control.permissions.subscription_query",
+    "SaaS Agent": "stemic_control.permissions.agent_query",
+}
+has_permission = {
+    "SaaS Tenant": "stemic_control.permissions.tenant_has_permission",
+    "SaaS Subscription": "stemic_control.permissions.subscription_has_permission",
+    "SaaS Agent": "stemic_control.permissions.agent_has_permission",
+}

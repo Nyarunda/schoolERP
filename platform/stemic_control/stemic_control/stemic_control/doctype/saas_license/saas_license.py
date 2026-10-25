@@ -1,4 +1,4 @@
 from frappe.model.document import Document
 
-class SaasLicense(Document):
+class SaaSLicense(Document):
     pass

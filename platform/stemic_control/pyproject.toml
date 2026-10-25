@@ -1,0 +1,13 @@
+[project]
+name = "stemic_control"
+version = "0.1.0"
+description = "Stemic Schools SaaS control plane"
+requires-python = ">=3.10"
+dependencies = []
+
+[build-system]
+requires = ["flit_core>=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=16.0.0-dev,<17.0.0"

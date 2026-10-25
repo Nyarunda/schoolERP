@@ -127,9 +127,12 @@ def queue_provisioning(tenant, request_key):
     name = existing_job()
     if name:
         return name
+    # A job under this same key is not a competitor: it is the answer (its insert may not be visible to this
+    # transaction's snapshot yet, in which case the duplicate-key handling below returns it)
     active = frappe.db.get_value(
         "SaaS Provisioning Job",
-        {"tenant": tenant, "action": "Create Site", "status": ["in", ["Queued", "Running"]]},
+        {"tenant": tenant, "action": "Create Site", "status": ["in", ["Queued", "Running"]],
+         "idempotency_key": ["!=", request_key]},
         "name",
     )
     if active:

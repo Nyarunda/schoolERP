@@ -74,4 +74,6 @@ Verified on Frappe/ERPNext 16.52: install-app, migrate, uninstall-app, 6 framewo
 - A per-tenant database row lock serializes Create Site requests; different active idempotency keys for one tenant are rejected.
 - Subscriptions require their agent assignment to match the tenant agent. A future commission ledger must preserve historical attributions.
 - Manual Create Site success is refused: a queued/running record is **not** proof that a site exists. There is currently no production-ready infrastructure provisioner.
-- Integration tests added for domain status forgery, tenant reassignment, competing provisioning keys and direct job-state changes. Tests were **not rerun by the assistant**; please rerun on a disposable admin site.
+- Integration tests added for domain status forgery, tenant reassignment, competing provisioning keys and direct job-state changes.
+- The competing-job check ignores a job under the same key, so a concurrent retry still gets its job back.
+- Verified on Frappe/ERPNext 16.52: 10 integration and 6 framework-free tests pass, `scripts/check.sh` passes.

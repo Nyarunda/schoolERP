@@ -1,0 +1,85 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Provisioning Job",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "format:ST-{#######}",
+  "engine": "InnoDB",
+  "field_order": [
+    "tenant",
+    "idempotency_key",
+    "action",
+    "status",
+    "attempts",
+    "last_error"
+  ],
+  "fields": [
+    {
+      "fieldtype": "Link",
+      "fieldname": "tenant",
+      "label": "Tenant",
+      "options": "SaaS Tenant",
+      "reqd": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "idempotency_key",
+      "label": "Idempotency Key",
+      "unique": 1,
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Select",
+      "fieldname": "action",
+      "label": "Action",
+      "options": "Create Site\nAttach Domain\nSuspend\nResume",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Select",
+      "fieldname": "status",
+      "label": "Status",
+      "options": "Queued\nRunning\nSucceeded\nFailed",
+      "default": "Queued",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Int",
+      "fieldname": "attempts",
+      "label": "Attempts",
+      "default": 0,
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Long Text",
+      "fieldname": "last_error",
+      "label": "Last Error",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    }
+  ]
+}

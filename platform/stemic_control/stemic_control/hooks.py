@@ -19,3 +19,6 @@ has_permission = {
     "SaaS Subscription": "stemic_control.permissions.subscription_has_permission",
     "SaaS Agent": "stemic_control.permissions.agent_has_permission",
 }
+
+# Admin KPI page only; keep the school tenant app unaffected.
+app_include_css = ["/assets/stemic_control/css/stemic_overview.css"]

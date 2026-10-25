@@ -1,27 +1,37 @@
-# SchoolERP browser links and sidebar navigation review
+# SchoolERP navigation review — corrected after Frappe 16.52 browser testing
 
-## Confirmed source findings
+## Outcome
 
-- `school_erp/public/js/school_dashboard.js` sent `["Form", "Leave Application", "new"]` and similar routes through `frappe.set_route`. Frappe's supported new-document API is `frappe.new_doc(doctype)`; the shared route handler now uses it.
-- Dashboard list navigation now explicitly clears old `frappe.route_options` for unfiltered lists. Previously a previously selected filter could persist into unrelated navigation.
-- `Page` route arrays are now handled explicitly by navigating to the named Desk page.
-- `school_erp/school/workspace/school/school.json` currently configures a single standard School workspace, with links grouped in Students, Fees, Staff, and Setup. This is not an independent role-specific sidebar implementation.
-- The Management Dashboard and Staff Room are separate Desk pages. The Parent Portal uses the public website route `/parent`, so it is expected to have different navigation chrome from Desk.
+The navigation change in commit `2559462` is a **non-urgent cleanup**, not a confirmed defect fix. Independent browser testing reported no behavioral difference for dashboard routes in Frappe 16.52. This note supersedes the earlier source-only claims in this document.
 
-## Recommended sidebar follow-up (not implemented in this patch)
+## Findings from browser validation (reported by reviewer)
 
-1. Confirm exact browser URL, role, screenshot, and viewport size for each reported mismatch.
-2. Define a canonical navigation inventory with actual Frappe DocType/Report/Page targets and authorize each by role.
-3. Separate management, bursar, teaching, driver and parent navigation where appropriate without replacing Frappe's native routing.
-4. Verify active-link highlighting, browser refresh, Back/Forward, collapsed desktop sidebar and mobile navigation.
-5. Avoid duplicate menus; keep the standard School workspace discoverable as the app entry point.
-6. Add navigation smoke tests for valid routes and permission-denied outcomes, across all supported roles.
+| Earlier claim | Browser finding |
+| --- | --- |
+| `frappe.set_route("Form", X, "new")` fails | Not reproduced. Both the old route and `frappe.new_doc(X)` open a new unsaved form. |
+| Existing list filters leak into unfiltered lists | Not reproduced in the tested navigation sequences. |
+| New `Page` route handling fixes a path | No current dashboard calls this route form; no user-visible effect. |
+| Missing document name in `Form` route previously opened a list | Behavioral change is real but not reachable through the tested dashboard UI. |
 
-## Validation required
+These are reviewer-reported observations, not independent browser tests executed by this assistant.
 
-- Build app assets: `bench build --app school_erp`.
-- Clear cached site assets: `bench --site test.localhost clear-cache` and refresh the browser.
-- Manually exercise Leave Application, Duty Report, the dashboards, Fee Balances and workspace navigation.
-- This patch has not been run in a browser or on a live Frappe server.
+## Sidebar architecture correction
 
-This navigation adjustment belongs to the review branch and is not merged to main.
+The previous document inaccurately described the app as having only one School workspace. The reviewer confirms **six workspaces and a separate sidebar definition**. The old analysis inspected `main` rather than the separate `ui-refresh-dashboards` branch, which contains newer dashboard work. Review that branch before making additional sidebar recommendations. Avoid assuming the School workspace is the entire navigation system.
+
+## Decision
+
+- Keep `2559462` as optional code cleanup; do not represent it as a required navigation fix.
+- Prioritize reproducible browser failures over speculative routing problems.
+- No urgent navigation patch is justified from this comparison alone.
+- When merging `ui-refresh-dashboards` and this PR, verify the combined navigation and styles at the resulting commit. The reviewer reports the UI branch does not modify `school_dashboard.js`; still confirm in the final merge diff.
+
+## Follow-up test matrix (not implemented here)
+
+1. Verify URLs and active sidebar state in every workspace and for each role.
+2. Check navigation from dashboard links, workspace entries, direct URLs and browser Back/Forward.
+3. Test narrow screens, collapsed sidebars and dark mode.
+4. Ensure no permission-denied or not-found links are displayed to users lacking access.
+5. Confirm new dashboard code from `ui-refresh-dashboards` before documenting its final sidebar behavior.
+
+No runtime test was executed as part of this documentation correction. The reviewer reports that browser tests created only unsaved forms and made no saved changes.

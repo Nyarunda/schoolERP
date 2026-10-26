@@ -13,5 +13,8 @@ class SaaSPayment(Document):
     def on_submit(self):
         billing.apply_payment(self)
 
+    def before_cancel(self):
+        billing.lock_invoice(self.invoice)
+
     def on_cancel(self):
         billing.reverse_payment(self)

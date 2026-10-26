@@ -29,7 +29,10 @@ fi
 step "Unit tests (business logic)"
 $PY -c "import pytest" 2>/dev/null || $PY -m pip install -q pytest
 $PY -c "import cryptography" 2>/dev/null || $PY -m pip install -q cryptography
-$PY -m pytest -q school_erp/tests/test_logic.py || fail "unit tests"
+$PY -m pytest -q \
+  school_erp/tests/test_logic.py \
+  school_erp/tests/test_document_verification_policy.py \
+  school_erp/tests/test_verified_document_integrity.py || fail "unit tests"
 
 step "No private keys staged"
 if git rev-parse --git-dir >/dev/null 2>&1; then

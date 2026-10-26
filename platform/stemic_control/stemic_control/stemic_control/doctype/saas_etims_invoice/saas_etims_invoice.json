@@ -10,6 +10,7 @@
     "seller_scope",
     "tenant",
     "subscription",
+    "saas_invoice",
     "external_invoice_no",
     "buyer_name",
     "buyer_pin",
@@ -39,6 +40,14 @@
       "hidden": 1
     },
     {
+      "fieldname": "seller_scope",
+      "fieldtype": "Select",
+      "label": "Legal Seller",
+      "options": "School\nStemic Platform",
+      "read_only": 1,
+      "default": "School"
+    },
+    {
       "fieldname": "tenant",
       "fieldtype": "Link",
       "label": "Tenant",
@@ -52,6 +61,15 @@
       "label": "Subscription",
       "options": "SaaS Subscription",
       "read_only": 1
+    },
+    {
+      "fieldname": "saas_invoice",
+      "fieldtype": "Link",
+      "label": "SaaS Invoice",
+      "options": "SaaS Invoice",
+      "read_only": 1,
+      "unique": 1,
+      "description": "Stemic's own invoices come only from a submitted SaaS Invoice."
     },
     {
       "fieldname": "external_invoice_no",
@@ -120,7 +138,7 @@
       "fieldname": "status",
       "fieldtype": "Select",
       "label": "Status",
-      "options": "Draft\nReady\nPending Submission\nSubmitted\nRejected\nCancelled",
+      "options": "Draft\nReady\nPending Submission\nSubmitted\nRejected\nCancelled\nWithdrawn",
       "default": "Draft",
       "read_only": 1
     },
@@ -166,14 +184,6 @@
       "fieldtype": "Datetime",
       "label": "Reviewed On",
       "read_only": 1
-    },
-    {
-      "fieldname": "seller_scope",
-      "fieldtype": "Select",
-      "label": "Legal Seller",
-      "options": "School\nStemic Platform",
-      "read_only": 1,
-      "default": "School"
     }
   ],
   "permissions": [
@@ -192,5 +202,6 @@
       "report": 1
     }
   ],
-  "naming_rule": "By fieldname"
+  "naming_rule": "By fieldname",
+  "modified": "2026-10-26 21:00:00.000000"
 }

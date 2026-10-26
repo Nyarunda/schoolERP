@@ -121,3 +121,58 @@ class TestEtims(TestCase):
         self.assertRaises(frappe.PermissionError, etims.prepare_invoice, **self.args)
         self.assertRaises(frappe.PermissionError, etims.compliance_overview)
         self.assertRaises(frappe.PermissionError, frappe.get_list, "SaaS eTIMS Invoice")
+
+    # ------------------------------------------------------------------ Stemic's own invoices come from SaaS Invoices (#18)
+    def stemic_seller(self, treatment="Standard Rated"):
+        s = frappe.get_doc("Stemic Tax Settings")
+        s.update({"seller_name": "Stemic Schools Ltd", "seller_pin": "P059999999Q", "branch_id": "00", "enabled": 1,
+                  "tax_treatment": treatment, "vat_rate": 16})
+        s.save()
+        frappe.clear_document_cache("Stemic Tax Settings", "Stemic Tax Settings")
+
+    def saas_invoice(self, months=1):
+        from stemic_control import billing
+
+        plan = frappe.get_doc({"doctype": "SaaS Plan", "plan_name": "Tax " + frappe.generate_hash(length=5), "enabled": 1,
+                               "monthly_price": 11600, "modules": "[]"}).insert().name
+        sub = frappe.get_doc({"doctype": "SaaS Subscription", "tenant": self.tenant, "plan": plan, "starts_on": frappe.utils.nowdate()}).insert().name
+        return billing.create_invoice(sub, months=months)
+
+    def test_stemic_tax_invoice_is_derived_from_the_saas_invoice(self):
+        self.stemic_seller()
+        inv = self.saas_invoice()
+        out = etims.prepare_from_saas_invoice(inv)
+        tax = frappe.get_doc("SaaS eTIMS Invoice", out["name"])
+        self.assertEqual((tax.saas_invoice, tax.external_invoice_no, tax.seller_scope), (inv, inv, "Stemic Platform"))
+        self.assertEqual((float(tax.net_amount), float(tax.vat_amount), float(tax.total_amount)), (10000, 1600, 11600))
+        self.assertEqual(tax.buyer_pin, "P051234567X")  # the school's own KRA PIN, from its tax profile
+        self.assertEqual(etims.prepare_from_saas_invoice(inv)["name"], out["name"])  # one tax record per SaaS Invoice
+
+    def test_stemic_invoices_cannot_be_typed_in(self):
+        self.stemic_seller()
+        inv = self.saas_invoice()
+        sub = frappe.db.get_value("SaaS Invoice", inv, "subscription")
+        self.assertRaises(frappe.ValidationError, etims.prepare_invoice, **{**self.args, "seller_scope": "Stemic Platform",
+                          "subscription": sub, "external_invoice_no": inv, "net_amount": "1", "total_amount": "1"})
+        self.assertFalse(hasattr(etims, "prepare_platform_subscription_invoice"))
+
+    def test_only_submitted_saas_invoices_are_prepared(self):
+        self.stemic_seller()
+        inv = self.saas_invoice()
+        frappe.get_doc("SaaS Invoice", inv).cancel()
+        self.assertRaises(frappe.ValidationError, etims.prepare_from_saas_invoice, inv)
+        self.assertRaises(frappe.ValidationError, etims.prepare_from_saas_invoice, "SINV-NOPE")
+
+    def test_cancelling_a_saas_invoice_follows_its_tax_invoice(self):
+        self.stemic_seller(treatment="Exempt")
+        inv = self.saas_invoice()
+        draft = etims.prepare_from_saas_invoice(inv)["name"]
+        self.assertEqual(float(frappe.db.get_value("SaaS eTIMS Invoice", draft, "vat_amount")), 0)  # exempt: no VAT
+        frappe.get_doc("SaaS Invoice", inv).cancel()  # not yet sent: withdrawn with it
+        self.assertEqual(frappe.db.get_value("SaaS eTIMS Invoice", draft, "status"), "Withdrawn")
+
+        sent_inv = self.saas_invoice()
+        sent = etims.prepare_from_saas_invoice(sent_inv)["name"]
+        frappe.db.set_value("SaaS eTIMS Invoice", sent, "status", "Submitted")
+        self.assertRaises(frappe.ValidationError, frappe.get_doc("SaaS Invoice", sent_inv).cancel)  # needs a credit note
+        self.assertEqual(frappe.db.get_value("SaaS Invoice", sent_inv, "docstatus"), 1)

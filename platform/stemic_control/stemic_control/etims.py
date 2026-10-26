@@ -5,7 +5,7 @@ import re
 
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, cint
+from frappe.utils import flt, now_datetime, cint
 
 from stemic_control.tax_rules import valid_pin, validate_amounts
 
@@ -20,8 +20,17 @@ def _admin():
 @frappe.whitelist(methods=["POST"])
 def prepare_invoice(tenant, external_invoice_no, buyer_name, net_amount, vat_amount,
                     total_amount, tax_treatment, subscription=None, buyer_pin=None, seller_scope="School"):
-    """Capture reviewed billable supply without creating a fictional KRA acknowledgement."""
+    """Capture reviewed billable supply without creating a fictional KRA acknowledgement.
+    Stemic's own (platform) tax invoices come only from submitted SaaS Invoices: see prepare_from_saas_invoice."""
     _admin()
+    if seller_scope == "Stemic Platform":
+        frappe.throw(_("Stemic tax invoices are prepared from a submitted SaaS Invoice, not from typed amounts"))
+    return _prepare(tenant, external_invoice_no, buyer_name, net_amount, vat_amount, total_amount, tax_treatment,
+                    subscription, buyer_pin, seller_scope)
+
+
+def _prepare(tenant, external_invoice_no, buyer_name, net_amount, vat_amount, total_amount, tax_treatment,
+             subscription=None, buyer_pin=None, seller_scope="School", saas_invoice=None):
     if not INVOICE_REF.fullmatch(str(external_invoice_no or "")):
         frappe.throw(_("Invalid source invoice reference"))
     if not frappe.db.exists("SaaS Tenant", tenant):
@@ -52,6 +61,8 @@ def prepare_invoice(tenant, external_invoice_no, buyer_name, net_amount, vat_amo
         "seller_pin": profile.seller_pin.upper(), "net_amount": str(net),
         "vat_amount": str(tax), "total_amount": str(total),
         "tax_treatment": tax_treatment, "subscription": subscription or ""}
+    if saas_invoice:  # only then, so a School-seller record's fingerprint is what it always was
+        source["saas_invoice"] = saas_invoice
     digest = hashlib.sha256(json.dumps(source, sort_keys=True).encode()).hexdigest()
     invoice_key = "ETI-" + hashlib.sha256(f"{seller_scope}|{tenant}|{external_invoice_no}".encode()).hexdigest().upper()[:40]
     existing = frappe.db.get_value("SaaS eTIMS Invoice", invoice_key,
@@ -69,27 +80,53 @@ def prepare_invoice(tenant, external_invoice_no, buyer_name, net_amount, vat_amo
     return {"name": doc.name, "status": "Draft"}
 
 
-@frappe.whitelist(methods=["POST"])
-def prepare_platform_subscription_invoice(subscription, external_invoice_no, net_amount,
-                                          vat_amount, total_amount, tax_treatment,
-                                          buyer_pin=None):
-    """Prepare Stemic-as-seller invoicing for a school subscription.
+def platform_amounts(total):
+    """Net, VAT and total of a Stemic invoice. Subscription invoice totals are what the school pays, so any VAT is inside."""
+    from decimal import Decimal
 
-    Pricing/tax totals must originate from the approved accounting invoice,
-    not the subscription plan's price alone.
-    """
+    settings = frappe.get_cached_doc("Stemic Tax Settings")
+    treatment = settings.get("tax_treatment") or "Standard Rated"
+    total = Decimal(str(flt(total, 2)))
+    if treatment != "Standard Rated":
+        return treatment, total, Decimal("0.00"), total
+    rate = Decimal(str(flt(settings.get("vat_rate") or 16)))
+    vat = (total * rate / (100 + rate)).quantize(Decimal("0.01"))
+    return treatment, total - vat, vat, total
+
+
+@frappe.whitelist(methods=["POST"])
+def prepare_from_saas_invoice(invoice):
+    """Prepare Stemic's tax invoice for a submitted SaaS Invoice: buyer, number, period and amounts all come from it.
+    One tax record per SaaS Invoice; preparing again returns it."""
     _admin()
-    sub = frappe.get_doc("SaaS Subscription", subscription)
-    if not sub.tenant:
-        frappe.throw(_("Subscription has no school customer"))
-    school_name = frappe.db.get_value("SaaS Tenant", sub.tenant, "school_name")
-    if not school_name:
-        frappe.throw(_("Unknown school customer"))
-    return prepare_invoice(tenant=sub.tenant, subscription=sub.name,
-        external_invoice_no=external_invoice_no, buyer_name=school_name,
-        buyer_pin=buyer_pin, net_amount=net_amount, vat_amount=vat_amount,
-        total_amount=total_amount, tax_treatment=tax_treatment,
-        seller_scope="Stemic Platform")
+    # serialise with payments and cancellation of the same invoice (billing.lock_invoice); a locking read of status
+    row = frappe.db.sql("SELECT docstatus, status FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE", (invoice,))
+    if not row:
+        frappe.throw(_("Unknown SaaS Invoice"))
+    if row[0][0] != 1 or row[0][1] == "Cancelled":
+        frappe.throw(_("Only a submitted SaaS Invoice can be prepared for eTIMS"))
+    existing = frappe.db.get_value("SaaS eTIMS Invoice", {"saas_invoice": invoice}, ["name", "status"], as_dict=True)
+    if existing:
+        return {"name": existing.name, "status": existing.status}
+    inv = frappe.get_doc("SaaS Invoice", invoice)
+    treatment, net, vat, total = platform_amounts(inv.total)
+    school_pin = frappe.db.get_value("SaaS Tax Profile", {"tenant": inv.tenant}, "seller_pin")
+    return _prepare(tenant=inv.tenant, external_invoice_no=inv.name, buyer_name=inv.school_name or inv.tenant,
+                    net_amount=net, vat_amount=vat, total_amount=total, tax_treatment=treatment,
+                    subscription=inv.subscription, buyer_pin=school_pin if valid_pin(school_pin) else None,
+                    seller_scope="Stemic Platform", saas_invoice=inv.name)
+
+
+def guard_saas_invoice_cancel(invoice):
+    """A SaaS Invoice whose tax invoice is with KRA (or on its way) cannot be cancelled: it needs a credit note.
+    A tax invoice not yet sent is withdrawn with it."""
+    row = frappe.db.get_value("SaaS eTIMS Invoice", {"saas_invoice": invoice}, ["name", "status"], as_dict=True)
+    if not row or row.status in ("Withdrawn", "Rejected"):
+        return
+    if row.status in ("Pending Submission", "Submitted"):
+        frappe.throw(_("Tax invoice {0} is {1} with KRA: raise a credit note instead of cancelling.").format(row.name, row.status))
+    frappe.db.set_value("SaaS eTIMS Invoice", row.name, "status", "Withdrawn")
+    _audit(row.name, "Withdrawn with its SaaS Invoice", row.status, "Withdrawn", f"{invoice} was cancelled")
 
 
 @frappe.whitelist(methods=["POST"])

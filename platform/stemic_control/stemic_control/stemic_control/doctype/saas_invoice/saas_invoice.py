@@ -16,6 +16,9 @@ class SaaSInvoice(Document):
 
     def before_cancel(self):
         billing.lock_invoice(self.name)
+        from stemic_control.etims import guard_saas_invoice_cancel
+
+        guard_saas_invoice_cancel(self.name)
         if billing.has_submitted_payment(self.name):
             frappe.throw("Cancel this invoice's payments first", frappe.ValidationError)
 

@@ -133,8 +133,12 @@ def confirm():
 	if reason:
 		frappe.log_error(title="Paybill confirmation refused", message=f"{reason}\n{json.dumps(raw)[:2000]}")
 		return _json_response(pb.REJECT_OTHER, status=403)
-	if not pb.valid_confirmation(raw, our_shortcodes(settings)):
-		frappe.log_error(title="Invalid Paybill confirmation", message=json.dumps(raw)[:2000])
+	problems = pb.confirmation_problems(raw, our_shortcodes(settings))
+	if problems:
+		# The request carried our secret token, so this is most likely a real payment with odd details (a changed
+		# short code, say). Refuse to post it, but keep it where the bursar will see it rather than only in a log.
+		frappe.log_error(title="Invalid Paybill confirmation", message=f"{'; '.join(problems)}\n{json.dumps(raw)[:2000]}")
+		hold_for_review(raw, problems)
 		return _json_response(pb.REJECT_OTHER, status=400)
 	try:
 		record_confirmation(raw, source="Safaricom")
@@ -143,6 +147,34 @@ def confirm():
 		frappe.log_error(title="Paybill confirmation could not be stored", message=json.dumps(raw)[:4000])
 		return _json_response(pb.REJECT_OTHER, status=503)
 	return _json_response(pb.ACCEPT)
+
+
+def hold_for_review(raw: dict, problems: list[str]) -> str | None:
+	"""Keep a confirmation that failed its checks as "Needs Review": never posted automatically, visible to the bursar.
+	Without a transaction code there is nothing to key it on, so it stays in the Error Log only."""
+	trans_id = str((raw or {}).get("TransID") or "").strip()[:140] if isinstance(raw, dict) else ""
+	if not trans_id or frappe.db.exists("M-Pesa Transaction", trans_id):
+		return None
+	try:
+		data = pb.normalize_payload(raw)
+	except (TypeError, ValueError):
+		data = {"trans_id": trans_id}
+	if not pb.valid_money(raw.get("TransAmount")):
+		data["amount"] = 0
+	try:
+		doc = frappe.get_doc({
+			"doctype": "M-Pesa Transaction", **data, "trans_id": trans_id,
+			"trans_time": data.get("trans_time") or now_datetime(), "status": "Needs Review", "source": "Safaricom",
+			"error": "Held for review: " + "; ".join(problems), "raw_payload": json.dumps(raw, indent=1, default=str),
+		})
+		doc.flags.ignore_permissions = True
+		doc.insert()
+		frappe.db.commit()
+		return doc.name
+	except Exception:
+		frappe.db.rollback()
+		frappe.log_error(title="Paybill confirmation could not be held for review", message=json.dumps(raw)[:4000])
+		return None
 
 
 def record_confirmation(raw: dict, source: str = "Safaricom") -> str:
@@ -251,7 +283,7 @@ def _post(name, student=None):
 
 @frappe.whitelist()
 def assign_and_post(name, student=None):
-	"""Bursar button: post an Unmatched/Failed payment (optionally to a chosen student)."""
+	"""Bursar button: post an Unmatched/Failed/Needs Review payment (optionally to a chosen student)."""
 	frappe.has_permission("M-Pesa Transaction", "write", name, throw=True)
 	frappe.has_permission("Fee Payment", "submit", throw=True)
 	if student:

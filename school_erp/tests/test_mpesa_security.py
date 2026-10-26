@@ -1,5 +1,5 @@
 """Pure unit tests for payment-envelope security; run with pytest."""
-from school_erp.logic.paybill import valid_confirmation, valid_money, valid_stk_metadata
+from school_erp.logic.paybill import confirmation_problems, valid_confirmation, valid_money, valid_stk_metadata
 
 
 def test_paybill_requires_shortcode_transaction_and_positive_cents():
@@ -42,3 +42,11 @@ def test_stk_phone_formats_match():
     for expected in ("0708374149", "+254 708 374 149", "254708374149"):
         assert valid_stk_metadata(meta, 50, expected), expected
     assert not valid_stk_metadata({**meta, "PhoneNumber": ""}, 50, "")
+
+
+def test_problems_say_what_is_wrong():
+    ok = {"TransID": "ABC123", "BusinessShortCode": "600000", "TransAmount": "50.00"}
+    assert confirmation_problems(ok, "600000") == []
+    bad = confirmation_problems({"TransID": "", "BusinessShortCode": "111", "TransAmount": "-1"}, "600000")
+    assert len(bad) == 3 and "111" in bad[1] and "-1" in bad[2]
+    assert confirmation_problems("junk", "600000") == ["Not a Daraja confirmation"]

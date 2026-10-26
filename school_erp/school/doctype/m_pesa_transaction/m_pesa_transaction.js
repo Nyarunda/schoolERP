@@ -2,13 +2,13 @@
 
 frappe.ui.form.on("M-Pesa Transaction", {
 	refresh(frm) {
-		const colors = { Posted: "green", Unmatched: "orange", Failed: "red", Received: "blue", Ignored: "gray" };
+		const colors = { Posted: "green", Unmatched: "orange", Failed: "red", "Needs Review": "red", Received: "blue", Ignored: "gray" };
 		frm.page.set_indicator(__(frm.doc.status), colors[frm.doc.status] || "gray");
 
 		if (frm.doc.error && frm.doc.status !== "Posted") {
-			frm.set_intro(frappe.utils.escape_html(frm.doc.error), frm.doc.status === "Failed" ? "red" : "orange");
+			frm.set_intro(frappe.utils.escape_html(frm.doc.error), ["Failed", "Needs Review"].includes(frm.doc.status) ? "red" : "orange");
 		}
-		if (["Unmatched", "Failed", "Ignored", "Received"].includes(frm.doc.status) && !frm.is_new()) {
+		if (["Unmatched", "Failed", "Needs Review", "Ignored", "Received"].includes(frm.doc.status) && !frm.is_new()) {
 			frm.add_custom_button(__("Post to Student"), () => {
 				frappe.prompt(
 					{ fieldname: "student", label: __("Student"), fieldtype: "Link", options: "Student", reqd: 1, default: frm.doc.student },

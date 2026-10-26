@@ -19,7 +19,7 @@ from frappe import _
 from frappe.utils import add_to_date, cint, flt, now_datetime
 
 from school_erp import licensing
-from school_erp.logic.paybill import account_key, stk_parties
+from school_erp.logic.paybill import account_key, stk_parties, valid_stk_metadata
 from school_erp.logic.text import normalize_phone
 
 EAT = timezone(timedelta(hours=3))  # Daraja timestamps are East Africa Time
@@ -129,6 +129,11 @@ def apply_result(checkout_request_id: str, result_code, result_desc: str, meta: 
 		return req.name
 
 	meta = meta or {}
+	if not valid_stk_metadata(meta, req.amount, req.phone):
+		req.db_set({"result_desc": "STK success lacks matching provider receipt, amount or phone; requires investigation"})
+		frappe.db.commit()
+		frappe.log_error(title="STK result needs reconciliation", message=f"Checkout {checkout_request_id}: incomplete or mismatched success metadata")
+		return req.name
 	receipt = str(meta.get("MpesaReceiptNumber") or "").upper()
 	if not receipt:
 		# a status query says "paid" but carries no receipt: wait for the callback / C2B confirmation
@@ -140,7 +145,7 @@ def apply_result(checkout_request_id: str, result_code, result_desc: str, meta: 
 	raw = {
 		"TransactionType": "STK Push", "TransID": receipt,
 		"TransTime": str(meta.get("TransactionDate") or now_datetime().strftime("%Y%m%d%H%M%S")),
-		"TransAmount": str(meta.get("Amount") or req.amount), "BusinessShortCode": _settings().mpesa_shortcode,
+		"TransAmount": str(meta["Amount"]), "BusinessShortCode": _settings().mpesa_shortcode,
 		"BillRefNumber": req.student, "MSISDN": str(meta.get("PhoneNumber") or req.phone), "FirstName": "Parent Portal",
 	}
 	tx = record_confirmation(raw, source="STK Push")
@@ -171,7 +176,9 @@ def callback():
 		finally:
 			frappe.set_user(previous)
 	except Exception:
+		frappe.db.rollback()
 		frappe.log_error(title="STK callback could not be processed", message=json.dumps(raw)[:4000])
+		return _json_response(REJECT_OTHER, status=503)
 	return _json_response(ACCEPT)
 
 

@@ -27,3 +27,18 @@ def test_stk_requires_actual_matching_receipt_amount_and_phone():
     assert not valid_stk_metadata({**valid, "PhoneNumber": 254711111111}, 50, "254708374149")
     assert not valid_stk_metadata({**valid, "MpesaReceiptNumber": ""}, 50, "254708374149")
     assert not valid_stk_metadata({k: v for k, v in valid.items() if k != "Amount"}, 50, "254708374149")
+
+
+def test_till_accepts_store_or_till_number():
+    valid = {"TransID": "ABC123", "BusinessShortCode": "8812345", "TransAmount": "50.00"}
+    assert valid_confirmation(valid, ["7712345", "8812345"])
+    assert valid_confirmation({**valid, "BusinessShortCode": "7712345"}, ["7712345", "8812345"])
+    assert not valid_confirmation({**valid, "BusinessShortCode": "600000"}, ["7712345", "8812345"])
+    assert not valid_confirmation(valid, None)
+
+
+def test_stk_phone_formats_match():
+    meta = {"MpesaReceiptNumber": "UJP030FNA4", "Amount": 50, "PhoneNumber": 254708374149}
+    for expected in ("0708374149", "+254 708 374 149", "254708374149"):
+        assert valid_stk_metadata(meta, 50, expected), expected
+    assert not valid_stk_metadata({**meta, "PhoneNumber": ""}, 50, "")

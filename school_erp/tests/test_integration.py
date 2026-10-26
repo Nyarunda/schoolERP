@@ -273,7 +273,8 @@ class TestSchoolFlow(TestCase):
 		s = self.make_student(guardians=[{"guardian_name": "Till Parent", "relation": "Mother", "mobile_no": phone}])
 		restore = self.use_till()
 		try:
-			till_payment = lambda msisdn: {**self.paybill_payload("", 700), "TransactionType": "Buy Goods", "MSISDN": msisdn}
+			till_payment = lambda msisdn, code="8812345": {**self.paybill_payload("", 700), "TransactionType": "Buy Goods",
+													   "BusinessShortCode": code, "MSISDN": msisdn}
 			name = record_confirmation(till_payment("254" + phone[1:]))  # no account number: matched by phone
 			tx = frappe.get_doc("M-Pesa Transaction", name)
 			self.assertEqual((tx.status, tx.student), ("Posted", s.name), tx.error)
@@ -283,8 +284,9 @@ class TestSchoolFlow(TestCase):
 
 			self.make_student()  # two students share the fixture's 0712345678: the bursar must choose
 			self.make_student()
-			shared = record_confirmation(till_payment("254712345678"))
+			shared = record_confirmation(till_payment("254712345678", code="7712345"))  # reported by store number
 			self.assertEqual(frappe.db.get_value("M-Pesa Transaction", shared, "status"), "Unmatched")
+			self.assertRaises(frappe.ValidationError, record_confirmation, till_payment("254712345678", code="999999"))
 		finally:
 			restore()
 

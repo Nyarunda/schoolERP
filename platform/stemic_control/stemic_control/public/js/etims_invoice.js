@@ -15,6 +15,13 @@ frappe.ui.form.on("SaaS eTIMS Invoice", {
          args:{name:frm.doc.name}, callback:()=>frm.reload_doc()})
      ));
    }
+   if (frm.doc.status === "Pending Submission") {
+     frm.add_custom_button(__("Reconcile With Provider"), () => frappe.confirm(
+       __("Query provider status without submitting the invoice again?"),
+       () => frappe.call({method:"stemic_control.etims.reconcile_invoice",
+          args:{name:frm.doc.name},callback:()=>frm.reload_doc()})
+     ));
+   }
    frm.add_custom_button(__("Submission History"), () => frappe.call({
      method:"stemic_control.etims.invoice_history", args:{name:frm.doc.name},
      callback:r => frappe.msgprint({title:__("Tax Submission History"),

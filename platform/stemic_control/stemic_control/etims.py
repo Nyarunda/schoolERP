@@ -217,3 +217,46 @@ def reconciliation_summary():
             "confirmed": frappe.db.count("SaaS eTIMS Invoice", {"status": "Submitted"}),
             "adapter_configured": bool(frappe.conf.get("stemic_etims_adapter")),
             "transmission_enabled": bool(frappe.conf.get("stemic_etims_live_enabled"))}
+
+
+@frappe.whitelist(methods=["POST"])
+def reconcile_invoice(name):
+    """Lookup-only reconciliation for uncertain provider submissions; never resends an invoice."""
+    import importlib
+
+    _admin()
+    if not frappe.conf.get("stemic_etims_live_enabled"):
+        frappe.throw(_("Provider integration is disabled"))
+    method = frappe.conf.get("stemic_etims_lookup_adapter") or ""
+    if not method.startswith("stemic_control_integrations.") or not re.fullmatch(
+        r"[a-z_][a-z_0-9]*(?:\.[a-z_][a-z_0-9]*)+", method
+    ):
+        frappe.throw(_("Certified provider lookup adapter not configured"))
+    doc = frappe.get_doc("SaaS eTIMS Invoice", name, for_update=True)
+    if doc.status != "Pending Submission":
+        return {"status": doc.status}
+    module, function = method.rsplit(".", 1)
+    lookup = getattr(importlib.import_module(module), function)
+    result = lookup({"invoice_key": doc.invoice_key, "provider_reference": doc.provider_reference,
+                     "seller_pin": doc.seller_pin, "seller_scope": doc.seller_scope})
+    if not isinstance(result, dict):
+        frappe.throw(_("Invalid provider lookup response"))
+    if result.get("status") == "accepted":
+        if result.get("signature_verified") is not True or not all(
+            str(result.get(key) or "").strip() for key in
+            ("verification_evidence", "provider_reference", "kra_invoice_number")
+        ):
+            frappe.throw(_("Provider lookup lacks verified acceptance evidence"))
+        doc.db_set({"status": "Submitted", "provider_reference": str(result["provider_reference"])[:140],
+                    "kra_invoice_number": str(result["kra_invoice_number"])[:140],
+                    "submitted_on": now_datetime(), "last_error": ""})
+        _audit(name, "Provider lookup confirmed", "Pending Submission", "Submitted",
+               str(result["verification_evidence"])[:450])
+        return {"status": "Submitted"}
+    if result.get("status") == "rejected" and result.get("signature_verified") is True:
+        reason = str(result.get("reason") or "Provider rejected")[:500]
+        doc.db_set({"status": "Rejected", "last_error": reason})
+        _audit(name, "Provider lookup rejected", "Pending Submission", "Rejected", reason)
+        return {"status": "Rejected"}
+    _audit(name, "Provider lookup pending", "Pending Submission", "Pending Submission")
+    return {"status": "Pending Submission"}

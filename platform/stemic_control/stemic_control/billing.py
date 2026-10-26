@@ -220,7 +220,9 @@ def apply_payment(doc):
 
 
 def reverse_payment(doc):
-    """A payment was cancelled: its commission goes, the invoice reopens, and the subscription loses the period."""
+    """A payment was cancelled: its commission goes, the invoice reopens, and the subscription loses the period.
+    Its reference is released, so the same M-Pesa code can be recorded again against the right invoice."""
+    doc.db_set("reference_key", None)
     for name, status in frappe.get_all("SaaS Commission", filters={"payment": doc.name}, fields=["name", "status"], as_list=True):
         if status == "Paid":
             frappe.throw(f"Commission {name} on this payment was already paid to the agent. Recover it first, then cancel.",

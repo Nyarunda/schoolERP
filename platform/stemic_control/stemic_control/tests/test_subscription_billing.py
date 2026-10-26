@@ -144,6 +144,16 @@ class TestSubscriptionBilling(TestCase):
         })
         self.assertRaises(frappe.ValidationError, duplicate.insert)
 
+    def test_cancelled_payment_releases_its_reference(self):
+        """A payment recorded against the wrong invoice is cancelled and the same M-Pesa code recorded again."""
+        wrong = billing.create_invoice(self.sub, months=1)
+        ref = "QFIX" + frappe.generate_hash(length=8).upper()
+        payment = self.pay(wrong, 1000, ref=ref)["payment"]
+        frappe.get_doc("SaaS Payment", payment).cancel()
+        self.assertIsNone(frappe.db.get_value("SaaS Payment", payment, "reference_key"))
+        again = self.pay(wrong, 1000, ref=ref)["payment"]  # not blocked by the cancelled payment's key
+        self.assertTrue(frappe.db.get_value("SaaS Payment", again, "reference_key"))
+
     # ------------------------------------------------------------------ daily job
     def test_daily_marks_overdue_and_raises_renewals(self):
         inv = billing.create_invoice(self.sub, months=1)

@@ -388,3 +388,26 @@ def revoke_license(license):
         frappe.throw("Only an issued license can be revoked", frappe.ValidationError)
     frappe.db.set_value("SaaS License", license, "status", "Revoked")
     return {"license": license, "status": "Revoked"}
+
+
+@frappe.whitelist(methods=["GET"])
+def operations_queue(limit=8):
+    """Small, actionable control-plane exceptions feed, not synthetic system health."""
+    _admin()
+    limit = max(1, min(int(limit), 25))
+    items = []
+    definitions = (
+        ("SaaS Provisioning Job", {"status": "Failed"}, "Failed provisioning", "critical", "creation"),
+        ("SaaS Provisioning Job", {"status": ["in", ["Queued", "Running"]]}, "Provisioning in progress", "warning", "creation"),
+        ("SaaS Domain", {"status": "Pending Verification"}, "DNS verification required", "warning", "creation"),
+        ("SaaS Subscription", {"status": "Past Due"}, "Subscription past due", "critical", "creation"),
+    )
+    for doctype, filters, label, severity, date_field in definitions:
+        for item in frappe.get_all(doctype, filters=filters,
+                                   fields=["name", "modified"], order_by="modified desc",
+                                   limit_page_length=limit):
+            items.append({"doctype": doctype, "name": item.name,
+                          "label": label, "severity": severity,
+                          "modified": str(item.modified)})
+    items.sort(key=lambda item: (item["severity"] != "critical", item["modified"]), reverse=False)
+    return {"items": items[:limit], "total_visible": len(items), "is_truncated": len(items) > limit}

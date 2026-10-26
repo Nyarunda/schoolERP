@@ -1,0 +1,114 @@
+{
+  "doctype": "DocType",
+  "name": "School Certificate",
+  "module": "School",
+  "autoname": "format:CERT-{YYYY}-{#####}",
+  "naming_rule": "Expression (old style)",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "student",
+    "certificate_type",
+    "issue_date",
+    "status",
+    "reference_number",
+    "purpose",
+    "recipient",
+    "body",
+    "approved_by",
+    "approved_on"
+  ],
+  "fields": [
+    {
+      "fieldname": "student",
+      "label": "Student",
+      "fieldtype": "Link",
+      "options": "Student",
+      "reqd": 1
+    },
+    {
+      "fieldname": "certificate_type",
+      "label": "Certificate Type",
+      "fieldtype": "Select",
+      "options": "Admission Letter\nTransfer Letter\nClearance Certificate",
+      "reqd": 1
+    },
+    {
+      "fieldname": "issue_date",
+      "label": "Issue Date",
+      "fieldtype": "Date",
+      "default": "Today"
+    },
+    {
+      "fieldname": "status",
+      "label": "Approval Status",
+      "fieldtype": "Select",
+      "options": "Draft\nApproved\nRevoked",
+      "default": "Draft",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reference_number",
+      "label": "Reference",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "purpose",
+      "label": "Purpose / Notes",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "recipient",
+      "label": "Addressed To",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "body",
+      "label": "Official Letter Text",
+      "fieldtype": "Long Text",
+      "reqd": 1
+    },
+    {
+      "fieldname": "approved_by",
+      "label": "Approved By",
+      "fieldtype": "Link",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "approved_on",
+      "label": "Approved On",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "print": 1
+    },
+    {
+      "role": "School Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "print": 1
+    },
+    {
+      "role": "Head Teacher",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "print": 1
+    }
+  ],
+  "creation": "2026-10-26 09:00:00.000000",
+  "modified": "2026-10-26 09:00:00.000000"
+}

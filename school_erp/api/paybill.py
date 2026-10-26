@@ -200,7 +200,13 @@ def _post(name, student=None):
 
 	student = student or tx.student or find_student(tx.bill_ref_number) or find_student_by_phone(tx.msisdn)
 	if not student:
-		tx.db_set({"status": "Unmatched", "error": f"No student with ID '{tx.bill_ref_number}'"})
+		if tx.bill_ref_number:
+			why = f"No student with ID '{tx.bill_ref_number}'"
+		elif "*" in (tx.msisdn or ""):
+			why = "No account number and Safaricom hid the payer's phone: assign the student"
+		else:
+			why = f"No account number and no single student whose guardian has phone {tx.msisdn}: assign the student"
+		tx.db_set({"status": "Unmatched", "error": why})
 		frappe.publish_realtime("paybill_unmatched", {"name": tx.name, "amount": tx.amount}, after_commit=True)
 		return tx.status
 
@@ -341,15 +347,17 @@ def simulate(amount, bill_ref_number=None, msisdn="254708374149"):
 	settings = frappe.get_doc("School Settings")
 	if settings.mpesa_environment != "Sandbox":
 		frappe.throw(_("Simulation only works in the Sandbox environment"))
+	body = {
+		"ShortCode": settings.mpesa_shortcode,
+		"CommandID": "CustomerBuyGoodsOnline" if pb.is_till(settings.mpesa_account_type) else "CustomerPayBillOnline",
+		"Amount": int(float(amount)),
+		"Msisdn": msisdn,
+	}
+	if not pb.is_till(settings.mpesa_account_type):
+		body["BillRefNumber"] = bill_ref_number  # a till has no account number; Safaricom refuses an empty one
 	r = requests.post(
 		f"{DARAJA_HOST['Sandbox']}/mpesa/c2b/v2/simulate",
-		json={
-			"ShortCode": settings.mpesa_shortcode,
-			"CommandID": "CustomerBuyGoodsOnline" if pb.is_till(settings.mpesa_account_type) else "CustomerPayBillOnline",
-			"Amount": int(float(amount)),
-			"Msisdn": msisdn,
-			"BillRefNumber": "" if pb.is_till(settings.mpesa_account_type) else bill_ref_number,
-		},
+		json=body,
 		headers={"Authorization": f"Bearer {_token(settings)}"},
 		timeout=30,
 	)

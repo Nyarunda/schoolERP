@@ -7,8 +7,11 @@ frappe.ui.form.on("SaaS Subscription", {
     refresh(frm) {
         if (frm.is_new()) return frm.get_field("summary_html").$wrapper.empty();
         frm.page.set_indicator(__(frm.doc.status), SUB_COLORS[frm.doc.status] || "gray");
-        frappe.call({ method: "stemic_control.api.subscription_summary", args: { subscription: frm.doc.name }, type: "GET" })
-            .then(({ message: s }) => {
+        Promise.all([
+            frappe.call({ method: "stemic_control.api.subscription_summary", args: { subscription: frm.doc.name }, type: "GET" }),
+            frappe.call({ method: "stemic_control.billing.subscription_billing", args: { subscription: frm.doc.name }, type: "GET" }),
+        ]).then(([{ message: s }, { message: b }]) => {
+                s.billing = b;
                 render_subscription(frm, s);
                 if (stemic_control.is_platform_admin()) add_actions(frm, s);
             });
@@ -75,10 +78,25 @@ function render_subscription(frm, s) {
             ${stemic_control.tile(__("Subscription period"), period_value, period_note, bar)}
             ${stemic_control.tile(__("Plan"), `${esc(d.plan)} · ${stemic_control.money(s.plan.monthly_price)}<small style="display:inline">/${__("mo")}</small>`, limit)}
             ${stemic_control.tile(__("License"), lic_value, lic_note)}
-            ${stemic_control.tile(__("Payment reference"), esc(d.external_payment_ref || "—"), d.agent ? __("Sold by {0}", [esc(d.agent)]) : __("Direct sale"))}
+            ${billing_tile(s.billing, esc, fmt)}
         </div>
         <div class="scx-chips"><span class="scx-chip">${__("Core")}</span>${s.modules.map((m) => `<span class="scx-chip">${esc(__(m))}</span>`).join("")}</div>
     </div>`);
+}
+
+// Billing: the open invoice and what is owed, or the last payment
+function billing_tile(b, esc, fmt) {
+    const money = (v) => format_currency(v || 0, b.currency, 0);
+    if (b.open) {
+        const late = b.open.status === "Overdue";
+        return stemic_control.tile(__("Billing"), `<a href="/app/saas-invoice/${encodeURIComponent(b.open.name)}">${esc(b.open.name)}</a>`,
+            `<span style="color:var(--${late ? "red" : "orange"}-600)">${__("{0} owed, due {1}", [money(b.open.outstanding), fmt(b.open.due_date)])}</span>`);
+    }
+    if (b.last_payment) {
+        const p = b.last_payment;
+        return stemic_control.tile(__("Billing"), __("Paid up"), __("Last payment {0} on {1} ({2} {3})", [money(p.amount), fmt(p.payment_date), esc(p.mode), esc(p.reference)]));
+    }
+    return stemic_control.tile(__("Billing"), __("No invoices yet"), __("Use Actions > Create Invoice."));
 }
 
 function add_actions(frm, s) {
@@ -93,20 +111,43 @@ function add_actions(frm, s) {
             const dlg = new frappe.ui.Dialog({
                 title: __("Renew {0}", [d.school_name || d.tenant]),
                 fields: [
-                    { fieldname: "months", fieldtype: "Select", label: __("Extend by"), options: "1\n3\n6\n12\n24", default: "12", description: __("Months, added to the current end date (or to today if it has passed).") },
+                    { fieldname: "months", fieldtype: "Select", label: __("Extend by"), options: "1\n3\n6\n12\n24", default: String(s.billing.months || 12),
+                      read_only: !!s.billing.open,
+                      description: s.billing.open ? __("Pays {0}, the invoice already raised for the next period.", [s.billing.open.name])
+                          : __("Months, invoiced and paid now; counted from the current end date (or today if it has passed).") },
+                    { fieldname: "mode", fieldtype: "Select", label: __("Paid By"), options: "M-Pesa\nBank Transfer\nCheque\nCash\nCard\nOther", default: "M-Pesa" },
                     { fieldname: "payment_ref", fieldtype: "Data", label: __("Payment Reference"), reqd: 1 },
                     { fieldname: "issue", fieldtype: "Check", label: __("Issue a new license key for the new period"), default: s.can_sign && s.tenant.canonical_site ? 1 : 0, read_only: !(s.can_sign && s.tenant.canonical_site) },
                 ],
                 primary_action_label: __("Renew"),
                 primary_action(v) {
                     dlg.hide();
-                    call("renew_subscription", { subscription: d.name, months: v.months, payment_ref: v.payment_ref }, __("Renewed"))
+                    call("renew_subscription", { subscription: d.name, months: v.months, payment_ref: v.payment_ref, mode: v.mode }, __("Renewed"))
                         .then(() => v.issue && issue(frm));
                 },
             });
             dlg.show();
         }, act);
     }
+    const bill = (method, args, msg) => frappe.call({ method: `stemic_control.billing.${method}`, args, freeze: true }).then((r) => {
+        frappe.show_alert({ message: msg, indicator: "green" });
+        frm.reload_doc();
+        return r;
+    });
+    if (d.status !== "Cancelled" && !s.billing.open) {
+        frm.add_custom_button(__("Create Invoice"), () => frappe.prompt([
+            { fieldname: "months", fieldtype: "Int", label: __("Months"), default: s.billing.months || 12, reqd: 1 },
+            { fieldname: "period_start", fieldtype: "Date", label: __("From"), default: s.billing.next_period_start, reqd: 1 },
+            { fieldname: "discount_amount", fieldtype: "Currency", label: __("Discount") },
+            { fieldname: "description", fieldtype: "Small Text", label: __("Note on the invoice") },
+        ], (v) => bill("create_invoice", { subscription: d.name, ...v }, __("Invoice raised")).then(({ message }) =>
+            frappe.set_route("Form", "SaaS Invoice", message)), __("Invoice {0}", [d.school_name || d.tenant]), __("Create")), __("Billing"));
+    }
+    if (s.billing.open) {
+        frm.add_custom_button(__("Record Payment"), () => stemic_control.record_payment(s.billing.open.name, s.billing.open.outstanding,
+            () => frm.reload_doc()), __("Billing"));
+    }
+    frm.add_custom_button(__("Invoices"), () => frappe.set_route("List", "SaaS Invoice", { subscription: d.name }), __("View"));
     if (s.next.includes("Active") && d.status !== "Active") {
         frm.add_custom_button(__("Activate"), () => frappe.prompt({ fieldname: "ref", fieldtype: "Data", label: __("Payment Reference"), reqd: 1 },
             (v) => call("set_subscription_status", { subscription: d.name, status: "Active", payment_ref: v.ref }, __("Activated")), __("Activate subscription")), act);

@@ -107,3 +107,28 @@ Object.assign(stemic_control, {
         return format_currency(v || 0, frappe.boot.sysdefaults.currency, 0);
     },
 });
+
+// Record money received against an invoice (Subscription and Invoice forms)
+stemic_control.record_payment = function (invoice, outstanding, after) {
+    const d = new frappe.ui.Dialog({
+        title: __("Record Payment for {0}", [invoice]),
+        fields: [
+            { fieldname: "amount", fieldtype: "Currency", label: __("Amount"), default: outstanding, reqd: 1,
+              description: __("Still owed: {0}", [stemic_control.money(outstanding)]) },
+            { fieldname: "mode", fieldtype: "Select", label: __("Paid By"), options: "M-Pesa\nBank Transfer\nCheque\nCash\nCard\nOther", default: "M-Pesa", reqd: 1 },
+            { fieldname: "reference", fieldtype: "Data", label: __("Reference"), reqd: 1, description: __("M-Pesa code, bank reference or cheque number") },
+            { fieldname: "payment_date", fieldtype: "Date", label: __("Date"), default: frappe.datetime.get_today(), reqd: 1 },
+        ],
+        primary_action_label: __("Record"),
+        primary_action(v) {
+            d.hide();
+            frappe.call({ method: "stemic_control.billing.record_payment", args: { invoice, ...v }, freeze: true }).then(({ message: r }) => {
+                frappe.show_alert({ indicator: "green", message: r.invoice_status === "Paid"
+                    ? __("Paid in full. The subscription now runs to {0}.", [frappe.datetime.str_to_user(r.ends_on)])
+                    : __("Recorded. {0} still owed.", [stemic_control.money(r.outstanding)]) }, 8);
+                after && after(r);
+            });
+        },
+    });
+    d.show();
+};

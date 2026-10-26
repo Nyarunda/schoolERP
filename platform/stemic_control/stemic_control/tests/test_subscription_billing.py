@@ -131,7 +131,7 @@ class TestSubscriptionBilling(TestCase):
             "doctype": "SaaS Payment", "invoice": second, "amount": 1000,
             "mode": "M-Pesa", "reference": ref, "payment_date": nowdate(),
         })
-        self.assertRaises((frappe.ValidationError, frappe.UniqueValidationError), duplicate.insert)
+        self.assertRaises(frappe.ValidationError, duplicate.insert)
 
     # ------------------------------------------------------------------ daily job
     def test_daily_marks_overdue_and_raises_renewals(self):

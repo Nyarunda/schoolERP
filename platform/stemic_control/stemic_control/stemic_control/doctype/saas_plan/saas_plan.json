@@ -1,0 +1,116 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Plan",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "field:plan_name",
+  "naming_rule": "By fieldname",
+  "engine": "InnoDB",
+  "field_order": [
+    "summary_html",
+    "details_section",
+    "plan_name",
+    "enabled",
+    "description",
+    "cb_price",
+    "monthly_price",
+    "student_limit",
+    "modules_section",
+    "modules_html",
+    "modules"
+  ],
+  "fields": [
+    {
+      "fieldtype": "HTML",
+      "fieldname": "summary_html"
+    },
+    {
+      "fieldtype": "Section Break",
+      "fieldname": "details_section",
+      "label": "Plan"
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "plan_name",
+      "label": "Plan Name",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldtype": "Check",
+      "fieldname": "enabled",
+      "label": "Enabled",
+      "default": 1
+    },
+    {
+      "fieldtype": "Small Text",
+      "fieldname": "description",
+      "label": "Description",
+      "description": "Who the plan is for, shown to agents and on quotes."
+    },
+    {
+      "fieldtype": "Column Break",
+      "fieldname": "cb_price"
+    },
+    {
+      "fieldtype": "Currency",
+      "fieldname": "monthly_price",
+      "label": "Monthly Price",
+      "default": 0,
+      "in_list_view": 1,
+      "description": "Monthly recurring revenue counts this for every Active subscription."
+    },
+    {
+      "fieldtype": "Int",
+      "fieldname": "student_limit",
+      "label": "Student Limit",
+      "default": 0,
+      "in_list_view": 1,
+      "description": "Most active students a school on this plan may have. 0 = no limit."
+    },
+    {
+      "fieldtype": "Section Break",
+      "fieldname": "modules_section",
+      "label": "Modules Included"
+    },
+    {
+      "fieldtype": "HTML",
+      "fieldname": "modules_html"
+    },
+    {
+      "fieldtype": "Code",
+      "fieldname": "modules",
+      "label": "Enabled Modules JSON",
+      "options": "JSON",
+      "default": "[]",
+      "hidden": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    }
+  ],
+  "creation": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-26 12:30:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator"
+}

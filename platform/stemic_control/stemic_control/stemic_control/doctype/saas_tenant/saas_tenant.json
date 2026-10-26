@@ -1,0 +1,136 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Tenant",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "field:slug",
+  "naming_rule": "By fieldname",
+  "engine": "InnoDB",
+  "field_order": [
+    "school_name",
+    "slug",
+    "admin_email",
+    "canonical_site",
+    "status",
+    "primary_domain",
+    "agent",
+    "subscription",
+    "notes",
+    "sb_site",
+    "site_admin_password"
+  ],
+  "fields": [
+    {
+      "fieldtype": "Data",
+      "fieldname": "school_name",
+      "label": "School Name",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "slug",
+      "label": "Tenant Slug",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "admin_email",
+      "label": "School Admin Email",
+      "options": "Email",
+      "reqd": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "canonical_site",
+      "label": "Frappe Site",
+      "read_only": 1,
+      "unique": 1
+    },
+    {
+      "fieldtype": "Select",
+      "fieldname": "status",
+      "label": "Status",
+      "options": "Draft\nPending\nProvisioning\nActive\nSuspended\nFailed",
+      "default": "Draft",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "primary_domain",
+      "label": "Primary Domain",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "agent",
+      "label": "Agent",
+      "options": "SaaS Agent",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "subscription",
+      "label": "Subscription",
+      "options": "SaaS Subscription",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Small Text",
+      "fieldname": "notes",
+      "label": "Notes"
+    },
+    {
+      "fieldname": "sb_site",
+      "fieldtype": "Section Break",
+      "label": "Site Access",
+      "collapsible": 1,
+      "depends_on": "eval:doc.canonical_site"
+    },
+    {
+      "fieldname": "site_admin_password",
+      "fieldtype": "Password",
+      "label": "Site Administrator Password",
+      "read_only": 1,
+      "no_copy": 1,
+      "print_hide": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Agent",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "creation": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-25 23:30:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "title_field": "school_name",
+  "show_title_field_in_link": 1
+}

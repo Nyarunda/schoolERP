@@ -1,0 +1,80 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Agent",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "format:AGT-{#####}",
+  "naming_rule": "Expression",
+  "engine": "InnoDB",
+  "field_order": [
+    "agent_name",
+    "user",
+    "status",
+    "commission_rate"
+  ],
+  "fields": [
+    {
+      "fieldtype": "Data",
+      "fieldname": "agent_name",
+      "label": "Agent Name",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "user",
+      "label": "Agent User",
+      "options": "User",
+      "unique": 1
+    },
+    {
+      "fieldtype": "Select",
+      "fieldname": "status",
+      "label": "Status",
+      "options": "Active\nInactive",
+      "default": "Active"
+    },
+    {
+      "fieldtype": "Percent",
+      "fieldname": "commission_rate",
+      "label": "Commission Percent",
+      "default": 0,
+      "in_list_view": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Agent",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "creation": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-25 22:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "title_field": "agent_name",
+  "show_title_field_in_link": 1
+}

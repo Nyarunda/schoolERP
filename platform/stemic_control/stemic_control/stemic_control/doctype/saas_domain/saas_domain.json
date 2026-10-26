@@ -1,0 +1,123 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Domain",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "is_submittable": 0,
+  "track_changes": 1,
+  "autoname": "field:hostname",
+  "naming_rule": "By fieldname",
+  "engine": "InnoDB",
+  "field_order": [
+    "sb_domain",
+    "tenant",
+    "hostname",
+    "cb_domain",
+    "domain_type",
+    "is_primary",
+    "sb_verification",
+    "status",
+    "verified_on",
+    "cb_verification",
+    "verification_token"
+  ],
+  "fields": [
+    {
+      "fieldname": "sb_domain",
+      "fieldtype": "Section Break",
+      "label": "Domain"
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "tenant",
+      "label": "School",
+      "options": "SaaS Tenant",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "hostname",
+      "label": "Hostname",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "cb_domain",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldtype": "Select",
+      "fieldname": "domain_type",
+      "label": "Domain Type",
+      "options": "Stemic Subdomain\nCustom Domain",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldtype": "Check",
+      "fieldname": "is_primary",
+      "label": "Primary Domain",
+      "default": 0,
+      "read_only": 1
+    },
+    {
+      "fieldname": "sb_verification",
+      "fieldtype": "Section Break",
+      "label": "Verification"
+    },
+    {
+      "fieldtype": "Select",
+      "fieldname": "status",
+      "label": "Status",
+      "options": "Pending Verification\nVerified\nActive\nDisabled",
+      "default": "Pending Verification",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Datetime",
+      "fieldname": "verified_on",
+      "label": "Verified On",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb_verification",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "verification_token",
+      "label": "Verification Value",
+      "read_only": 1,
+      "hidden": 1,
+      "depends_on": "eval:doc.domain_type=='Custom Domain'"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1
+    }
+  ],
+  "creation": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-25 23:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "quick_entry": 0
+}

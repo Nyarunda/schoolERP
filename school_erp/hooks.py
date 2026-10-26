@@ -69,6 +69,7 @@ doctype_js = {
 	"Sales Invoice": "public/js/sales_invoice.js",
 	"Fee Payment": "public/js/verified_documents.js",
 	"Report Card": "public/js/verified_documents.js",
+	"School Certificate": "public/js/school_certificate.js",
 }
 
 # Custom SMS sender (used when School Settings > SMS Provider = "Custom Hook").

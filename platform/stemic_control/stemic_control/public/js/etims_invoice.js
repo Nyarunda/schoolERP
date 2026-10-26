@@ -15,12 +15,13 @@ frappe.ui.form.on("SaaS eTIMS Invoice", {
         }
         if (frm.doc.status === "Pending Submission") {
             // Never resend an uncertain submission: ask the provider what happened to it
-            frm.add_custom_button(__("Check with Provider"), () =>
-                frappe.call({ method: "stemic_control.etims.reconcile_invoice", args: { name: frm.doc.name }, freeze: true })
+            frm.add_custom_button(__("Reconcile With Provider"), () => frappe.confirm(
+                __("Query provider status without submitting the invoice again?"),
+                () => frappe.call({ method: "stemic_control.etims.reconcile_invoice", args: { name: frm.doc.name }, freeze: true })
                     .then(({ message }) => {
                         frappe.show_alert({ message: __("Status: {0}", [__(message.status)]), indicator: "blue" });
                         frm.reload_doc();
-                    }));
+                    })));
         }
         frm.add_custom_button(__("Submission History"), () =>
             frappe.call({ method: "stemic_control.etims.invoice_history", args: { name: frm.doc.name }, type: "GET" })

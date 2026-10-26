@@ -5,11 +5,17 @@ injected inside the critical section (after the check, before the write) so the 
 Every scenario runs with the PR's protections ("protected") and with the row locks removed ("control"), to show the
 harness detects the race when nothing prevents it.
 
-Run it on a disposable admin site (it commits fixtures named race-*, and removes them at the end):
+Run it on a disposable admin site. Its fixtures carry this run's own id (race-<run>-..., "Race Agent <run>",
+"Race Plan <run>") and only those are removed at the end, so other data, or another run, is left alone:
 
     cd frappe-bench/sites
     ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost            # both modes
     ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost protected  # only with locks
+
+Exit status (so a CI job or script can gate on it):
+    0  every protected round consistent, no client crashed or hung, and every expected control race broke
+    1  a protected round was inconsistent, or a client crashed or hung
+    2  protected rounds were fine, but a control race no longer broke: the harness has stopped exercising it
 
 Every "protected" round must print CONSISTENT. The "control" rounds are expected to break for the races the locks
 exist for (double payment, two part-payments, two invoices, cancel vs pay, cancel invoice vs pay); if a control round
@@ -24,6 +30,10 @@ import time
 import traceback
 
 SITE = sys.argv[1] if len(sys.argv) > 1 else "admin.localhost"
+RUN = None  # this run's id, set in main(); fixtures are named with it and only they are cleaned up
+# Races the locks exist for: with the locks removed ("control") these must break, or the harness lost its teeth
+EXPECT_CONTROL_BREAKS = {"s1_double_payment", "s1b_two_part_payments", "s3_double_invoice", "s4_cancel_vs_pay",
+                         "s7_cancel_invoice_vs_pay"}
 PAUSE = 1.5
 ROUNDS = 3
 
@@ -119,12 +129,12 @@ def fixture(frappe, tag):
 
     from stemic_control import api
 
-    agent = frappe.db.get_value("SaaS Agent", {"agent_name": "Race Agent"}) or frappe.get_doc(
-        {"doctype": "SaaS Agent", "agent_name": "Race Agent", "status": "Active", "commission_rate": 10}).insert().name
-    plan = "Race Plan"
+    agent = frappe.db.get_value("SaaS Agent", {"agent_name": f"Race Agent {RUN}"}) or frappe.get_doc(
+        {"doctype": "SaaS Agent", "agent_name": f"Race Agent {RUN}", "status": "Active", "commission_rate": 10}).insert().name
+    plan = f"Race Plan {RUN}"
     if not frappe.db.exists("SaaS Plan", plan):
         frappe.get_doc({"doctype": "SaaS Plan", "plan_name": plan, "enabled": 1, "monthly_price": 1000, "modules": "[]"}).insert()
-    tenant = api.register_tenant(f"Race School {tag}", f"race-{tag}-{frappe.generate_hash(length=4).lower()}", "race@race.test", agent)
+    tenant = api.register_tenant(f"Race School {tag}", f"race-{RUN}-{tag}-{frappe.generate_hash(length=4).lower()}", "race@race.test", agent)
     sub = frappe.get_doc({"doctype": "SaaS Subscription", "tenant": tenant, "plan": plan, "agent": agent,
                           "starts_on": add_days(nowdate(), -40), "ends_on": add_days(nowdate(), 5)}).insert().name
     frappe.db.commit()
@@ -132,12 +142,13 @@ def fixture(frappe, tag):
 
 
 def cleanup(frappe):
-    tenants = frappe.get_all("SaaS Tenant", filters={"name": ("like", "race-%")}, pluck="name") or [""]
+    """Remove this run's fixtures, and nothing else."""
+    tenants = frappe.get_all("SaaS Tenant", filters={"name": ("like", f"race-{RUN}-%")}, pluck="name") or [""]
     invoices = frappe.get_all("SaaS Invoice", filters={"tenant": ("in", tenants)}, pluck="name") or [""]
     for dt, f in (("SaaS Commission", {"tenant": ("in", tenants)}), ("SaaS Payment", {"invoice": ("in", invoices)}),
                   ("SaaS Invoice", {"name": ("in", invoices)}), ("SaaS Subscription", {"tenant": ("in", tenants)}),
                   ("SaaS Domain", {"tenant": ("in", tenants)}), ("SaaS Tenant", {"name": ("in", tenants)}),
-                  ("SaaS Agent", {"agent_name": "Race Agent"}), ("SaaS Plan", {"name": "Race Plan"})):
+                  ("SaaS Agent", {"agent_name": f"Race Agent {RUN}"}), ("SaaS Plan", {"name": f"Race Plan {RUN}"})):
         frappe.db.delete(dt, f)
     frappe.db.commit()
 
@@ -267,11 +278,14 @@ def s7_cancel_invoice_vs_pay(frappe, mode, tag):
 
 
 def main():
+    global RUN
     import frappe
 
     frappe.init(SITE, sites_path="."); frappe.connect(); frappe.set_user("Administrator")
     frappe.local.conf["stemic_platform_domain"] = "race.test"
-    cleanup(frappe)
+    RUN = frappe.generate_hash(length=6).lower()
+    print(f"run {RUN} on {SITE}", flush=True)
+    stuck = []
     scenarios = [s1_double_payment, s1b_two_part_payments, s2_same_reference, s3_double_invoice, s4_cancel_vs_pay, s5_pay_vs_invoice,
                  s6_daily_vs_payment, s7_cancel_invoice_vs_pay]
     summary = {}
@@ -282,6 +296,7 @@ def main():
                     tag = f"{sc.__name__.split('_')[0]}{mode[0]}{n}"
                     ok, res, detail = sc(frappe, mode, tag)
                     summary.setdefault((mode, sc.__name__), []).append(ok)
+                    stuck += [f"{mode} {sc.__name__} round {n + 1}: {r[0]}" for r in res if r[0] in ("crash", "hung")]
                     print(f"[{mode:9s}] {sc.__name__:20s} round {n + 1}: {'CONSISTENT' if ok else 'BROKEN    '} | {detail} | "
                           + " ; ".join(f"{r[0]}" + (f" ({r[1]})" if r[0] != 'ok' else "") for r in res), flush=True)
     finally:
@@ -289,6 +304,15 @@ def main():
     print("\nSUMMARY")
     for (mode, name), oks in summary.items():
         print(f"  {mode:9s} {name:20s} {sum(oks)}/{len(oks)} consistent")
+    broken = [name for (mode, name), oks in summary.items() if mode == "protected" and not all(oks)]
+    toothless = [name for (mode, name), oks in summary.items() if mode == "control" and name in EXPECT_CONTROL_BREAKS and all(oks)]
+    if broken or stuck:
+        print("\nFAIL: " + "; ".join([f"protected {b} inconsistent" for b in broken] + stuck))
+        sys.exit(1)
+    if toothless:
+        print("\nFAIL: the harness no longer exercises: " + ", ".join(toothless) + " (the control run stayed consistent)")
+        sys.exit(2)
+    print("\nPASS")
 
 
 if __name__ == "__main__":

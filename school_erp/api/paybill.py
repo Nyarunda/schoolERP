@@ -14,6 +14,7 @@ The endpoint path deliberately avoids the word "mpesa": Safaricom rejects such c
 """
 
 import json
+import secrets
 
 import frappe
 from frappe import _
@@ -61,7 +62,7 @@ def _authorised(settings) -> str | None:
 		return "auto-posting disabled"
 	# Safaricom posts JSON, and Frappe builds form_dict from a JSON body alone, so the ?token= has to be read off the URL
 	token = frappe.form_dict.get("token") or (frappe.request.args.get("token") if getattr(frappe.local, "request", None) else None)
-	if not settings.mpesa_callback_token or token != settings.mpesa_callback_token:
+	if not settings.mpesa_callback_token or not secrets.compare_digest(str(token or ""), str(settings.mpesa_callback_token)):
 		return "bad token"
 	if settings.mpesa_check_ip and not pb.ip_allowed(frappe.local.request_ip, settings.mpesa_allowed_ips):
 		return f"IP {frappe.local.request_ip} not allowed"
@@ -138,8 +139,9 @@ def confirm():
 		# The request carried our secret token, so this is most likely a real payment with odd details (a changed
 		# short code, say). Refuse to post it, but keep it where the bursar will see it rather than only in a log.
 		frappe.log_error(title="Invalid Paybill confirmation", message=f"{'; '.join(problems)}\n{json.dumps(raw)[:2000]}")
-		hold_for_review(raw, problems)
-		return _json_response(pb.REJECT_OTHER, status=400)
+		if not hold_for_review(raw, problems):
+			return _json_response(pb.REJECT_OTHER, status=503)
+		return _json_response(pb.ACCEPT)
 	try:
 		record_confirmation(raw, source="Safaricom")
 	except Exception:
@@ -199,14 +201,18 @@ def record_confirmation(raw: dict, source: str = "Safaricom") -> str:
 	)
 	doc.flags.ignore_permissions = True
 	doc.insert()
+	# Commit the inbox row before ACK. An enqueue outage must not lose the payment:
+	# retry_pending() scans durable Received rows.
 	frappe.db.commit()
-	frappe.enqueue(
-		"school_erp.api.paybill.post_transaction",
-		queue="short",
-		name=doc.name,
-		enqueue_after_commit=True,
-		now=bool(frappe.flags.in_test),
-	)
+	try:
+		frappe.enqueue(
+			"school_erp.api.paybill.post_transaction",
+			queue="short", name=doc.name, now=bool(frappe.flags.in_test),
+			job_id=f"school-paybill-{doc.name}",
+		)
+	except Exception:
+		frappe.log_error(title=f"Paybill worker queue unavailable for {doc.name}")
+
 	return doc.name
 
 
@@ -223,7 +229,7 @@ def post_transaction(name: str, student: str | None = None) -> str:
 
 def _post(name, student=None):
 	tx = frappe.get_doc("M-Pesa Transaction", name, for_update=True)
-	if tx.status in ("Posted", "Ignored"):
+	if tx.status in ("Posted", "Ignored", "Needs Review"):
 		return tx.status
 
 	if not licensing.is_enabled("mpesa"):
@@ -286,6 +292,8 @@ def assign_and_post(name, student=None):
 	"""Bursar button: post an Unmatched/Failed/Needs Review payment (optionally to a chosen student)."""
 	frappe.has_permission("M-Pesa Transaction", "write", name, throw=True)
 	frappe.has_permission("Fee Payment", "submit", throw=True)
+	if frappe.db.get_value("M-Pesa Transaction", name, "status") == "Needs Review":
+		frappe.throw(_("Reconcile rejected callback evidence with Safaricom before posting"), frappe.PermissionError)
 	if student:
 		frappe.db.set_value("M-Pesa Transaction", name, "student", student)
 	status = post_transaction(name, student)

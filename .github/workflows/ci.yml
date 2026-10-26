@@ -99,4 +99,15 @@ jobs:
       - name: Test summary
         if: always()
         run: |
-          { echo '### Test output (last 80 lines)'; echo '```'; tail -n 80 ~/tests.log 2>/dev/null || tail -n 80 ~/site.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo '### Test output (last 80 lines)'
+            echo '```'
+            if [ -f ~/tests.log ]; then
+              tail -n 80 ~/tests.log
+            elif [ -f ~/site.log ]; then
+              tail -n 80 ~/site.log
+            else
+              echo 'No test log available; job may have stopped during Bench setup.'
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

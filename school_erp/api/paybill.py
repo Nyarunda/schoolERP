@@ -155,8 +155,10 @@ def hold_for_review(raw: dict, problems: list[str]) -> str | None:
 	"""Keep a confirmation that failed its checks as "Needs Review": never posted automatically, visible to the bursar.
 	Without a transaction code there is nothing to key it on, so it stays in the Error Log only."""
 	trans_id = str((raw or {}).get("TransID") or "").strip()[:140] if isinstance(raw, dict) else ""
-	if not trans_id or frappe.db.exists("M-Pesa Transaction", trans_id):
+	if not trans_id:
 		return None
+	if frappe.db.exists("M-Pesa Transaction", trans_id):
+		return trans_id
 	try:
 		data = pb.normalize_payload(raw)
 	except (TypeError, ValueError):

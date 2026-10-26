@@ -1,0 +1,111 @@
+{
+  "doctype": "DocType",
+  "name": "Verified Document",
+  "module": "School",
+  "custom": 0,
+  "autoname": "field:verification_code",
+  "naming_rule": "By fieldname",
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "verification_code",
+    "document_type",
+    "document_name",
+    "issued_by",
+    "issued_on",
+    "pdf_hash",
+    "file_url",
+    "status",
+    "revocation_reason"
+  ],
+  "fields": [
+    {
+      "fieldname": "verification_code",
+      "label": "Verification Code",
+      "fieldtype": "Data",
+      "unique": 1,
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "document_type",
+      "label": "Source DocType",
+      "fieldtype": "Select",
+      "options": "Fee Payment\nReport Card",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "document_name",
+      "label": "Source Document",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "issued_by",
+      "label": "Issued By",
+      "fieldtype": "Link",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "issued_on",
+      "label": "Issued On",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "pdf_hash",
+      "label": "SHA-256 of Issued PDF",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "file_url",
+      "label": "Private Issued PDF",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Valid\nRevoked",
+      "default": "Valid",
+      "read_only": 1
+    },
+    {
+      "fieldname": "revocation_reason",
+      "label": "Revocation Reason",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "School Admin",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Bursar",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Head Teacher",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "creation": "2026-10-26 09:00:00.000000",
+  "modified": "2026-10-26 09:00:00.000000",
+  "owner": "Administrator",
+  "modified_by": "Administrator"
+}

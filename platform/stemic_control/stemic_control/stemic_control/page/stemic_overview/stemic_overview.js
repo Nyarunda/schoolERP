@@ -157,8 +157,13 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             const response = await frappe.call({ method: "stemic_control.api.dashboard_metrics", type: "GET" });
             metrics = response.message;
             loadError = false;
-            const queue = await frappe.call({method: "stemic_control.api.operations_queue", type: "GET"});
-            operations = queue.message?.items || [];
+            try {
+                const queue = await frappe.call({method: "stemic_control.api.operations_queue", type: "GET"});
+                operations = queue.message?.items || [];
+            } catch (queueError) {
+                operations = [];
+                console.warn("Stemic operations queue unavailable", queueError);
+            }
         } catch (error) {
             loadError = true;
             frappe.msgprint({title: __("Dashboard unavailable"), message: __("Unable to load platform metrics."), indicator: "red"});

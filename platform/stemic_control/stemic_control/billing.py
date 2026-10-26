@@ -72,11 +72,22 @@ def compute_invoice(doc):
         doc.paid_amount, doc.outstanding = 0, doc.total
 
 
+def submitted_payments(invoice, exclude=None):
+    """The total of an invoice's submitted payments, as committed now.
+
+    A locking read: under MariaDB's REPEATABLE READ a plain SELECT returns the snapshot taken at the transaction's
+    first read, so a client that waited for the invoice lock would still miss the payment that was committed while it
+    waited. FOR UPDATE reads the latest committed rows (and holds them until this transaction ends)."""
+    return flt(frappe.db.sql(
+        "SELECT COALESCE(SUM(amount), 0) FROM `tabSaaS Payment` WHERE invoice = %s AND docstatus = 1 AND name != %s FOR UPDATE",
+        (invoice, exclude or ""))[0][0], 2)
+
+
 def refresh_invoice(name):
-    """Paid amount, outstanding and status from the invoice's submitted payments."""
+    """Paid amount, outstanding and status from the invoice's submitted payments, under the invoice lock."""
+    lock_invoice(name)
     inv = frappe.get_doc("SaaS Invoice", name)
-    paid = flt(frappe.db.sql("select coalesce(sum(amount), 0) from `tabSaaS Payment` where invoice = %s and docstatus = 1",
-                             name)[0][0], 2)
+    paid = submitted_payments(name)
     outstanding = flt(inv.total - paid, 2)
     if inv.docstatus == 2:
         status = "Cancelled"
@@ -167,12 +178,18 @@ def validate_payment(doc):
 
 
 def lock_invoice(invoice):
-    """InnoDB row lock shared by payment submit/cancel and invoice cancellation."""
-    if not frappe.db.sql(
-        "SELECT name FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE",
-        (invoice,),
-    ):
+    """InnoDB row lock shared by payment submit/cancel and invoice cancellation. Returns the invoice's docstatus as
+    committed now (a locking read), so a caller that waited sees a cancellation made meanwhile."""
+    row = frappe.db.sql("SELECT docstatus FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE", (invoice,))
+    if not row:
         frappe.throw("Unknown invoice", frappe.ValidationError)
+    return row[0][0]
+
+
+def has_submitted_payment(invoice):
+    """Locking read: a payment committed while we waited for the invoice lock is seen."""
+    return bool(frappe.db.sql("SELECT name FROM `tabSaaS Payment` WHERE invoice = %s AND docstatus = 1 LIMIT 1 FOR UPDATE",
+                              (invoice,)))
 
 
 def validate_payment_for_submit(doc):
@@ -181,14 +198,9 @@ def validate_payment_for_submit(doc):
     Do not trust the previously calculated outstanding field: the same invoice
     may have received another payment since the draft was validated.
     """
-    lock_invoice(doc.invoice)
-    if frappe.db.get_value("SaaS Invoice", doc.invoice, "docstatus") != 1:
+    if lock_invoice(doc.invoice) != 1:
         frappe.throw("Invoice is not submitted", frappe.ValidationError)
-    paid = frappe.db.sql(
-        "SELECT COALESCE(SUM(amount), 0) FROM `tabSaaS Payment` "
-        "WHERE invoice = %s AND docstatus = 1 AND name != %s",
-        (doc.invoice, doc.name),
-    )[0][0]
+    paid = submitted_payments(doc.invoice, exclude=doc.name)  # locking read: sees payments committed while we waited
     total = frappe.db.get_value("SaaS Invoice", doc.invoice, "total")
     remaining = flt(flt(total) - flt(paid), 2)
     if remaining <= 0 or flt(doc.amount) > remaining + 0.005:

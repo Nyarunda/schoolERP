@@ -5,7 +5,7 @@ description = "School management on ERPNext: students as customers, term billing
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
-dependencies = []
+dependencies = ["qrcode[pil]>=7.4,<9"]
 
 [build-system]
 requires = ["flit_core >=3.4,<4"]

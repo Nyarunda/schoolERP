@@ -30,6 +30,9 @@ frappe.ui.form.on("Student", {
 		}, __("Fees"));
 
 		frm.add_custom_button(__("Fee Statement (PDF)"), () => statement_dialog(frm), __("Fees"));
+		if (["School Admin", "System Manager", "Bursar", "Head Teacher"].some((r) => frappe.user.has_role(r))) {
+			frm.add_custom_button(__("Verified Statement (QR)"), () => verified_statement_dialog(frm), __("Fees"));
+		}
 
 		frm.add_custom_button(__("Bill for a Term"), () => {
 			frappe.prompt(
@@ -70,6 +73,25 @@ frappe.ui.form.on("Student", {
 		}
 	},
 });
+
+// A statement with a QR code that anyone can check against the school's archived copy
+function verified_statement_dialog(frm) {
+	frappe.prompt(
+		[
+			{ fieldname: "from_date", label: __("From"), fieldtype: "Date", description: __("Blank = start of the school year") },
+			{ fieldname: "to_date", label: __("To"), fieldtype: "Date", default: frappe.datetime.get_today() },
+		],
+		(v) =>
+			frappe.call({
+				method: "school_erp.api.document_verification.issue_statement",
+				args: { student: frm.doc.name, from_date: v.from_date, to_date: v.to_date },
+				freeze: true,
+				freeze_message: __("Creating PDF..."),
+			}).then(({ message }) => school_erp.show_verified_document(message)),
+		__("Verified Fee Statement"),
+		__("Issue"),
+	);
+}
 
 function statement_dialog(frm) {
 	frappe.prompt(

@@ -69,6 +69,29 @@ def prepare_invoice(tenant, external_invoice_no, buyer_name, net_amount, vat_amo
 
 
 @frappe.whitelist(methods=["POST"])
+def prepare_platform_subscription_invoice(subscription, external_invoice_no, net_amount,
+                                          vat_amount, total_amount, tax_treatment,
+                                          buyer_pin=None):
+    """Prepare Stemic-as-seller invoicing for a school subscription.
+
+    Pricing/tax totals must originate from the approved accounting invoice,
+    not the subscription plan's price alone.
+    """
+    _admin()
+    sub = frappe.get_doc("SaaS Subscription", subscription)
+    if not sub.tenant:
+        frappe.throw(_("Subscription has no school customer"))
+    school_name = frappe.db.get_value("SaaS Tenant", sub.tenant, "school_name")
+    if not school_name:
+        frappe.throw(_("Unknown school customer"))
+    return prepare_invoice(tenant=sub.tenant, subscription=sub.name,
+        external_invoice_no=external_invoice_no, buyer_name=school_name,
+        buyer_pin=buyer_pin, net_amount=net_amount, vat_amount=vat_amount,
+        total_amount=total_amount, tax_treatment=tax_treatment,
+        seller_scope="Stemic Platform")
+
+
+@frappe.whitelist(methods=["POST"])
 def approve_invoice(name):
     """Approve for integration; does not contact the tax authority."""
     _admin()

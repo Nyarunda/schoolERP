@@ -38,6 +38,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
     let selected = "home";
     let metrics = null;
     let busy = false;
+    let loadError = false;
     const tabs = [["home","Overview"],["schools","Schools"],["billing","Billing"],["agents","Agents"]];
 
     function render() {
@@ -46,6 +47,13 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         description.className = "stemic-intro";
         description.textContent = __("Manage schools, subscriptions and provisioning from one control plane.");
         root.append(description);
+        if (loadError) {
+            const warning = document.createElement("div");
+            warning.className = "alert alert-warning";
+            warning.setAttribute("role", "alert");
+            warning.textContent = __("Metrics could not be loaded. Use Refresh to try again.");
+            root.append(warning);
+        }
         const nav = document.createElement("div");
         nav.className = "stemic-tabs";
         nav.setAttribute("role","tablist");
@@ -66,6 +74,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             const card = document.createElement("button");
             card.type = "button";
             card.className = "stemic-kpi-card";
+            card.setAttribute("aria-label", __(label) + ": " + (metrics?.[selected]?.[key] ?? __("Not available")));
             const heading = document.createElement("span");
             heading.className = "stemic-kpi-label";
             heading.textContent = __(label);
@@ -78,12 +87,13 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             card.append(heading,value,hint);
             if (filters !== null) {
                 card.addEventListener("click", () => {
-                    frappe.route_options = filters;
+                    frappe.route_options = {...filters};
                     frappe.set_route("List",doctype);
                 });
             } else {
-                card.disabled = true;
-                card.title = __("A matching filtered list is not available yet");
+                card.type = "button";
+                card.setAttribute("aria-disabled", "true");
+                card.title = __("Summary only — detailed report not yet available");
             }
             section.append(card);
         }
@@ -99,7 +109,9 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         try {
             const response = await frappe.call({ method: "stemic_control.api.dashboard_metrics", type: "GET" });
             metrics = response.message;
+            loadError = false;
         } catch (error) {
+            loadError = true;
             frappe.msgprint({title: __("Dashboard unavailable"), message: __("Unable to load platform metrics."), indicator: "red"});
         } finally {
             busy = false; render();

@@ -50,6 +50,12 @@ def execute(filters=None):
 		{"fd": fd, "td": td}, as_dict=True):
 		row(r.month).purchases += flt(r.net)
 
+	for r in frappe.db.sql("""select date_format(pi.posting_date, '%%Y-%%m') month, sum(pi.net_total) net from `tabPurchase Invoice` pi
+		where pi.docstatus = 1 and pi.company = %(co)s and pi.posting_date between %(fd)s and %(td)s
+			and exists (select 1 from `tabPurchase Taxes and Charges` t where t.parent = pi.name and t.account_head = %(acc)s)
+		group by month""", {"co": s.company, "fd": fd, "td": td, "acc": s.input_vat_account}, as_dict=True):
+		row(r.month).purchases += flt(r.net)  # supplier bills that carried input VAT
+
 	data = sorted(rows.values(), key=lambda r: r.month)
 	for r in data:
 		r.payable = flt(r.output_vat - r.input_vat, 2)

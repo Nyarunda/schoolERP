@@ -60,6 +60,54 @@ def ensure_accounts(settings):
 		settings.set(field, existing)
 	if settings.vat_registered:
 		ensure_item_tax_templates(settings)
+		ensure_invoice_templates(settings)
+	if settings.withhold_tax and settings.wht_account:
+		sync_withholding_categories(settings)
+
+
+def _ensure_template(doctype, title, settings, row):
+	"""A Sales/Purchase Taxes and Charges Template with one VAT row, kept at the school's rate."""
+	name = frappe.db.get_value(doctype, {"title": title, "company": settings.company})
+	doc = frappe.get_doc(doctype, name) if name else frappe.get_doc({"doctype": doctype, "title": title, "company": settings.company})
+	current = [(t.account_head, flt(t.rate)) for t in doc.get("taxes")]
+	if current == [(row["account_head"], flt(row["rate"]))]:
+		return doc.name
+	doc.set("taxes", [{"charge_type": "On Net Total", "description": title, "cost_center": settings.cost_center, **row}])
+	doc.save(ignore_permissions=True)
+	return doc.name
+
+
+def ensure_invoice_templates(settings):
+	"""VAT templates for invoices raised outside fee billing: supplier bills (input VAT, added to what the supplier
+	charges) and other customer invoices (output VAT). Exempt items are kept out by their Item Tax Template."""
+	rate = flt(settings.vat_rate)
+	_ensure_template("Purchase Taxes and Charges Template", "Kenya Input VAT", settings,
+					 {"account_head": settings.input_vat_account, "rate": rate, "category": "Total", "add_deduct_tax": "Add"})
+	_ensure_template("Sales Taxes and Charges Template", "Kenya VAT", settings,
+					 {"account_head": settings.output_vat_account, "rate": rate})
+
+
+def sync_withholding_categories(settings=None, only=None):
+	"""Mirror each active Withholding Tax Type into an ERPNext Tax Withholding Category, so a supplier bill with
+	"Apply Tax Withholding" deducts it: on the amount before VAT, from the first shilling, to the payable account."""
+	settings = settings or frappe.get_cached_doc("School Settings")
+	if not (settings.withhold_tax and settings.wht_account and settings.company):
+		return
+	filters = {"is_active": 1}
+	if only:
+		filters["name"] = only
+	for wt in frappe.get_all("Withholding Tax Type", filters=filters, fields=["name", "rate"]):
+		exists = frappe.db.exists("Tax Withholding Category", wt.name)
+		doc = frappe.get_doc("Tax Withholding Category", wt.name) if exists else frappe.new_doc("Tax Withholding Category")
+		doc.category_name = wt.name
+		doc.tax_deduction_basis = "Net Total"
+		doc.disable_cumulative_threshold = doc.disable_transaction_threshold = 1
+		doc.set("rates", [{"from_date": "2000-01-01", "to_date": "2099-12-31", "tax_withholding_rate": flt(wt.rate)}])
+		doc.set("accounts", [{"company": settings.company, "account": settings.wht_account}])
+		if exists:
+			doc.save(ignore_permissions=True)
+		else:
+			doc.insert(ignore_permissions=True, set_name=wt.name)
 
 
 def ensure_item_tax_templates(settings):

@@ -51,6 +51,8 @@ from school_erp.logic.license import DOCTYPE_MODULE as _DOCTYPE_MODULE  # noqa: 
 
 _licensed = "school_erp.licensing.enforce_on_doc"
 doc_events = {dt: {"validate": _licensed, "before_submit": _licensed} for dt in _DOCTYPE_MODULE}
+# Bursars and school admins get the ERPNext accounting roles behind Finance (school_erp.setup.finance)
+doc_events["User"] = {"validate": "school_erp.setup.finance.sync_user_roles"}
 
 # Staff see only their own leave, duty reports and driver logs (plus what they must approve)
 permission_query_conditions = {

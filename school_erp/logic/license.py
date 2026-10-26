@@ -53,6 +53,7 @@ DOCTYPE_MODULE = {
 	"Complaint": "welfare",
 	"Expense Category": "expenses",
 	"School Expense": "expenses",
+	"Withholding Tax Type": "expenses",
 	"School Vehicle": "transport_ops",
 	"Driver Daily Log": "transport_ops",
 	"Grading Scale": "exams",

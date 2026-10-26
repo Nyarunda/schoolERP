@@ -16,7 +16,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "school_er
 # DocTypes from Frappe / ERPNext that our Links may point to
 EXTERNAL = {
 	"Customer", "Company", "Currency", "Account", "Cost Center", "Mode of Payment", "Customer Group",
-	"Territory", "Employee", "User", "Item", "Sales Invoice", "Payment Entry", "Role", "Journal Entry",
+	"Territory", "Employee", "User", "Item", "Sales Invoice", "Payment Entry", "Role", "Journal Entry", "Supplier",
 }
 
 errors = []

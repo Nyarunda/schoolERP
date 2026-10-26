@@ -116,6 +116,22 @@
   "cb_portal",
   "default_grading_scale",
   "report_card_sms",
+  "tax_tab",
+  "tax_status_html",
+  "kra_pin",
+  "vat_section",
+  "vat_registered",
+  "vat_rate",
+  "cb_vat",
+  "output_vat_account",
+  "input_vat_account",
+  "wht_section",
+  "withhold_tax",
+  "wht_account",
+  "cb_wht",
+  "vat_withholding_agent",
+  "vat_wht_rate",
+  "vat_wht_account",
   "license_tab",
   "license_status_html",
   "license_key_section",
@@ -906,33 +922,147 @@
    "label": "Report card SMS"
   },
   {
+   "fieldname": "tax_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tax",
+   "idx": 112
+  },
+  {
+   "fieldname": "tax_status_html",
+   "fieldtype": "HTML",
+   "idx": 113
+  },
+  {
+   "fieldname": "kra_pin",
+   "fieldtype": "Data",
+   "label": "School KRA PIN",
+   "description": "For example P051234567X. Printed on tax invoices and needed for returns.",
+   "idx": 114
+  },
+  {
+   "fieldname": "vat_section",
+   "fieldtype": "Section Break",
+   "label": "VAT",
+   "idx": 115
+  },
+  {
+   "default": "0",
+   "fieldname": "vat_registered",
+   "fieldtype": "Check",
+   "label": "Registered for VAT",
+   "description": "Most schools are not: education services are VAT-exempt. Tick only if KRA has registered the school for VAT (for example because it sells taxable goods such as uniforms above the threshold).",
+   "idx": 116
+  },
+  {
+   "default": "16",
+   "depends_on": "eval:doc.vat_registered",
+   "fieldname": "vat_rate",
+   "fieldtype": "Percent",
+   "label": "Standard VAT Rate",
+   "mandatory_depends_on": "eval:doc.vat_registered",
+   "idx": 117
+  },
+  {
+   "fieldname": "cb_vat",
+   "fieldtype": "Column Break",
+   "idx": 118
+  },
+  {
+   "depends_on": "eval:doc.vat_registered",
+   "fieldname": "output_vat_account",
+   "fieldtype": "Link",
+   "label": "Output VAT Account (sales)",
+   "options": "Account",
+   "description": "Created for you when you save, if left blank.",
+   "idx": 119
+  },
+  {
+   "depends_on": "eval:doc.vat_registered",
+   "fieldname": "input_vat_account",
+   "fieldtype": "Link",
+   "label": "Input VAT Account (purchases)",
+   "options": "Account",
+   "idx": 120
+  },
+  {
+   "fieldname": "wht_section",
+   "fieldtype": "Section Break",
+   "label": "Withholding Tax",
+   "idx": 121
+  },
+  {
+   "default": "0",
+   "fieldname": "withhold_tax",
+   "fieldtype": "Check",
+   "label": "Deduct withholding tax when paying suppliers",
+   "description": "For services such as professional, management, training or contractual fees. Choose the type on each expense; rates are under Withholding Tax Type.",
+   "idx": 122
+  },
+  {
+   "depends_on": "eval:doc.withhold_tax",
+   "fieldname": "wht_account",
+   "fieldtype": "Link",
+   "label": "Withholding Tax Payable Account",
+   "options": "Account",
+   "idx": 123
+  },
+  {
+   "fieldname": "cb_wht",
+   "fieldtype": "Column Break",
+   "idx": 124
+  },
+  {
+   "default": "0",
+   "fieldname": "vat_withholding_agent",
+   "fieldtype": "Check",
+   "label": "Appointed VAT withholding agent",
+   "description": "Only if KRA has appointed the school. Withholds VAT from suppliers who charge VAT.",
+   "idx": 125
+  },
+  {
+   "default": "2",
+   "depends_on": "eval:doc.vat_withholding_agent",
+   "fieldname": "vat_wht_rate",
+   "fieldtype": "Percent",
+   "label": "VAT Withholding Rate",
+   "idx": 126
+  },
+  {
+   "depends_on": "eval:doc.vat_withholding_agent",
+   "fieldname": "vat_wht_account",
+   "fieldtype": "Link",
+   "label": "VAT Withholding Payable Account",
+   "options": "Account",
+   "idx": 127
+  },
+  {
    "fieldname": "license_tab",
    "fieldtype": "Tab Break",
-   "idx": 112,
+   "idx": 128,
    "label": "License"
   },
   {
    "fieldname": "license_status_html",
    "fieldtype": "HTML",
-   "idx": 113
+   "idx": 129
   },
   {
    "fieldname": "license_key_section",
    "fieldtype": "Section Break",
    "label": "Add or Renew License Key",
-   "idx": 114
+   "idx": 130
   },
   {
    "description": "Paste the whole key your vendor sent (one long line), then press Save. The modules switch on straight away; no data is lost when a key is replaced.",
    "fieldname": "license_key",
    "fieldtype": "Long Text",
-   "idx": 115,
+   "idx": 131,
    "label": "License Key"
   },
   {
    "fieldname": "license_status",
    "fieldtype": "Data",
-   "idx": 116,
+   "idx": 132,
    "label": "License Status",
    "read_only": 1,
    "hidden": 1
@@ -940,7 +1070,7 @@
   {
    "fieldname": "licensed_to",
    "fieldtype": "Data",
-   "idx": 117,
+   "idx": 133,
    "label": "Licensed To",
    "read_only": 1,
    "hidden": 1
@@ -948,7 +1078,7 @@
   {
    "fieldname": "licensed_modules",
    "fieldtype": "Small Text",
-   "idx": 118,
+   "idx": 134,
    "label": "Licensed Modules",
    "read_only": 1,
    "hidden": 1
@@ -956,7 +1086,7 @@
   {
    "fieldname": "license_expiry",
    "fieldtype": "Date",
-   "idx": 119,
+   "idx": 135,
    "label": "License Expiry",
    "read_only": 1,
    "hidden": 1
@@ -964,7 +1094,7 @@
   {
    "fieldname": "max_students",
    "fieldtype": "Int",
-   "idx": 120,
+   "idx": 136,
    "label": "Max Students",
    "read_only": 1,
    "hidden": 1
@@ -973,7 +1103,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-26 11:00:00.000000",
+ "modified": "2026-10-26 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Settings",

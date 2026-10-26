@@ -21,6 +21,7 @@ frappe.ui.form.on("School Settings", {
 			});
 		});
 		render_license(frm);
+		render_tax_status(frm);
 		setup_mpesa(frm);
 		if (((frappe.boot.school_erp || {}).modules || []).includes("portal")) {
 			frm.add_custom_button(__("Give All Parents Portal Access"), () =>
@@ -247,4 +248,21 @@ function license_panel(frm, s) {
 			<button class="btn btn-xs btn-default sl-copy" data-copy="${esc(s.this_site)}">${__("Copy")}</button>
 			<span class="text-muted">${__("Your vendor needs this name to make a key for this school.")}</span></div>
 	</div>`;
+}
+
+// What the school's tax settings mean, in one place on the Tax tab
+function render_tax_status(frm) {
+	const d = frm.doc;
+	const on = (ok, text) => `<li style="margin:3px 0">${ok ? "✓" : "–"} ${text}</li>`;
+	frm.get_field("tax_status_html").$wrapper.html(`<div class="small" style="margin-bottom:8px">
+		<ul style="list-style:none;padding:0;margin:0">
+			${on(d.vat_registered, d.vat_registered
+				? __("VAT-registered: fee invoices carry {0}% VAT on Standard Rated fee types (set on each Fee Type); fee amounts already include it.", [d.vat_rate || 16])
+				: __("Not VAT-registered: invoices carry no VAT, and VAT a supplier charges is part of the cost."))}
+			${on(d.vat_registered, d.vat_registered ? __("VAT a supplier charges is claimable as input VAT.") : __("No input VAT to claim."))}
+			${on(d.withhold_tax, d.withhold_tax ? __("Withholding tax is deducted from supplier payments by type (Withholding Tax Type).") : __("No withholding tax is deducted from supplier payments."))}
+			${on(d.vat_withholding_agent, d.vat_withholding_agent ? __("As a VAT withholding agent, {0}% VAT is withheld from suppliers who charge VAT.", [d.vat_wht_rate || 2]) : __("Not a VAT withholding agent."))}
+		</ul>
+		<div class="text-muted" style="margin-top:6px">${__("Monthly figures: reports VAT Summary and Withholding Tax Register. Rates follow what you set here; confirm them with KRA or your tax adviser.")}</div>
+	</div>`);
 }

@@ -35,15 +35,19 @@ class StaffRoom {
 		this.$root = $(`<div class="sd sr"><div class="sd-skeleton" style="height:180px;margin-bottom:16px"></div></div>`).appendTo($parent);
 		school_dash.bind_routes(this.$root);
 		this.$root.on("click", "[data-ack]", (e) => this.acknowledge(e.currentTarget));
+		this.loading = false;
 		this.load();
 	}
 
 	load() {
+		if (this.loading) return;
+		this.loading = true;
 		frappe.call("school_erp.api.dashboard.staff_room").then(({ message }) => {
 			this.data = message;
 			this.loaded_at = Date.now();
 			this.render();
-		});
+		}).catch(() => frappe.show_alert({message: __("Unable to refresh staff room"), indicator: "red"}))
+			.finally(() => { this.loading = false; });
 	}
 
 	acknowledge(btn) {

@@ -1,7 +1,7 @@
 frappe.listview_settings["M-Pesa Transaction"] = {
 	add_fields: ["status"],
 	get_indicator(doc) {
-		const colors = { Posted: "green", Unmatched: "orange", Failed: "red", Received: "blue", Ignored: "gray" };
+		const colors = { Posted: "green", Unmatched: "orange", Failed: "red", "Needs Review": "red", Received: "blue", Ignored: "gray" };
 		return [__(doc.status), colors[doc.status] || "gray", "status,=," + doc.status];
 	},
 	onload(list) {

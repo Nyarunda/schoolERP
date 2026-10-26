@@ -118,16 +118,25 @@ def valid_money(value):
 		return False
 
 
-def valid_confirmation(data, shortcode, require_transaction_id=True):
-	"""Check C2B envelope before money may enter the posting pipeline.
+def confirmation_problems(data, shortcode, require_transaction_id=True) -> list[str]:
+	"""Why a C2B envelope may not enter the posting pipeline; empty when it may.
 	`shortcode` may be one code or several (a Till is reported by its store number or its till number)."""
+	if not isinstance(data, dict):
+		return ["Not a Daraja confirmation"]
 	codes = {str(c).strip() for c in ([shortcode] if isinstance(shortcode, (str, int)) or shortcode is None else shortcode) if str(c or "").strip()}
-	return bool(
-		isinstance(data, dict)
-		and (not require_transaction_id or str(data.get("TransID") or "").strip())
-		and str(data.get("BusinessShortCode") or "").strip() in codes
-		and valid_money(data.get("TransAmount"))
-	)
+	problems = []
+	if require_transaction_id and not str(data.get("TransID") or "").strip():
+		problems.append("No M-Pesa transaction code (TransID)")
+	if str(data.get("BusinessShortCode") or "").strip() not in codes:
+		problems.append(f"Short code {data.get('BusinessShortCode') or '(none)'} is not this school's")
+	if not valid_money(data.get("TransAmount")):
+		problems.append(f"Amount {data.get('TransAmount')!r} is not a positive amount with at most 2 decimals")
+	return problems
+
+
+def valid_confirmation(data, shortcode, require_transaction_id=True):
+	"""Check C2B envelope before money may enter the posting pipeline."""
+	return not confirmation_problems(data, shortcode, require_transaction_id)
 
 
 def valid_stk_metadata(meta, expected_amount, expected_phone):

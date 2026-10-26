@@ -243,10 +243,10 @@ def _management_attention(mods, today):
 		if n2:
 			items.append(_attention(_("Expenses awaiting final approval"), n2, ["List", "School Expense", {"status": "Pending Final Approval"}]))
 	if "mpesa" in mods:
-		n = frappe.db.count("M-Pesa Transaction", {"status": ("in", ["Unmatched", "Failed"])})
+		n = frappe.db.count("M-Pesa Transaction", {"status": ("in", ["Unmatched", "Failed", "Needs Review"])})
 		if n:
-			items.append(_attention(_("Paybill payments not matched to a student"), n,
-									["List", "M-Pesa Transaction", {"status": "Unmatched"}], "serious"))
+			items.append(_attention(_("M-Pesa payments for the bursar to check"), n,
+									["List", "M-Pesa Transaction", {"status": ["in", ["Unmatched", "Failed", "Needs Review"]]}], "serious"))
 	if "welfare" in mods:
 		n = frappe.db.count("Complaint", {"status": ("in", ["Open", "In Progress"]), "priority": ("in", ["High", "Urgent"])})
 		if n:

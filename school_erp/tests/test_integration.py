@@ -266,6 +266,25 @@ class TestSchoolFlow(TestCase):
 			frappe.clear_document_cache("School Settings", "School Settings")
 		return restore
 
+	def test_refused_confirmation_is_held_for_the_bursar(self):
+		from school_erp.api.paybill import assign_and_post, hold_for_review, retry_pending
+		from school_erp.logic.paybill import confirmation_problems
+
+		s = self.make_student()
+		raw = {**self.paybill_payload(s.name, 800), "BusinessShortCode": "999999"}  # a short code that is not ours
+		problems = confirmation_problems(raw, "600000")
+		name = hold_for_review(raw, problems)
+		tx = frappe.get_doc("M-Pesa Transaction", name)
+		self.assertEqual((tx.status, tx.fee_payment), ("Needs Review", None))
+		self.assertIn("999999", tx.error)
+		self.assertIsNone(hold_for_review(raw, problems))  # a retry does not duplicate it
+
+		retry_pending()  # never posted automatically
+		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "status"), "Needs Review")
+
+		self.assertEqual(assign_and_post(name, s.name)["status"], "Posted")  # the bursar checked it and posts it
+		self.assertIsNone(hold_for_review({**raw, "TransID": ""}, problems))  # nothing to key it on: log only
+
 	def test_till_payment_matched_by_payer_phone(self):
 		from school_erp.api.paybill import record_confirmation
 

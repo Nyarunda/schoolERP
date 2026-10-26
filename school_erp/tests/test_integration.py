@@ -252,6 +252,63 @@ class TestSchoolFlow(TestCase):
 		finally:
 			frappe.local.request, frappe.local.form_dict = previous
 
+	def use_till(self, store="7712345", till="8812345"):
+		"""Switch School Settings to a Till for one test; returns a function that switches back."""
+		fields = ("mpesa_account_type", "mpesa_shortcode", "paybill_number")
+		before = {f: frappe.db.get_single_value("School Settings", f) for f in fields}
+		for f, v in zip(fields, ("Till (Buy Goods)", store, till)):
+			frappe.db.set_single_value("School Settings", f, v)
+		frappe.clear_document_cache("School Settings", "School Settings")
+
+		def restore():
+			for f, v in before.items():
+				frappe.db.set_single_value("School Settings", f, v)
+			frappe.clear_document_cache("School Settings", "School Settings")
+		return restore
+
+	def test_till_payment_matched_by_payer_phone(self):
+		from school_erp.api.paybill import record_confirmation
+
+		phone = "0733" + frappe.generate_hash(length=6).translate(str.maketrans("abcdef", "123456"))[:6]
+		s = self.make_student(guardians=[{"guardian_name": "Till Parent", "relation": "Mother", "mobile_no": phone}])
+		restore = self.use_till()
+		try:
+			till_payment = lambda msisdn: {**self.paybill_payload("", 700), "TransactionType": "Buy Goods", "MSISDN": msisdn}
+			name = record_confirmation(till_payment("254" + phone[1:]))  # no account number: matched by phone
+			tx = frappe.get_doc("M-Pesa Transaction", name)
+			self.assertEqual((tx.status, tx.student), ("Posted", s.name), tx.error)
+
+			masked = record_confirmation(till_payment("2547 ***** 126"))  # how Safaricom usually sends it
+			self.assertEqual(frappe.db.get_value("M-Pesa Transaction", masked, "status"), "Unmatched")
+
+			self.make_student()  # two students share the fixture's 0712345678: the bursar must choose
+			self.make_student()
+			shared = record_confirmation(till_payment("254712345678"))
+			self.assertEqual(frappe.db.get_value("M-Pesa Transaction", shared, "status"), "Unmatched")
+		finally:
+			restore()
+
+	def test_stk_push_to_a_till(self):
+		from school_erp.api import stk
+
+		s = self.make_student()
+		restore = self.use_till()
+		settings = frappe.get_doc("School Settings")
+		settings.update({"mpesa_enabled": 1, "mpesa_stk_enabled": 1, "mpesa_passkey": "testkey", "mpesa_consumer_key": "k",
+						 "mpesa_consumer_secret": "s", "mpesa_environment": "Sandbox"})
+		settings.save()
+		ok = lambda body: type("R", (), {"status_code": 200, "text": "x", "json": lambda self: body})()
+		try:
+			with patch("requests.get", return_value=ok({"access_token": "t"})), \
+				 patch("requests.post", return_value=ok({"ResponseCode": "0", "CheckoutRequestID": "ws_CO_" + frappe.generate_hash(length=8),
+														  "MerchantRequestID": "m1"})) as post:
+				stk.initiate(s.name, 500, "0712345678")
+			sent = post.call_args.kwargs["json"]
+			self.assertEqual(sent["TransactionType"], "CustomerBuyGoodsOnline")
+			self.assertEqual((sent["BusinessShortCode"], sent["PartyB"]), ("7712345", "8812345"))
+		finally:
+			restore()
+
 	def test_paybill_needs_license(self):
 		from school_erp.api.paybill import record_confirmation
 

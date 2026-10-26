@@ -348,3 +348,13 @@ def test_promotion_plan():
 	assert pr.apply_action("Promote", "Grade 9", "Grade 9 West", None)["action"] == "Graduate"
 	s = pr.summarize([{"action": "Promote", "balance": 5000}, {"action": "Graduate", "balance": 0}, {"action": "Repeat", "balance": 100}])
 	assert (s["promote"], s["graduate"], s["repeat"], s["with_balance"], s["balance"]) == (1, 1, 1, 2, 5100)
+
+
+def test_paybill_and_till_wording_and_stk_parties():
+	assert pb.is_till("Till (Buy Goods)") and not pb.is_till("Paybill") and not pb.is_till(None)
+	assert pb.pay_line("Paybill", "522522", "STU-1") == "M-Pesa Paybill 522522, Account STU-1"
+	assert pb.pay_line("Till (Buy Goods)", "8812345", "STU-1") == "M-Pesa Buy Goods, Till 8812345"
+	assert pb.pay_line("Paybill", "", "STU-1") == ""
+	assert pb.stk_parties("Paybill", "522522", "522522") == ("CustomerPayBillOnline", "522522")
+	# a Till is authenticated with its store number but the money goes to the till
+	assert pb.stk_parties("Till (Buy Goods)", "7712345", "8812345") == ("CustomerBuyGoodsOnline", "8812345")

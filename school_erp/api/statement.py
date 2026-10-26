@@ -7,6 +7,7 @@ from frappe import _
 from frappe.utils import add_days, flt, formatdate, fmt_money, get_url, getdate, nowdate
 
 from school_erp.api.payments import customer_of, invoice_fee_lines
+from school_erp.logic.paybill import is_till, pay_line
 from school_erp.logic.statement import breakdown_rows, build_ledger, status_line
 from school_erp.logic.text import render
 
@@ -135,6 +136,7 @@ def build_statement(student, from_date=None, to_date=None):
 		"student_id": stu.name,
 		"student_name": stu.student_name,
 		"paybill": settings.paybill_number or "",
+		"mpesa": pay_line(settings.mpesa_account_type, settings.paybill_number, stu.name),
 		"school_name": settings.school_name or "",
 	}
 	accent = settings.statement_accent_color or "#1f6f5c"
@@ -172,6 +174,7 @@ def build_statement(student, from_date=None, to_date=None):
 		"due_date": due_label,
 		"payment_instructions": render(settings.payment_instructions or "", ctx_text),
 		"paybill": settings.paybill_number,
+		"till": is_till(settings.mpesa_account_type),
 		"bank_details": settings.bank_details,
 		"footer": settings.statement_footer,
 		"money": money,

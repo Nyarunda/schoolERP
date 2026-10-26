@@ -153,3 +153,16 @@ def get_desktop_page(page):
 
 def daily_license_check():
 	get_state(refresh=True)
+
+
+@frappe.whitelist()
+def license_overview():
+	"""Everything the License tab in School Settings shows: the saved key's state, usage and the full module list."""
+	frappe.has_permission("School Settings", "read", throw=True)
+	state = get_state()
+	return {
+		**state,
+		"this_site": frappe.local.site,
+		"active_students": frappe.db.count("Student", {"status": "Active"}),
+		"catalogue": [{"code": code, "label": label, "included": code in state["modules"]} for code, label in lic.MODULES.items()],
+	}

@@ -8,6 +8,9 @@ class SaaSInvoice(Document):
     def validate(self):
         billing.compute_invoice(self)
 
+    def before_submit(self):
+        billing.validate_invoice_for_submit(self)
+
     def on_submit(self):
         billing.refresh_invoice(self.name)
 

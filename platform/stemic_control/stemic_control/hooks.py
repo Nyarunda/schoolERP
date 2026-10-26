@@ -36,3 +36,6 @@ app_include_css = ["stemic_overview.bundle.css"]  # bundled: hashed file name, s
 
 # Local provisioner safety net: picks up queued jobs and fails abandoned ones (only when switched on)
 scheduler_events = {"cron": {"*/5 * * * *": ["stemic_control.provisioner.process_queue"]}}
+
+# Finance operators review tax records through controlled service actions.
+doctype_js = {"SaaS eTIMS Invoice": "public/js/etims_invoice.js"}

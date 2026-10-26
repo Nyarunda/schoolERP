@@ -144,16 +144,23 @@ def validate_payment(doc):
 
 
 
+def lock_invoice(invoice):
+    """InnoDB row lock shared by payment submit/cancel and invoice cancellation."""
+    if not frappe.db.sql(
+        "SELECT name FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE",
+        (invoice,),
+    ):
+        frappe.throw("Unknown invoice", frappe.ValidationError)
+
+
 def validate_payment_for_submit(doc):
     """Recheck the live balance under an invoice row lock immediately before submit.
 
     Do not trust the previously calculated outstanding field: the same invoice
     may have received another payment since the draft was validated.
     """
-    if not frappe.db.sql(
-        "SELECT name FROM `tabSaaS Invoice` WHERE name = %s AND docstatus = 1 FOR UPDATE",
-        (doc.invoice,),
-    ):
+    lock_invoice(doc.invoice)
+    if frappe.db.get_value("SaaS Invoice", doc.invoice, "docstatus") != 1:
         frappe.throw("Invoice is not submitted", frappe.ValidationError)
     paid = frappe.db.sql(
         "SELECT COALESCE(SUM(amount), 0) FROM `tabSaaS Payment` "

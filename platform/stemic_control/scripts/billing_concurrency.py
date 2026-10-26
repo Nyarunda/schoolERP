@@ -12,6 +12,15 @@ Run it on a disposable admin site. Its fixtures carry this run's own id (race-<r
     ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost            # both modes
     ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost protected  # only with locks
 
+If a run is killed (its cleanup cannot run), remove what it left by its id, printed on the first line:
+
+    ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost --cleanup <run-id>
+
+MariaDB 11.6+ turns innodb_snapshot_isolation ON: a transaction that would act on stale reads is aborted with error
+1020 ("Record has changed since last read") instead. Races then fail safely before reaching the code under test, so
+the control run cannot break. Set STEMIC_RACE_SNAPSHOT_ISOLATION=OFF (or ON) to choose it per connection; CI runs
+both. The run's header says which applied; with it ON the control check is reported, not enforced.
+
 Exit status (so a CI job or script can gate on it):
     0  every protected round consistent, no client crashed or hung, and every expected control race broke
     1  a protected round was inconsistent, or a client crashed or hung
@@ -25,6 +34,7 @@ Results on MariaDB 10.11 (REPEATABLE READ), 26 Oct 2026: protected 24/24 consist
 """
 
 import multiprocessing as mp
+import os
 import sys
 import time
 import traceback
@@ -38,11 +48,23 @@ PAUSE = 1.5
 ROUNDS = 3
 
 
+def set_snapshot_isolation(frappe):
+    """Apply STEMIC_RACE_SNAPSHOT_ISOLATION to this connection (when the server has the variable); return the effect."""
+    have = frappe.db.sql("SHOW VARIABLES LIKE 'innodb_snapshot_isolation'")
+    if not have:
+        return "n/a"
+    wanted = (os.environ.get("STEMIC_RACE_SNAPSHOT_ISOLATION") or "").upper()
+    if wanted in ("ON", "OFF"):
+        frappe.db.sql(f"SET SESSION innodb_snapshot_isolation = {wanted}")
+    return frappe.db.sql("SELECT @@SESSION.innodb_snapshot_isolation")[0][0] and "ON" or "OFF"
+
+
 def connect():
     import frappe
 
     frappe.init(SITE, sites_path=".")
     frappe.connect()
+    set_snapshot_isolation(frappe)
     frappe.set_user("Administrator")
     frappe.local.conf["stemic_platform_domain"] = "race.test"
     return frappe
@@ -282,9 +304,18 @@ def main():
     import frappe
 
     frappe.init(SITE, sites_path="."); frappe.connect(); frappe.set_user("Administrator")
+    if sys.argv[2:3] == ["--cleanup"]:
+        RUN = (sys.argv[3:4] or [""])[0].strip().lower()
+        if not RUN.isalnum():
+            sys.exit("usage: billing_concurrency.py <site> --cleanup <run-id>")
+        cleanup(frappe)
+        print(f"removed the fixtures of run {RUN}")
+        return
     frappe.local.conf["stemic_platform_domain"] = "race.test"
     RUN = frappe.generate_hash(length=6).lower()
-    print(f"run {RUN} on {SITE}", flush=True)
+    snapshot = set_snapshot_isolation(frappe)
+    version = frappe.db.sql("SELECT VERSION()")[0][0]
+    print(f"run {RUN} on {SITE} | {version} | innodb_snapshot_isolation {snapshot}", flush=True)
     stuck = []
     scenarios = [s1_double_payment, s1b_two_part_payments, s2_same_reference, s3_double_invoice, s4_cancel_vs_pay, s5_pay_vs_invoice,
                  s6_daily_vs_payment, s7_cancel_invoice_vs_pay]
@@ -309,6 +340,10 @@ def main():
     if broken or stuck:
         print("\nFAIL: " + "; ".join([f"protected {b} inconsistent" for b in broken] + stuck))
         sys.exit(1)
+    if toothless and snapshot == "ON":
+        print("\nnote: snapshot isolation is ON, so races abort with error 1020 before the code under test and the control"
+              " run cannot break; control is not enforced. Run with STEMIC_RACE_SNAPSHOT_ISOLATION=OFF to exercise the locks.")
+        toothless = []
     if toothless:
         print("\nFAIL: the harness no longer exercises: " + ", ".join(toothless) + " (the control run stayed consistent)")
         sys.exit(2)

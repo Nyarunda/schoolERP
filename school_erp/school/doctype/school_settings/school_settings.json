@@ -65,6 +65,7 @@
   "statement_email_subject",
   "statement_email_body",
   "mpesa_tab",
+  "mpesa_account_type",
   "mpesa_enabled",
   "mpesa_environment",
   "mpesa_shortcode",
@@ -116,9 +117,9 @@
   "default_grading_scale",
   "report_card_sms",
   "license_tab",
-  "license_key",
   "license_status_html",
-  "cb_lic",
+  "license_key_section",
+  "license_key",
   "license_status",
   "licensed_to",
   "licensed_modules",
@@ -358,10 +359,11 @@
    "label": "Fee Statements"
   },
   {
+   "description": "The number parents pay to. For a Till, this is the Till number.",
    "fieldname": "paybill_number",
    "fieldtype": "Data",
    "idx": 34,
-   "label": "M-Pesa Paybill / Till"
+   "label": "Paybill / Till Number (shown to parents)"
   },
   {
    "description": "Bank name, account name and number shown on statements.",
@@ -371,8 +373,8 @@
    "label": "Bank Details"
   },
   {
-   "default": "Pay via M-Pesa Paybill {paybill}, Account No: {student_id}. Always use the Student ID as the account number.",
-   "description": "Placeholders: {student_id} {student_name} {paybill} {school_name}",
+   "default": "Pay via {mpesa}. For a Paybill, always use the Student ID as the account number.",
+   "description": "Placeholders: {student_id} {student_name} {paybill} {mpesa} {school_name}",
    "fieldname": "payment_instructions",
    "fieldtype": "Small Text",
    "idx": 36,
@@ -495,7 +497,7 @@
    "label": "SMS (left) and Statement Email (right)"
   },
   {
-   "default": "Dear {guardian_name}, {term} fees for {first_name} ({student_id}) have been posted. Balance due: {balance}, by {due_date}. Paybill {paybill}, Acc {student_id}. {school_name}",
+   "default": "Dear {guardian_name}, {term} fees for {first_name} ({student_id}) have been posted. Balance due: {balance}, by {due_date}. Pay via {mpesa}. {school_name}",
    "fieldname": "billing_sms_template",
    "fieldtype": "Small Text",
    "idx": 54,
@@ -509,7 +511,7 @@
    "label": "Payment Sms Template"
   },
   {
-   "default": "Dear {guardian_name}, kindly clear {first_name}'s fee balance of {balance}. Paybill {paybill}, Acc {student_id}. {school_name}",
+   "default": "Dear {guardian_name}, kindly clear {first_name}'s fee balance of {balance}. Pay via {mpesa}. {school_name}",
    "fieldname": "reminder_sms_template",
    "fieldtype": "Small Text",
    "idx": 56,
@@ -541,41 +543,51 @@
    "label": "M-Pesa"
   },
   {
-   "description": "Payments to the Paybill with the Student ID as account number are posted to the student automatically.",
+   "default": "Paybill",
+   "description": "Paybill: parents enter the Student ID as the account number. Till (Buy Goods): there is no account number, so parents should pay with the M-Pesa prompt on the parent portal; direct till payments are matched by the payer's phone when possible, otherwise the bursar assigns them. Put the number parents pay to (Paybill or Till) in Billing & Statements > Paybill / Till Number.",
+   "fieldname": "mpesa_account_type",
+   "fieldtype": "Select",
+   "label": "M-Pesa Account Type",
+   "options": "Paybill\nTill (Buy Goods)",
+   "idx": 61
+  },
+  {
+   "description": "Payments Safaricom reports to this site are posted to the student automatically (by account number on a Paybill, by M-Pesa prompt or payer phone on a Till).",
    "fieldname": "mpesa_enabled",
    "fieldtype": "Check",
-   "idx": 61,
-   "label": "Auto-post Paybill payments"
+   "idx": 62,
+   "label": "Auto-post M-Pesa payments"
   },
   {
    "default": "Sandbox",
    "depends_on": "mpesa_enabled",
    "fieldname": "mpesa_environment",
    "fieldtype": "Select",
-   "idx": 62,
+   "idx": 63,
    "label": "Environment",
    "options": "Sandbox\nProduction"
   },
   {
    "depends_on": "mpesa_enabled",
+   "description": "Paybill: the Paybill number. Till: the Store / Head Office number on your Daraja app (not the Till number).",
    "fieldname": "mpesa_shortcode",
    "fieldtype": "Data",
-   "idx": 63,
-   "label": "Paybill Short Code",
+   "idx": 64,
+   "label": "Short Code",
    "mandatory_depends_on": "mpesa_enabled"
   },
   {
    "depends_on": "mpesa_enabled",
    "fieldname": "mpesa_consumer_key",
    "fieldtype": "Data",
-   "idx": 64,
+   "idx": 65,
    "label": "Daraja Consumer Key"
   },
   {
    "depends_on": "mpesa_enabled",
    "fieldname": "mpesa_consumer_secret",
    "fieldtype": "Password",
-   "idx": 65,
+   "idx": 66,
    "label": "Daraja Consumer Secret"
   },
   {
@@ -583,21 +595,21 @@
    "description": "Its default account for your company must be the M-Pesa / Paybill clearing account. Filled by Run School Setup.",
    "fieldname": "mpesa_mode_of_payment",
    "fieldtype": "Link",
-   "idx": 66,
-   "label": "Mode of Payment for Paybill",
+   "idx": 67,
+   "label": "Mode of Payment for M-Pesa",
    "options": "Mode of Payment"
   },
   {
    "fieldname": "cb_mpesa",
    "fieldtype": "Column Break",
-   "idx": 67
+   "idx": 68
   },
   {
    "depends_on": "mpesa_enabled",
    "description": "https address Safaricom can reach, e.g. https://greenhill.example.com. Must not contain the words mpesa or safaricom.",
    "fieldname": "mpesa_callback_base_url",
    "fieldtype": "Data",
-   "idx": 68,
+   "idx": 69,
    "label": "Public Site URL"
   },
   {
@@ -605,7 +617,7 @@
    "description": "Generated automatically and added to the callback URLs.",
    "fieldname": "mpesa_callback_token",
    "fieldtype": "Data",
-   "idx": 69,
+   "idx": 70,
    "label": "Callback Secret",
    "read_only": 1
   },
@@ -613,7 +625,7 @@
    "depends_on": "mpesa_enabled",
    "fieldname": "mpesa_registered_on",
    "fieldtype": "Datetime",
-   "idx": 70,
+   "idx": 71,
    "label": "URLs registered on",
    "read_only": 1
   },
@@ -622,7 +634,7 @@
    "depends_on": "mpesa_enabled",
    "fieldname": "sb_mpesa_advanced",
    "fieldtype": "Section Break",
-   "idx": 71,
+   "idx": 72,
    "label": "Security & Advanced"
   },
   {
@@ -631,28 +643,28 @@
    "description": "Completed = Safaricom accepts the payment anyway (recommended; it is posted when the site is back or matched by the bursar).",
    "fieldname": "mpesa_response_type",
    "fieldtype": "Select",
-   "idx": 72,
+   "idx": 73,
    "label": "If our site is unreachable",
    "options": "Completed\nCancelled"
   },
   {
-   "depends_on": "mpesa_enabled",
+   "depends_on": "eval:doc.mpesa_enabled && doc.mpesa_account_type != 'Till (Buy Goods)'",
    "description": "Only works after Safaricom activates External Validation on your paybill. The parent's payment is refused if the account number is not a Student ID.",
    "fieldname": "mpesa_validate_account",
    "fieldtype": "Check",
-   "idx": 73,
+   "idx": 74,
    "label": "Reject unknown account numbers"
   },
   {
    "fieldname": "cb_mpesa_adv",
    "fieldtype": "Column Break",
-   "idx": 74
+   "idx": 75
   },
   {
    "depends_on": "mpesa_enabled",
    "fieldname": "mpesa_check_ip",
    "fieldtype": "Check",
-   "idx": 75,
+   "idx": 76,
    "label": "Only accept callbacks from Safaricom IPs"
   },
   {
@@ -660,33 +672,33 @@
    "depends_on": "mpesa_check_ip",
    "fieldname": "mpesa_allowed_ips",
    "fieldtype": "Small Text",
-   "idx": 76,
+   "idx": 77,
    "label": "Allowed IPs / ranges"
   },
   {
    "depends_on": "mpesa_enabled",
    "fieldname": "sb_stk",
    "fieldtype": "Section Break",
-   "idx": 77,
+   "idx": 78,
    "label": "Pay from the Parent Portal (STK Push)"
   },
   {
    "fieldname": "mpesa_stk_enabled",
    "fieldtype": "Check",
-   "idx": 78,
+   "idx": 79,
    "label": "Allow parents to pay with an M-Pesa prompt (STK Push)"
   },
   {
    "fieldname": "cb_stk",
    "fieldtype": "Column Break",
-   "idx": 79
+   "idx": 80
   },
   {
    "depends_on": "mpesa_stk_enabled",
    "description": "From Safaricom when M-Pesa Express is enabled on the paybill (sandbox: from the Daraja test credentials page).",
    "fieldname": "mpesa_passkey",
    "fieldtype": "Password",
-   "idx": 80,
+   "idx": 81,
    "label": "Lipa na M-Pesa Online Passkey"
   },
   {
@@ -694,32 +706,32 @@
    "depends_on": "mpesa_enabled",
    "fieldname": "sb_mpesa_urls",
    "fieldtype": "Section Break",
-   "idx": 81,
+   "idx": 82,
    "label": "Callback URLs"
   },
   {
    "fieldname": "mpesa_urls_html",
    "fieldtype": "HTML",
-   "idx": 82,
+   "idx": 83,
    "label": "URLs"
   },
   {
    "fieldname": "operations_tab",
    "fieldtype": "Tab Break",
-   "idx": 83,
+   "idx": 84,
    "label": "Approvals"
   },
   {
    "fieldname": "sb_staff_approval",
    "fieldtype": "Section Break",
-   "idx": 84,
+   "idx": 85,
    "label": "Leave (left) and Expense (right) Approvals"
   },
   {
    "description": "Approves leave for staff with no 'Reports To', and receives duty reports and alerts.",
    "fieldname": "head_teacher_user",
    "fieldtype": "Link",
-   "idx": 85,
+   "idx": 86,
    "label": "Head Teacher / Principal (login)",
    "options": "User"
   },
@@ -727,27 +739,27 @@
    "default": "1",
    "fieldname": "notify_staff_by_sms",
    "fieldtype": "Check",
-   "idx": 86,
+   "idx": 87,
    "label": "Also SMS staff about leave, relieving and alerts"
   },
   {
    "fieldname": "cb_expense_approval",
    "fieldtype": "Column Break",
-   "idx": 87
+   "idx": 88
   },
   {
    "default": "10000",
    "description": "Expense approvals: up to this amount one approval is needed; above it, a second (final) approval.",
    "fieldname": "expense_single_approval_limit",
    "fieldtype": "Currency",
-   "idx": 88,
+   "idx": 89,
    "label": "One approval up to"
   },
   {
    "description": "Blank = Bursar. The role needs Submit permission on School Expense.",
    "fieldname": "expense_first_approver_role",
    "fieldtype": "Link",
-   "idx": 89,
+   "idx": 90,
    "label": "First Approver Role",
    "options": "Role"
   },
@@ -755,27 +767,27 @@
    "description": "Blank = Head Teacher. The role needs Submit permission on School Expense.",
    "fieldname": "expense_final_approver_role",
    "fieldtype": "Link",
-   "idx": 90,
+   "idx": 91,
    "label": "Final Approver Role",
    "options": "Role"
   },
   {
    "fieldname": "daily_ops_tab",
    "fieldtype": "Tab Break",
-   "idx": 91,
+   "idx": 92,
    "label": "Daily Operations"
   },
   {
    "fieldname": "sb_duty",
    "fieldtype": "Section Break",
-   "idx": 92,
+   "idx": 93,
    "label": "Teacher on Duty & Driver Check-in"
   },
   {
    "description": "Blank = Head Teacher",
    "fieldname": "duty_report_recipient",
    "fieldtype": "Link",
-   "idx": 93,
+   "idx": 94,
    "label": "Send duty reports to",
    "options": "User"
   },
@@ -783,18 +795,18 @@
    "default": "17:00:00",
    "fieldname": "duty_report_due_time",
    "fieldtype": "Time",
-   "idx": 94,
+   "idx": 95,
    "label": "Remind if no report by"
   },
   {
    "fieldname": "cb_transport_ops",
    "fieldtype": "Column Break",
-   "idx": 95
+   "idx": 96
   },
   {
    "fieldname": "transport_manager_user",
    "fieldtype": "Link",
-   "idx": 96,
+   "idx": 97,
    "label": "Transport Manager (login)",
    "options": "User"
   },
@@ -802,14 +814,14 @@
    "default": "06:30:00",
    "fieldname": "driver_checkin_deadline",
    "fieldtype": "Time",
-   "idx": 97,
+   "idx": 98,
    "label": "Drivers must check in by"
   },
   {
    "fieldname": "checkin_alert_sent_on",
    "fieldtype": "Date",
    "hidden": 1,
-   "idx": 98,
+   "idx": 99,
    "label": "Checkin Alert Sent On",
    "read_only": 1
   },
@@ -817,46 +829,46 @@
    "fieldname": "duty_alert_sent_on",
    "fieldtype": "Date",
    "hidden": 1,
-   "idx": 99,
+   "idx": 100,
    "label": "Duty Alert Sent On",
    "read_only": 1
   },
   {
    "fieldname": "sb_complaints",
    "fieldtype": "Section Break",
-   "idx": 100,
+   "idx": 101,
    "label": "Complaints"
   },
   {
    "default": "Dear {name}, your complaint has been received. Ref {ref}. Track it at {url}. {school_name}",
    "fieldname": "complaint_ack_sms",
    "fieldtype": "Small Text",
-   "idx": 101,
+   "idx": 102,
    "label": "Acknowledgement SMS"
   },
   {
    "fieldname": "cb_complaints",
    "fieldtype": "Column Break",
-   "idx": 102
+   "idx": 103
   },
   {
    "default": "Dear {name}, your complaint {ref} has been resolved: {resolution}. {school_name}",
    "fieldname": "complaint_resolved_sms",
    "fieldtype": "Small Text",
-   "idx": 103,
+   "idx": 104,
    "label": "Resolved SMS"
   },
   {
    "default": "3",
    "fieldname": "complaint_daily_limit",
    "fieldtype": "Int",
-   "idx": 104,
+   "idx": 105,
    "label": "Max web complaints per phone per day"
   },
   {
    "fieldname": "portal_tab",
    "fieldtype": "Tab Break",
-   "idx": 105,
+   "idx": 106,
    "label": "Parent Portal & Exams"
   },
   {
@@ -864,25 +876,25 @@
    "description": "Parents log in at /parent with their phone number to see balances, statements, receipts, report cards and notices.",
    "fieldname": "portal_enabled",
    "fieldtype": "Check",
-   "idx": 106,
+   "idx": 107,
    "label": "Parent portal on"
   },
   {
    "default": "Dear {name}, view {students} fees and report cards at {url}. Login: {login} Password: {password} - {school_name}",
    "fieldname": "portal_welcome_sms",
    "fieldtype": "Small Text",
-   "idx": 107,
+   "idx": 108,
    "label": "Portal login SMS"
   },
   {
    "fieldname": "cb_portal",
    "fieldtype": "Column Break",
-   "idx": 108
+   "idx": 109
   },
   {
    "fieldname": "default_grading_scale",
    "fieldtype": "Link",
-   "idx": 109,
+   "idx": 110,
    "label": "Default Grading Scale",
    "options": "Grading Scale"
   },
@@ -890,73 +902,78 @@
    "default": "Dear {name}, {student_name}'s {exam} results: mean {mean_grade} ({mean_percent}%), position {position}/{size}. View the report card at {url} - {school_name}",
    "fieldname": "report_card_sms",
    "fieldtype": "Small Text",
-   "idx": 110,
+   "idx": 111,
    "label": "Report card SMS"
   },
   {
    "fieldname": "license_tab",
    "fieldtype": "Tab Break",
-   "idx": 111,
-   "label": "License"
-  },
-  {
-   "description": "Paste the license key supplied by your vendor. Modules switch on when you save.",
-   "fieldname": "license_key",
-   "fieldtype": "Long Text",
    "idx": 112,
-   "label": "License Key"
+   "label": "License"
   },
   {
    "fieldname": "license_status_html",
    "fieldtype": "HTML",
-   "idx": 113,
-   "label": "License Status"
+   "idx": 113
   },
   {
-   "fieldname": "cb_lic",
-   "fieldtype": "Column Break",
+   "fieldname": "license_key_section",
+   "fieldtype": "Section Break",
+   "label": "Add or Renew License Key",
    "idx": 114
+  },
+  {
+   "description": "Paste the whole key your vendor sent (one long line), then press Save. The modules switch on straight away; no data is lost when a key is replaced.",
+   "fieldname": "license_key",
+   "fieldtype": "Long Text",
+   "idx": 115,
+   "label": "License Key"
   },
   {
    "fieldname": "license_status",
    "fieldtype": "Data",
-   "idx": 115,
+   "idx": 116,
    "label": "License Status",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "licensed_to",
    "fieldtype": "Data",
-   "idx": 116,
+   "idx": 117,
    "label": "Licensed To",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "licensed_modules",
    "fieldtype": "Small Text",
-   "idx": 117,
+   "idx": 118,
    "label": "Licensed Modules",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "license_expiry",
    "fieldtype": "Date",
-   "idx": 118,
+   "idx": 119,
    "label": "License Expiry",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "max_students",
    "fieldtype": "Int",
-   "idx": 119,
+   "idx": 120,
    "label": "Max Students",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-22 20:00:00.000000",
+ "modified": "2026-10-26 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Settings",

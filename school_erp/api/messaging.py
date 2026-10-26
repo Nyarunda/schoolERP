@@ -6,6 +6,7 @@ from frappe.utils import flt, fmt_money, formatdate
 
 from school_erp import licensing
 from school_erp.api.payments import party_balance
+from school_erp.logic.paybill import pay_line
 from school_erp.logic.text import normalize_phone, render
 
 
@@ -104,6 +105,7 @@ def message_context(student_doc, extra=None):
 		"guardian_name": student_doc.primary_guardian or "Parent",
 		"school_name": settings.school_name or "",
 		"paybill": settings.paybill_number or "",
+		"mpesa": pay_line(settings.mpesa_account_type, settings.paybill_number, student_doc.name),
 	}
 	ctx.update(extra or {})
 	return ctx

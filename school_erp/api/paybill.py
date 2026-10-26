@@ -7,6 +7,8 @@ Flow
   -> a background job matches the Student and submits a Fee Payment
      (Payment Entry posted, balance reduced, parent gets the receipt SMS)
   -> payments with an unknown account number wait as "Unmatched" for the bursar to assign.
+  -> a Till (Buy Goods) payment has no account number: it is matched by the payer's phone when exactly one
+     active student has a guardian with that number (Safaricom often masks it), otherwise it waits as "Unmatched".
 
 The endpoint path deliberately avoids the word "mpesa": Safaricom rejects such callback URLs.
 """
@@ -20,6 +22,7 @@ from werkzeug.wrappers import Response
 
 from school_erp import licensing
 from school_erp.logic import paybill as pb
+from school_erp.logic.text import normalize_phone
 
 MAX_ATTEMPTS = 5
 DARAJA_HOST = {"Sandbox": "https://sandbox.safaricom.co.ke", "Production": "https://api.safaricom.co.ke"}
@@ -78,6 +81,24 @@ def find_student(bill_ref: str) -> str | None:
 	return rows[0][0] if len(rows) == 1 else None  # ambiguous -> let the bursar decide
 
 
+def find_student_by_phone(msisdn: str | None) -> str | None:
+	"""The one active student whose guardian has this phone number, for payments without an account number (Tills).
+	Safaricom masks the number in most C2B callbacks ("2547 ***** 126"); those, and shared numbers, return None."""
+	if not msisdn or "*" in msisdn:
+		return None
+	cc = _settings().country_code
+	phone = normalize_phone(msisdn, cc)
+	if not phone:
+		return None
+	rows = frappe.db.sql(
+		"""select distinct g.parent, g.mobile_no from `tabStudent Guardian` g join `tabStudent` s on s.name = g.parent
+		where g.parenttype = 'Student' and s.status = 'Active' and ifnull(g.mobile_no, '') != ''""",
+		as_dict=True,
+	)
+	students = {r.parent for r in rows if normalize_phone(r.mobile_no, cc) == phone}
+	return students.pop() if len(students) == 1 else None  # a parent of siblings: let the bursar choose
+
+
 # ----------------------------------------------------------------------------- Safaricom callbacks
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def validate():
@@ -90,7 +111,7 @@ def validate():
 	data = pb.normalize_payload(_payload())
 	if data["amount"] <= 0:
 		return _json_response(pb.REJECT_AMOUNT)
-	if settings.mpesa_validate_account and not find_student(data["bill_ref_number"]):
+	if settings.mpesa_validate_account and not pb.is_till(settings.mpesa_account_type) and not find_student(data["bill_ref_number"]):
 		return _json_response(pb.REJECT_ACCOUNT)
 	return _json_response(pb.ACCEPT)
 
@@ -163,7 +184,7 @@ def _post(name, student=None):
 		tx.db_set({"status": "Failed", "error": "M-Pesa auto-posting is not part of this school's subscription"})
 		return tx.status
 
-	student = student or tx.student or find_student(tx.bill_ref_number)
+	student = student or tx.student or find_student(tx.bill_ref_number) or find_student_by_phone(tx.msisdn)
 	if not student:
 		tx.db_set({"status": "Unmatched", "error": f"No student with ID '{tx.bill_ref_number}'"})
 		frappe.publish_realtime("paybill_unmatched", {"name": tx.name, "amount": tx.amount}, after_commit=True)
@@ -255,6 +276,9 @@ def _token(settings) -> str:
 		timeout=30,
 	)
 	if r.status_code != 200:
+		if "html" in r.headers.get("content-type", "").lower() or r.text.lstrip().startswith("<"):
+			# Safaricom's firewall answers with an HTML page (often after many requests in a short time)
+			frappe.throw(_("Safaricom's gateway turned the request away ({0}). Please try again in a minute.").format(r.status_code))
 		frappe.throw(_("Safaricom rejected the Consumer Key/Secret ({0}): {1}").format(r.status_code, r.text[:300]))
 	return r.json()["access_token"]
 
@@ -295,7 +319,7 @@ def register_urls():
 
 
 @frappe.whitelist()
-def simulate(amount, bill_ref_number, msisdn="254708374149"):
+def simulate(amount, bill_ref_number=None, msisdn="254708374149"):
 	"""Sandbox only: ask Safaricom to send a test payment to the registered URLs."""
 	import requests
 
@@ -307,10 +331,10 @@ def simulate(amount, bill_ref_number, msisdn="254708374149"):
 		f"{DARAJA_HOST['Sandbox']}/mpesa/c2b/v2/simulate",
 		json={
 			"ShortCode": settings.mpesa_shortcode,
-			"CommandID": "CustomerPayBillOnline",
+			"CommandID": "CustomerBuyGoodsOnline" if pb.is_till(settings.mpesa_account_type) else "CustomerPayBillOnline",
 			"Amount": int(float(amount)),
 			"Msisdn": msisdn,
-			"BillRefNumber": bill_ref_number,
+			"BillRefNumber": "" if pb.is_till(settings.mpesa_account_type) else bill_ref_number,
 		},
 		headers={"Authorization": f"Bearer {_token(settings)}"},
 		timeout=30,
@@ -319,7 +343,7 @@ def simulate(amount, bill_ref_number, msisdn="254708374149"):
 
 
 @frappe.whitelist()
-def local_test_payment(amount, bill_ref_number, payer="Test Parent"):
+def local_test_payment(amount, bill_ref_number=None, payer="Test Parent", msisdn=None):
 	"""Feed a fake confirmation through the real posting code, without Safaricom or internet.
 	Only allowed in developer mode or Sandbox, because it creates real accounting entries."""
 	frappe.only_for(["System Manager", "School Admin"])
@@ -330,13 +354,13 @@ def local_test_payment(amount, bill_ref_number, payer="Test Parent"):
 	code = "TST" + frappe.generate_hash(length=7).upper()
 	name = record_confirmation(
 		{
-			"TransactionType": "Pay Bill",
+			"TransactionType": "Buy Goods" if pb.is_till(settings.mpesa_account_type) else "Pay Bill",
 			"TransID": code,
 			"TransTime": now_datetime().strftime("%Y%m%d%H%M%S"),
 			"TransAmount": str(amount),
 			"BusinessShortCode": settings.mpesa_shortcode or "600000",
-			"BillRefNumber": bill_ref_number,
-			"MSISDN": "2547 ***** 126",
+			"BillRefNumber": bill_ref_number or "",
+			"MSISDN": msisdn or "2547 ***** 126",
 			"FirstName": first,
 			"LastName": last,
 		},

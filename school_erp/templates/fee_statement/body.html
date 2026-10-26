@@ -203,10 +203,16 @@
 			{% if s.paybill %}
 			<td style="width:34%; border-right:1px solid #e3e7ec">
 				<div class="pay-title">Pay with M-Pesa</div>
+				{% if s.till %}
+				<div class="lbl">Buy Goods Till</div>
+				<div class="paybill">{{ s.paybill }}</div>
+				<div class="lbl" style="margin-top:4px">No account number: send the M-Pesa message to the school office</div>
+				{% else %}
 				<div class="lbl">Paybill</div>
 				<div class="paybill">{{ s.paybill }}</div>
 				<div class="lbl" style="margin-top:4px">Account number</div>
 				<div class="acct">{{ s.student.id }}</div>
+				{% endif %}
 			</td>
 			{% endif %}
 			<td>

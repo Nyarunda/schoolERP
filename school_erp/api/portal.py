@@ -5,6 +5,7 @@ from frappe import _
 from frappe.utils import flt, formatdate, get_url, nowdate, random_string, strip_html
 
 from school_erp import licensing
+from school_erp.logic.paybill import is_till
 from school_erp.logic.text import normalize_phone, render
 
 PARENT_ROLE = "Parent"
@@ -18,6 +19,20 @@ def children_of(user=None) -> list[str]:
 	return frappe.db.sql_list(
 		"""select distinct g.parent from `tabStudent Guardian` g join `tabStudent` s on s.name = g.parent
 		where g.parenttype='Student' and g.user=%s and s.status in ('Active', 'Suspended') order by s.student_name""", user)
+
+
+def payer_phone(student=None, user=None) -> str:
+	"""The number to prefill for an M-Pesa prompt, in the local form parents type (07..): this parent's own number
+	on the child's guardian row, else any of their guardian rows, else their login's mobile."""
+	user = user or frappe.session.user
+	filters = {"parenttype": "Student", "user": user, "mobile_no": ("is", "set")}
+	if student:
+		filters["parent"] = student
+	mobile = frappe.db.get_value("Student Guardian", filters, "mobile_no") or (
+		student and payer_phone(None, user)) or frappe.db.get_value("User", user, "mobile_no") or ""
+	cc = frappe.db.get_single_value("School Settings", "country_code") or "254"
+	full = normalize_phone(mobile, cc) if mobile else None
+	return ("0" + full[len(cc):]) if full and full.startswith(cc) else (mobile or "")
 
 
 def assert_parent_of(student):
@@ -138,7 +153,7 @@ def child_summary(student):
 	return {
 		"id": stu.name, "name": stu.student_name, "first_name": stu.first_name, "stream": stu.stream or stu.school_class,
 		"photo": stu.photo, "balance": balance, "due": formatdate(due, "d MMM yyyy") if due else None,
-		"payments": payments, "report_cards": cards,
+		"payments": payments, "report_cards": cards, "payer_phone": payer_phone(student),
 	}
 
 
@@ -164,12 +179,12 @@ def portal_context():
 	kids = children_of()
 	return {
 		"school": {"name": s.school_name, "logo": s.school_logo, "accent": s.statement_accent_color or "#1f6f5c",
-				   "paybill": s.paybill_number, "phone": s.phone},
+				   "paybill": s.paybill_number, "till": is_till(s.mpesa_account_type), "phone": s.phone},
 		"currency": s.currency,
 		"children": [child_summary(c) for c in kids],
 		"notices": parent_notices(kids) if kids else [],
 		"can_pay": bool(s.mpesa_enabled and s.mpesa_stk_enabled and licensing.is_enabled("mpesa")),
-		"phone": frappe.db.get_value("User", frappe.session.user, "mobile_no") or "",
+		"phone": payer_phone(),
 		"parent_name": frappe.utils.get_fullname(frappe.session.user),
 	}
 

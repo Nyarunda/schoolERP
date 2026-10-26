@@ -65,6 +65,7 @@ def prepare_invoice(tenant, external_invoice_no, buyer_name, net_amount, vat_amo
         "invoice_key": invoice_key})
     doc.flags.etims_service = True
     doc.insert(ignore_permissions=True)
+    _audit(doc.name, "Prepared", None, "Draft", f"{seller_scope} seller, {tax_treatment}, total {total}")
     return {"name": doc.name, "status": "Draft"}
 
 
@@ -193,6 +194,11 @@ def submit_queued(name):
                str(result["verification_evidence"])[:450])
         return {"status": "Submitted"}
     if result["status"] == "rejected":
+        if result.get("signature_verified") is not True:
+            # An unverified rejection must not free the invoice for re-issue: KRA may in fact have accepted it
+            _audit(name, "Provider response unverified", "Pending Submission", "Pending Submission",
+                   "Rejection without verified evidence; reconcile before acting")
+            return {"status": "Pending Submission"}
         doc.db_set({"status": "Rejected", "last_error": str(result.get("reason") or "Provider rejected")[:500]})
         _audit(name, "Provider rejected", "Pending Submission", "Rejected", result.get("reason"))
         return {"status": "Rejected"}

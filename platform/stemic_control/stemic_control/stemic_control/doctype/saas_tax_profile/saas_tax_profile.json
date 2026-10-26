@@ -28,7 +28,8 @@
       "fieldname": "seller_pin",
       "fieldtype": "Data",
       "label": "Seller Pin",
-      "reqd": 1
+      "mandatory_depends_on": "eval:doc.enabled",
+      "description": "KRA PIN, e.g. P051234567X. Needed before the profile can be enabled."
     },
     {
       "fieldname": "seller_name",
@@ -80,5 +81,6 @@
       "create": 1,
       "report": 1
     }
-  ]
+  ],
+  "modified": "2026-10-26 14:00:00.000000"
 }

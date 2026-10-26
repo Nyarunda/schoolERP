@@ -102,6 +102,15 @@ jobs:
               --mariadb-user-host-login-scope='%' --install-app stemic_control
           bench --site admin.localhost set-config allow_tests true
           bench --site admin.localhost run-tests --app stemic_control 2>&1 | tee -a ~/tests.log
+      - name: Billing concurrency (two real clients per scenario against MariaDB)
+        run: |
+          set -o pipefail
+          cd ~/frappe-bench/sites
+          # exits 1 if a protected scenario is inconsistent or a client crashed/hung, 2 if a control race stopped breaking
+          # 1) snapshot isolation OFF (MariaDB 10.x behaviour): the locks must do the work, and the control must break
+          STEMIC_RACE_SNAPSHOT_ISOLATION=OFF ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost protected control 2>&1 | tee -a ~/tests.log
+          # 2) the server's default (ON on MariaDB 11.6+): still consistent
+          ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost protected 2>&1 | tee -a ~/tests.log
       - name: Show errors as annotations
         if: failure()
         run: |

@@ -57,6 +57,7 @@
 .sd-kpi:hover { border-color: var(--sd-accent); transform: translateY(-1px); }
 .sd-kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; display: flex; gap: 6px; align-items: center; }
 .sd-kpi-value { font-size: 26px; font-weight: 700; line-height: 1.15; margin-top: 6px; font-variant-numeric: tabular-nums; color: var(--heading-color, var(--text-color)); }
+.sd-kpi-of { font-size: 15px; font-weight: 600; color: var(--text-muted); }
 .sd-kpi-foot { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .sd-bar { height: 6px; border-radius: 3px; background: var(--subtle-fg, var(--border-color)); margin-top: 10px; overflow: hidden; }
 .sd-bar > span { display: block; height: 100%; border-radius: 3px; background: var(--sd-accent); }

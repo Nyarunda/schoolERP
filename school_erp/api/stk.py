@@ -129,6 +129,10 @@ def apply_result(checkout_request_id: str, result_code, result_desc: str, meta: 
 		return req.name
 
 	meta = meta or {}
+	if source == "query" and not meta.get("MpesaReceiptNumber"):
+		req.db_set({"result_desc": "Provider query reports success; waiting for a receipt-bearing confirmation"})
+		frappe.db.commit()
+		return req.name
 	if not valid_stk_metadata(meta, req.amount, req.phone):
 		req.db_set({"result_desc": "STK success lacks matching provider receipt, amount or phone; requires investigation"})
 		frappe.db.commit()

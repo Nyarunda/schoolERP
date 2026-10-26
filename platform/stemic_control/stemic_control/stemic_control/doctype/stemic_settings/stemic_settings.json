@@ -1,0 +1,179 @@
+{
+  "doctype": "DocType",
+  "name": "Stemic Settings",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "setup_tab",
+    "setup_html",
+    "platform_tab",
+    "platform_domain",
+    "dns_over_https",
+    "cb_platform",
+    "local_provisioner",
+    "site_domain",
+    "site_apps",
+    "bench_path",
+    "billing_tab",
+    "seller_name",
+    "seller_pin",
+    "seller_address",
+    "cb_billing",
+    "currency",
+    "billing_months",
+    "payment_terms_days",
+    "renewal_notice_days",
+    "payment_instructions",
+    "commission_tab",
+    "commission_basis"
+  ],
+  "fields": [
+    {
+      "fieldname": "setup_tab",
+      "fieldtype": "Tab Break",
+      "label": "Setup Check"
+    },
+    {
+      "fieldname": "setup_html",
+      "fieldtype": "HTML"
+    },
+    {
+      "fieldname": "platform_tab",
+      "fieldtype": "Tab Break",
+      "label": "Platform"
+    },
+    {
+      "fieldname": "platform_domain",
+      "fieldtype": "Data",
+      "label": "Platform Domain",
+      "description": "Schools' default addresses are <school>.<this domain>, e.g. stemischools.com."
+    },
+    {
+      "fieldname": "dns_over_https",
+      "fieldtype": "Data",
+      "label": "DNS Lookup Service",
+      "description": "Used to check custom-domain ownership (DNS-over-HTTPS JSON). Default: Cloudflare."
+    },
+    {
+      "fieldname": "cb_platform",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "local_provisioner",
+      "fieldtype": "Check",
+      "label": "Create school sites on this server",
+      "description": "Turns queued sites into real ones on this bench. Needs the database root password in site_config.json."
+    },
+    {
+      "fieldname": "site_domain",
+      "fieldtype": "Data",
+      "label": "Local Site Suffix",
+      "description": "Sites created here are named <school>.<this>, e.g. localhost on a development machine."
+    },
+    {
+      "fieldname": "site_apps",
+      "fieldtype": "Small Text",
+      "label": "Apps on Each School Site",
+      "description": "One per line, in install order."
+    },
+    {
+      "fieldname": "bench_path",
+      "fieldtype": "Data",
+      "label": "Bench Path",
+      "description": "Leave blank to use this bench."
+    },
+    {
+      "fieldname": "billing_tab",
+      "fieldtype": "Tab Break",
+      "label": "Billing"
+    },
+    {
+      "fieldname": "seller_name",
+      "fieldtype": "Data",
+      "label": "Billing Name",
+      "description": "Shown as the seller on invoices and receipts."
+    },
+    {
+      "fieldname": "seller_pin",
+      "fieldtype": "Data",
+      "label": "KRA PIN"
+    },
+    {
+      "fieldname": "seller_address",
+      "fieldtype": "Small Text",
+      "label": "Address and Contacts"
+    },
+    {
+      "fieldname": "cb_billing",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Link",
+      "label": "Currency",
+      "options": "Currency",
+      "default": "KES"
+    },
+    {
+      "fieldname": "billing_months",
+      "fieldtype": "Int",
+      "label": "Months per Invoice",
+      "default": "12",
+      "description": "The period a new subscription invoice covers unless you choose otherwise."
+    },
+    {
+      "fieldname": "payment_terms_days",
+      "fieldtype": "Int",
+      "label": "Days to Pay",
+      "default": "14"
+    },
+    {
+      "fieldname": "renewal_notice_days",
+      "fieldtype": "Int",
+      "label": "Invoice Renewals This Many Days Early",
+      "default": "30",
+      "description": "A renewal invoice is raised automatically this long before a subscription ends. 0 = never automatically."
+    },
+    {
+      "fieldname": "payment_instructions",
+      "fieldtype": "Small Text",
+      "label": "Payment Instructions",
+      "description": "Printed on invoices. {invoice} and {amount} are filled in, e.g. 'Pay via M-Pesa Paybill 123456, Account {invoice}'."
+    },
+    {
+      "fieldname": "commission_tab",
+      "fieldtype": "Tab Break",
+      "label": "Commissions"
+    },
+    {
+      "fieldname": "commission_basis",
+      "fieldtype": "Select",
+      "label": "Agents Earn Commission On",
+      "options": "Every payment\nFirst payment only",
+      "default": "Every payment",
+      "description": "Each agent's rate is on their agent record."
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1
+    }
+  ],
+  "creation": "2026-10-26 18:00:00.000000",
+  "modified": "2026-10-26 18:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "issingle": 1
+}

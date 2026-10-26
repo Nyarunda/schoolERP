@@ -29,6 +29,26 @@ def subscription_query(user=None):
     return _agent_condition("SaaS Subscription", user)
 
 
+def invoice_query(user=None):
+    return _agent_condition("SaaS Invoice", user)
+
+
+def commission_query(user=None):
+    return _agent_condition("SaaS Commission", user)
+
+
+def payment_query(user=None):
+    """A payment has no agent of its own: an agent sees payments on invoices for their schools."""
+    user = user or frappe.session.user
+    if _platform(user):
+        return ""
+    agent = _agent_of(user)
+    if not agent:
+        return "1=0"
+    return (f"`tabSaaS Payment`.invoice in (select name from `tabSaaS Invoice` "
+            f"where agent = {frappe.db.escape(agent)})")
+
+
 def agent_query(user=None):
     user = user or frappe.session.user
     return "" if _platform(user) else f"`tabSaaS Agent`.user = {frappe.db.escape(user)}"
@@ -58,3 +78,19 @@ def agent_has_permission(doc, ptype=None, user=None):
 def has_app_permission():
     """The Stemic Control tile on the Apps screen is for platform administrators."""
     return _platform(frappe.session.user)
+
+
+def invoice_has_permission(doc, ptype=None, user=None):
+    return _own_rows(doc, ptype, user, lambda u: bool(doc.agent) and doc.agent == _agent_of(u))
+
+
+def commission_has_permission(doc, ptype=None, user=None):
+    return _own_rows(doc, ptype, user, lambda u: bool(doc.agent) and doc.agent == _agent_of(u))
+
+
+def payment_has_permission(doc, ptype=None, user=None):
+    def mine(u):
+        agent = frappe.db.get_value("SaaS Invoice", doc.invoice, "agent")
+        return bool(agent) and agent == _agent_of(u)
+
+    return _own_rows(doc, ptype, user, mine)

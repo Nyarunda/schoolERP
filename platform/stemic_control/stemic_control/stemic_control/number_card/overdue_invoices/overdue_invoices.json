@@ -1,0 +1,22 @@
+{
+ "creation": "2026-10-26 18:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "SaaS Invoice",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"SaaS Invoice\", \"docstatus\", \"=\", 1], [\"SaaS Invoice\", \"status\", \"=\", \"Overdue\"]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Overdue Invoices",
+ "modified": "2026-10-26 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Stemic Control",
+ "name": "Overdue Invoices",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Monthly",
+ "type": "Document Type",
+ "aggregate_function_based_on": ""
+}

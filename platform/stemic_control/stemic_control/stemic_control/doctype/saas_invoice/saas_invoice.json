@@ -1,0 +1,249 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Invoice",
+  "module": "Stemic Control",
+  "custom": 0,
+  "istable": 0,
+  "track_changes": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "tenant",
+    "school_name",
+    "subscription",
+    "plan",
+    "agent",
+    "cb_head",
+    "issue_date",
+    "due_date",
+    "status",
+    "period_section",
+    "period_start",
+    "period_end",
+    "months",
+    "cb_amount",
+    "monthly_price",
+    "amount",
+    "discount_amount",
+    "total",
+    "paid_amount",
+    "outstanding",
+    "currency",
+    "notes_section",
+    "description",
+    "amended_from"
+  ],
+  "fields": [
+    {
+      "fieldname": "tenant",
+      "fieldtype": "Link",
+      "label": "School",
+      "options": "SaaS Tenant",
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "school_name",
+      "fieldtype": "Data",
+      "label": "School Name",
+      "fetch_from": "tenant.school_name",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "subscription",
+      "fieldtype": "Link",
+      "label": "Subscription",
+      "options": "SaaS Subscription",
+      "reqd": 1
+    },
+    {
+      "fieldname": "plan",
+      "fieldtype": "Link",
+      "label": "Plan",
+      "options": "SaaS Plan",
+      "read_only": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "agent",
+      "fieldtype": "Link",
+      "label": "Sales Agent",
+      "options": "SaaS Agent",
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb_head",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "issue_date",
+      "fieldtype": "Date",
+      "label": "Invoice Date",
+      "reqd": 1,
+      "default": "Today"
+    },
+    {
+      "fieldname": "due_date",
+      "fieldtype": "Date",
+      "label": "Due Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Draft\nUnpaid\nPartly Paid\nPaid\nOverdue\nCancelled",
+      "default": "Draft",
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "period_section",
+      "fieldtype": "Section Break",
+      "label": "Period and Amount"
+    },
+    {
+      "fieldname": "period_start",
+      "fieldtype": "Date",
+      "label": "From",
+      "reqd": 1
+    },
+    {
+      "fieldname": "period_end",
+      "fieldtype": "Date",
+      "label": "To",
+      "read_only": 1
+    },
+    {
+      "fieldname": "months",
+      "fieldtype": "Int",
+      "label": "Months",
+      "reqd": 1,
+      "default": "12"
+    },
+    {
+      "fieldname": "cb_amount",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "monthly_price",
+      "fieldtype": "Currency",
+      "label": "Monthly Price",
+      "options": "currency"
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Currency",
+      "label": "Amount",
+      "options": "currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "discount_amount",
+      "fieldtype": "Currency",
+      "label": "Discount",
+      "options": "currency"
+    },
+    {
+      "fieldname": "total",
+      "fieldtype": "Currency",
+      "label": "Total",
+      "options": "currency",
+      "read_only": 1,
+      "in_list_view": 1,
+      "bold": 1
+    },
+    {
+      "fieldname": "paid_amount",
+      "fieldtype": "Currency",
+      "label": "Paid",
+      "options": "currency",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "outstanding",
+      "fieldtype": "Currency",
+      "label": "Outstanding",
+      "options": "currency",
+      "read_only": 1,
+      "in_list_view": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Link",
+      "label": "Currency",
+      "options": "Currency",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "notes_section",
+      "fieldtype": "Section Break",
+      "label": "Notes",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Small Text",
+      "label": "Notes on the Invoice"
+    },
+    {
+      "fieldname": "amended_from",
+      "fieldtype": "Link",
+      "label": "Amended From",
+      "options": "SaaS Invoice",
+      "read_only": 1,
+      "hidden": 1,
+      "no_copy": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1,
+      "print": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "report": 1,
+      "export": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1,
+      "print": 1
+    },
+    {
+      "role": "Stemic Agent",
+      "read": 1,
+      "report": 1,
+      "print": 1
+    }
+  ],
+  "creation": "2026-10-26 18:00:00.000000",
+  "modified": "2026-10-26 18:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "autoname": "format:SINV-{YYYY}-{#####}",
+  "naming_rule": "Expression",
+  "is_submittable": 1,
+  "title_field": "school_name",
+  "search_fields": "school_name,status",
+  "sort_field": "issue_date",
+  "default_print_format": "Stemic Invoice"
+}

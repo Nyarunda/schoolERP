@@ -19,7 +19,7 @@ import subprocess
 import frappe
 from frappe.utils import add_to_date, get_bench_path, now_datetime
 
-from stemic_control import policy
+from stemic_control import config, policy
 
 DEFAULT_APPS = ["erpnext", "school_erp"]
 NEW_SITE_TIMEOUT = 45 * 60  # installing ERPNext can take several minutes
@@ -32,19 +32,19 @@ class ProvisioningError(Exception):
 
 
 def enabled() -> bool:
-    return bool(frappe.conf.get("stemic_local_provisioner"))
+    return bool(int(config.get("stemic_local_provisioner") or 0))
 
 
 def site_name(slug: str) -> str:
-    return f"{slug}.{(frappe.conf.get('stemic_site_domain') or 'localhost').strip('.')}"
+    return f"{slug}.{(config.get('stemic_site_domain') or 'localhost').strip('.')}"
 
 
 def _apps() -> list[str]:
-    return list(frappe.conf.get("stemic_site_apps") or DEFAULT_APPS)
+    return config.site_apps() or list(DEFAULT_APPS)
 
 
 def _bench() -> str:
-    return frappe.conf.get("stemic_bench_path") or get_bench_path()
+    return config.get("stemic_bench_path") or get_bench_path()
 
 
 def _root_password() -> str:
@@ -148,7 +148,7 @@ def run(job: str) -> str:
         frappe.db.commit()
         return "Closed by operator"
 
-    base = frappe.conf.get("stemic_platform_domain") or "stemischools.com"
+    base = config.get("stemic_platform_domain")
     subdomain = f"{tenant.slug}.{base}"
     _set_job(job, "Succeeded")
     _set_tenant(tenant.name, "Active", canonical_site=site, site_admin_password=password,  # Password field: saved encrypted

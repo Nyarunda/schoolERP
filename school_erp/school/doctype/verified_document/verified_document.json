@@ -31,7 +31,7 @@
       "fieldname": "document_type",
       "label": "Source DocType",
       "fieldtype": "Select",
-      "options": "Fee Payment\nReport Card",
+      "options": "Fee Payment\nReport Card\nFee Statement\nSchool Certificate",
       "reqd": 1,
       "read_only": 1
     },

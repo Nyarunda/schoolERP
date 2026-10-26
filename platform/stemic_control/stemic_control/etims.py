@@ -5,7 +5,7 @@ import re
 
 import frappe
 from frappe import _
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, cint
 
 from stemic_control.tax_rules import valid_pin, validate_amounts
 
@@ -35,7 +35,7 @@ def prepare_invoice(tenant, external_invoice_no, buyer_name, net_amount, vat_amo
             frappe.throw(_("Platform tax invoices must reference a subscription"))
     else:
         frappe.throw(_("Unknown legal seller"))
-    if not profile or not profile.get("enabled") or not valid_pin(profile.get("seller_pin")):
+    if not profile or not cint(profile.get("enabled")) or not valid_pin(profile.get("seller_pin")):
         frappe.throw(_("Enable the legal seller tax profile and verify its KRA PIN first"))
     if buyer_pin and not valid_pin(buyer_pin):
         frappe.throw(_("Invalid buyer KRA PIN"))
@@ -82,6 +82,7 @@ def approve_invoice(name):
     except ValueError as error:
         frappe.throw(str(error))
     doc.db_set({"status": "Ready", "reviewed_by": frappe.session.user, "reviewed_on": now_datetime()})
+    _audit(name, "Tax review approved", "Draft", "Ready")
     return {"name": name, "status": "Ready", "kra_submitted": False}
 
 

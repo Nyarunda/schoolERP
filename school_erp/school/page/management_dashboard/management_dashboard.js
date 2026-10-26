@@ -19,17 +19,21 @@ class ManagementDashboard {
 		this.$root = $(`<div class="sd"><div class="sd-grid sd-kpis">${'<div class="sd-skeleton"></div>'.repeat(4)}</div></div>`).appendTo($parent);
 		school_dash.bind_routes(this.$root);
 		this.$root.on("change", ".sd-term", (e) => this.load(e.target.value));
+		this.loading = false;
 		this.load();
 		frappe.realtime.on("paybill_unmatched", () => this.load(this.term));
 	}
 
 	load(term) {
+		if (this.loading) return;
+		this.loading = true;
 		frappe.call("school_erp.api.dashboard.management", { term: term || this.term }).then(({ message }) => {
 			this.data = message;
 			this.term = message.term;
 			this.loaded_at = Date.now();
 			this.render();
-		});
+		}).catch(() => frappe.show_alert({message: __("Unable to refresh management dashboard"), indicator: "red"}))
+			.finally(() => { this.loading = false; });
 	}
 
 	render() {
@@ -69,7 +73,7 @@ class ManagementDashboard {
 		}
 		if (d.staff) {
 			k.push(S.kpi({
-				label: __("Staff in today"), value: `${d.staff.present}<span style="font-size:15px;color:var(--text-muted)"> / ${d.staff.total}</span>`,
+				label: __("Staff in today"), value: `${d.staff.present} / ${d.staff.total}`,
 				route: ["query-report", "Staff On Leave"], foot: d.staff.on_leave.length ? __("{0} on leave", [d.staff.on_leave.length]) : __("Nobody on leave"),
 				bar: d.staff.total ? (d.staff.present / d.staff.total) * 100 : null,
 			}));
@@ -77,7 +81,7 @@ class ManagementDashboard {
 		if (d.transport) {
 			const t = d.transport;
 			k.push(S.kpi({
-				label: __("Drivers checked in"), value: `${t.checked_in}<span style="font-size:15px;color:var(--text-muted)"> / ${t.routes}</span>`,
+				label: __("Drivers checked in"), value: `${t.checked_in} / ${t.routes}`,
 				route: ["query-report", "Driver Check-in Register"], foot: t.issues ? S.pill("serious", __("{0} with vehicle issues", [t.issues])) : __("No vehicle issues"),
 				bar: t.routes ? (t.checked_in / t.routes) * 100 : null,
 			}));

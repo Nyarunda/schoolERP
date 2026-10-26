@@ -93,6 +93,67 @@ class TestSubscriptionBilling(TestCase):
         self.assertEqual(frappe.db.get_value("SaaS Invoice", out["invoice"], ["status", "months"]), ("Paid", 3))
         self.assertEqual(frappe.db.get_value("SaaS Payment", out["payment"], "mode"), "Bank Transfer")
 
+    def test_manual_invoice_submit_rechecks_existing_unpaid_invoice(self):
+        existing = billing.create_invoice(self.sub, months=1)
+        self.assertTrue(existing)
+        other = frappe.get_doc({
+            "doctype": "SaaS Invoice", "tenant": self.tenant,
+            "subscription": self.sub, "issue_date": nowdate(),
+            "period_start": add_days(nowdate(), 11), "months": 1,
+        }).insert()
+        self.assertRaises(frappe.ValidationError, other.submit)
+        self.assertEqual(frappe.db.get_value("SaaS Invoice", other.name, "docstatus"), 0)
+
+    def test_whitespace_payment_reference_rejected(self):
+        invoice = billing.create_invoice(self.sub, months=1)
+        payment = frappe.get_doc({
+            "doctype": "SaaS Payment", "invoice": invoice, "amount": 1000,
+            "mode": "M-Pesa", "reference": "   ", "payment_date": nowdate(),
+        })
+        self.assertRaises(frappe.ValidationError, payment.insert)
+
+    def test_stale_draft_cannot_overpay_after_another_receipt(self):
+        invoice = billing.create_invoice(self.sub, months=1)
+        stale = frappe.get_doc({
+            "doctype": "SaaS Payment", "invoice": invoice, "amount": 4000,
+            "mode": "M-Pesa", "reference": "STALE-" + frappe.generate_hash(length=10),
+            "payment_date": nowdate(),
+        }).insert()
+        self.pay(invoice, 4000)
+        # The draft passed initial validation when the invoice was unpaid.
+        # before_submit must lock and recalculate the actual ledger balance.
+        self.assertRaises(frappe.ValidationError, stale.submit)
+        self.assertEqual(frappe.db.get_value("SaaS Payment", stale.name, "docstatus"), 0)
+        self.assertEqual(flt(frappe.db.get_value("SaaS Invoice", invoice, "outstanding")), 1000)
+
+    def test_payment_mode_reference_identity_unique_at_database_level(self):
+        first = billing.create_invoice(self.sub, months=1)
+        ref = "DUP-" + frappe.generate_hash(length=12).upper()
+        self.pay(first, 1000, ref=ref)
+        # Record with same bank/M-Pesa reference cannot be reused, even on another invoice.
+        other = api.register_tenant("Second School", "dup-" + frappe.generate_hash(length=6).lower(),
+                                    "second@billing.test")
+        second_sub = frappe.get_doc({
+            "doctype": "SaaS Subscription", "tenant": other, "plan": self.plan,
+            "starts_on": nowdate(),
+        }).insert().name
+        second = billing.create_invoice(second_sub, months=1)
+        duplicate = frappe.get_doc({
+            "doctype": "SaaS Payment", "invoice": second, "amount": 1000,
+            "mode": "M-Pesa", "reference": ref, "payment_date": nowdate(),
+        })
+        self.assertRaises(frappe.ValidationError, duplicate.insert)
+
+    def test_cancelled_payment_releases_its_reference(self):
+        """A payment recorded against the wrong invoice is cancelled and the same M-Pesa code recorded again."""
+        wrong = billing.create_invoice(self.sub, months=1)
+        ref = "QFIX" + frappe.generate_hash(length=8).upper()
+        payment = self.pay(wrong, 1000, ref=ref)["payment"]
+        frappe.get_doc("SaaS Payment", payment).cancel()
+        self.assertIsNone(frappe.db.get_value("SaaS Payment", payment, "reference_key"))
+        again = self.pay(wrong, 1000, ref=ref)["payment"]  # not blocked by the cancelled payment's key
+        self.assertTrue(frappe.db.get_value("SaaS Payment", again, "reference_key"))
+
     # ------------------------------------------------------------------ daily job
     def test_daily_marks_overdue_and_raises_renewals(self):
         inv = billing.create_invoice(self.sub, months=1)

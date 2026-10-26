@@ -8,11 +8,15 @@ class SaaSInvoice(Document):
     def validate(self):
         billing.compute_invoice(self)
 
+    def before_submit(self):
+        billing.validate_invoice_for_submit(self)
+
     def on_submit(self):
         billing.refresh_invoice(self.name)
 
     def before_cancel(self):
-        if frappe.db.exists("SaaS Payment", {"invoice": self.name, "docstatus": 1}):
+        billing.lock_invoice(self.name)
+        if billing.has_submitted_payment(self.name):
             frappe.throw("Cancel this invoice's payments first", frappe.ValidationError)
 
     def on_cancel(self):

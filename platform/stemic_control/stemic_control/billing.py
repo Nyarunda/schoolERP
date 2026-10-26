@@ -72,11 +72,22 @@ def compute_invoice(doc):
         doc.paid_amount, doc.outstanding = 0, doc.total
 
 
+def submitted_payments(invoice, exclude=None):
+    """The total of an invoice's submitted payments, as committed now.
+
+    A locking read: under MariaDB's REPEATABLE READ a plain SELECT returns the snapshot taken at the transaction's
+    first read, so a client that waited for the invoice lock would still miss the payment that was committed while it
+    waited. FOR UPDATE reads the latest committed rows (and holds them until this transaction ends)."""
+    return flt(frappe.db.sql(
+        "SELECT COALESCE(SUM(amount), 0) FROM `tabSaaS Payment` WHERE invoice = %s AND docstatus = 1 AND name != %s FOR UPDATE",
+        (invoice, exclude or ""))[0][0], 2)
+
+
 def refresh_invoice(name):
-    """Paid amount, outstanding and status from the invoice's submitted payments."""
+    """Paid amount, outstanding and status from the invoice's submitted payments, under the invoice lock."""
+    lock_invoice(name)
     inv = frappe.get_doc("SaaS Invoice", name)
-    paid = flt(frappe.db.sql("select coalesce(sum(amount), 0) from `tabSaaS Payment` where invoice = %s and docstatus = 1",
-                             name)[0][0], 2)
+    paid = submitted_payments(name)
     outstanding = flt(inv.total - paid, 2)
     if inv.docstatus == 2:
         status = "Cancelled"
@@ -102,6 +113,10 @@ def create_invoice(subscription, months=None, period_start=None, discount_amount
 
 
 def _create_invoice(subscription, months=None, period_start=None, discount_amount=0, description=None):
+    # All creation paths (including the scheduler) serialize by subscription.
+    # InnoDB holds this row lock until the surrounding request commits.
+    if not frappe.db.sql("SELECT name FROM `tabSaaS Subscription` WHERE name = %s FOR UPDATE", (subscription,)):
+        frappe.throw("Unknown subscription", frappe.ValidationError)
     sub = frappe.get_doc("SaaS Subscription", subscription)
     if sub.status == "Cancelled":
         frappe.throw("A cancelled subscription cannot be invoiced", frappe.ValidationError)
@@ -118,6 +133,31 @@ def _create_invoice(subscription, months=None, period_start=None, discount_amoun
     return inv.name
 
 
+
+def validate_invoice_for_submit(doc):
+    """Guard the form-submit path too; users can submit invoices outside the create API."""
+    if not frappe.db.sql(
+        "SELECT name FROM `tabSaaS Subscription` WHERE name = %s FOR UPDATE",
+        (doc.subscription,),
+    ):
+        frappe.throw("Unknown subscription", frappe.ValidationError)
+    conflicting = frappe.db.get_value(
+        "SaaS Invoice",
+        {
+            "subscription": doc.subscription,
+            "docstatus": 1,
+            "status": ("in", OPEN),
+            "name": ("!=", doc.name),
+        },
+        "name",
+    )
+    if conflicting:
+        frappe.throw(
+            f"Invoice {conflicting} is still unpaid; cannot submit another invoice",
+            frappe.ValidationError,
+        )
+
+
 # ----------------------------------------------------------------------------- payments
 def validate_payment(doc):
     inv = frappe.db.get_value("SaaS Invoice", doc.invoice, ["docstatus", "outstanding", "tenant"], as_dict=True)
@@ -128,15 +168,57 @@ def validate_payment(doc):
     if flt(doc.amount) > flt(inv.outstanding) + 0.005:
         frappe.throw(f"That is more than the {flt(inv.outstanding):,.2f} still owed on {doc.invoice}", frappe.ValidationError)
     doc.reference = (doc.reference or "").strip().upper()
+    if not doc.reference:
+        frappe.throw("A non-empty payment reference is required", frappe.ValidationError)
     clash = frappe.db.get_value("SaaS Payment", {"mode": doc.mode, "reference": doc.reference, "docstatus": 1, "name": ("!=", doc.name)})
     if clash:
         frappe.throw(f"{doc.mode} reference {doc.reference} is already recorded on {clash}", frappe.ValidationError)
     doc.tenant = inv.tenant
 
 
+
+def lock_invoice(invoice):
+    """InnoDB row lock shared by payment submit/cancel and invoice cancellation. Returns the invoice's docstatus as
+    committed now (a locking read), so a caller that waited sees a cancellation made meanwhile."""
+    row = frappe.db.sql("SELECT docstatus FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE", (invoice,))
+    if not row:
+        frappe.throw("Unknown invoice", frappe.ValidationError)
+    return row[0][0]
+
+
+def has_submitted_payment(invoice):
+    """Locking read: a payment committed while we waited for the invoice lock is seen."""
+    return bool(frappe.db.sql("SELECT name FROM `tabSaaS Payment` WHERE invoice = %s AND docstatus = 1 LIMIT 1 FOR UPDATE",
+                              (invoice,)))
+
+
+def validate_payment_for_submit(doc):
+    """Recheck the live balance under an invoice row lock immediately before submit.
+
+    Do not trust the previously calculated outstanding field: the same invoice
+    may have received another payment since the draft was validated.
+    """
+    if lock_invoice(doc.invoice) != 1:
+        frappe.throw("Invoice is not submitted", frappe.ValidationError)
+    paid = submitted_payments(doc.invoice, exclude=doc.name)  # locking read: sees payments committed while we waited
+    total = frappe.db.get_value("SaaS Invoice", doc.invoice, "total")
+    remaining = flt(flt(total) - flt(paid), 2)
+    if remaining <= 0 or flt(doc.amount) > remaining + 0.005:
+        frappe.throw(
+            f"Payment exceeds the current invoice balance of {remaining:,.2f}",
+            frappe.ValidationError,
+        )
+    validate_payment(doc)
+    # Drafts do not reserve references; the unique DB key is claimed on submit.
+    import hashlib
+    doc.reference_key = hashlib.sha256(f"{doc.mode}|{doc.reference}".encode()).hexdigest()
+
+
 def apply_payment(doc):
     """A payment was submitted: update its invoice, and if that is now paid, extend the subscription; pay commission."""
     inv = refresh_invoice(doc.invoice)
+    if flt(inv.paid_amount) > flt(inv.total) + 0.005:
+        frappe.throw("Submitted payments exceed invoiced amount; transaction rolled back", frappe.ValidationError)
     if inv.status == "Paid":
         sub = frappe.get_doc("SaaS Subscription", inv.subscription)
         if not sub.ends_on or getdate(inv.period_end) > getdate(sub.ends_on):
@@ -150,7 +232,9 @@ def apply_payment(doc):
 
 
 def reverse_payment(doc):
-    """A payment was cancelled: its commission goes, the invoice reopens, and the subscription loses the period."""
+    """A payment was cancelled: its commission goes, the invoice reopens, and the subscription loses the period.
+    Its reference is released, so the same M-Pesa code can be recorded again against the right invoice."""
+    doc.db_set("reference_key", None)
     for name, status in frappe.get_all("SaaS Commission", filters={"payment": doc.name}, fields=["name", "status"], as_list=True):
         if status == "Paid":
             frappe.throw(f"Commission {name} on this payment was already paid to the agent. Recover it first, then cancel.",

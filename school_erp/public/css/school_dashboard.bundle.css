@@ -278,3 +278,11 @@
 .sr-meter { height: 8px; border-radius: 4px; background: var(--subtle-fg, var(--border-color)); overflow: hidden; }
 .sr-meter span { display: block; height: 100%; border-radius: 4px; background: var(--sd-accent); }
 .sr-meter.low span { background: var(--sd-warning); }
+
+/* Workspace dashboards: Frappe keeps them in a 900px column unless the user turns on Full Width, which leaves
+   wide empty margins on a laptop. Use the screen, up to a comfortable reading width. */
+@media (min-width: 992px) {
+	html body:not(.full-width) [data-page-route="Workspaces"] .layout-main {
+		max-width: min(100%, 1600px);
+	}
+}

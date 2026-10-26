@@ -1,4 +1,4 @@
-.stemic-overview { padding: 18px 2px 40px; max-width: 1320px; margin: 0 auto; }
+.stemic-overview { padding: 18px 18px 40px; max-width: 1600px; margin: 0 auto; }
 .stemic-intro { color: var(--text-muted, #64748b); margin: 0 0 22px; }
 .stemic-tabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--border-color, #e2e8f0); margin-bottom: 22px; padding-bottom: 12px; }
 .stemic-tab { border: 0; background: transparent; border-radius: 8px; padding: 9px 15px; color: var(--text-muted, #64748b); font-weight: 600; }
@@ -13,7 +13,7 @@
 .stemic-kpi-hint { font-size: 12px; color: var(--text-muted, #64748b); margin-top: auto; }
 .stemic-note { margin-top: 24px; color: var(--text-muted, #64748b); font-size: 12px; }
 @media(max-width: 1000px) { .stemic-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media(max-width: 550px) { .stemic-card-grid { grid-template-columns: 1fr; } .stemic-overview { padding: 12px 0; } }
+@media(max-width: 550px) { .stemic-card-grid { grid-template-columns: 1fr; } .stemic-overview { padding: 12px 12px 32px; } }
 
 /* Claim a Domain dialog */
 .sc-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 14px; }
@@ -68,3 +68,8 @@
 .scx-steps b, .scx-steps code { color: var(--text-color); }
 .scx-h { font-weight: 600; margin: 4px 0 -4px; display: flex; justify-content: space-between; gap: 8px; }
 .scx-h span { font-weight: normal; color: var(--text-muted); font-size: var(--text-sm); }
+
+/* Workspace dashboards: use the screen instead of Frappe's 900px column (see school_erp's dashboard CSS) */
+@media (min-width: 992px) {
+    html body:not(.full-width) [data-page-route="Workspaces"] .layout-main { max-width: min(100%, 1600px); }
+}

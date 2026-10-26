@@ -12,6 +12,7 @@ class SaaSInvoice(Document):
         billing.refresh_invoice(self.name)
 
     def before_cancel(self):
+        billing.lock_invoice(self.name)
         if frappe.db.exists("SaaS Payment", {"invoice": self.name, "docstatus": 1}):
             frappe.throw("Cancel this invoice's payments first", frappe.ValidationError)
 

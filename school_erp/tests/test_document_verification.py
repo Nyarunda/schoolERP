@@ -27,8 +27,14 @@ class TestDocumentVerification(TestCase):
 		self.rendered = []
 		self._pdf = patch("frappe.utils.pdf.get_pdf", side_effect=self.fake_pdf)
 		self._pdf.start()
+		# CI installs apps with --skip-assets, so there is no assets.json and Frappe's print view cannot look up
+		# print.bundle.css. Treat that as "no bundles" so the real print format still renders.
+		real_assets = frappe.utils.get_assets_json
+		self._assets = patch("frappe.utils.get_assets_json", side_effect=lambda: real_assets() or {})
+		self._assets.start()
 
 	def tearDown(self):
+		self._assets.stop()
 		self._pdf.stop()
 		frappe.set_user("Administrator")
 		set_license(ALL_MODULES)
@@ -101,7 +107,7 @@ class TestDocumentVerification(TestCase):
 		draft = frappe.get_doc({"doctype": "Fee Payment", "student": student, "amount": 100,
 								"reference_no": "V" + frappe.generate_hash(length=8)}).insert()
 		self.assertRaises(frappe.ValidationError, dv.issue, "Fee Payment", draft.name)
-		self.assertRaises(frappe.ValidationError, dv.issue, "Student", student)  # not a verifiable document
+		self.assertRaises(frappe.PermissionError, dv.issue, "Student", student)  # not a verifiable document: nobody may issue it
 		fp = self.posted_payment(student)
 		frappe.set_user("Guest")
 		self.assertRaises(frappe.PermissionError, dv.issue, "Fee Payment", fp.name)
@@ -137,3 +143,32 @@ class TestDocumentVerification(TestCase):
 		set_license(["exams"])  # no fees module
 		self.assertRaises(frappe.PermissionError, dv.issue, "Fee Payment", fp.name)
 		self.assertRaises(frappe.PermissionError, dv.issue_statement, student)
+
+	def test_records_only_come_from_issuing_and_are_never_deleted(self):
+		fp = self.posted_payment(self.make_student().name)
+		forged = frappe.get_doc({"doctype": "Verified Document", "verification_code": "F" * 43, "document_type": "Fee Payment",
+								 "document_name": fp.name, "pdf_hash": "0" * 64, "status": "Valid"})
+		self.assertRaises(frappe.PermissionError, forged.insert, ignore_permissions=True)
+
+		issued = dv.issue("Fee Payment", fp.name)
+		doc = frappe.get_doc("Verified Document", issued["code"])
+		doc.pdf_hash = "0" * 64  # an edit outside the issuing service
+		self.assertRaises(frappe.PermissionError, doc.save, ignore_permissions=True)
+		self.assertRaises(frappe.PermissionError, frappe.delete_doc, "Verified Document", issued["code"], force=True)
+		self.assertEqual(dv.verify(issued["code"])["status"], "Valid")
+
+	def test_finance_and_academic_staff_issue_only_their_documents(self):
+		fp = self.posted_payment(self.make_student().name)
+		frappe.set_user(self.staff("Head Teacher"))
+		self.assertRaises(frappe.PermissionError, dv.issue, "Fee Payment", fp.name)
+		frappe.set_user(self.staff("Bursar"))
+		self.assertTrue(dv.issue("Fee Payment", fp.name)["code"])
+		self.assertRaises(frappe.PermissionError, dv.issue, "Report Card", "anything")
+
+	def test_reissued_statement_for_the_same_period_revokes_the_old_one(self):
+		student = self.make_student().name
+		self.posted_payment(student)
+		first = dv.issue_statement(student)
+		second = dv.issue_statement(student)
+		self.assertEqual(dv.verify(first["code"])["status"], "Revoked")
+		self.assertEqual(dv.verify(second["code"])["status"], "Valid")

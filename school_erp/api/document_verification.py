@@ -20,6 +20,12 @@ SUPPORTED = {"Fee Payment", "Report Card", "Fee Statement", "School Certificate"
 # Licensed module each document belongs to; certificates are core (always on)
 MODULE = {"Fee Payment": "fees", "Report Card": "exams", "Fee Statement": "fees", "School Certificate": "core"}
 ISSUER_ROLES = {"School Admin", "System Manager", "Bursar", "Head Teacher"}
+ISSUE_ROLES_BY_TYPE = {
+    "Fee Payment": {"School Admin", "System Manager", "Bursar"},
+    "Fee Statement": {"School Admin", "System Manager", "Bursar"},
+    "Report Card": {"School Admin", "System Manager", "Head Teacher"},
+    "School Certificate": {"School Admin", "System Manager", "Head Teacher"},
+}
 CODE_PATTERN = re.compile(r"^[A-Za-z0-9_-]{32,100}$")
 HASH_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
 
@@ -59,6 +65,23 @@ def _is_current(row):
     except Exception:
         return False
     return False
+
+
+def _lock_source(doctype, name):
+    """Serialize concurrent issuance on the underlying source row.
+
+    Doctype identifiers are an allowlist, and the document name is SQL-bound.
+    The lock is retained by Frappe until the request transaction commits.
+    """
+    table = {
+        "Fee Payment": "tabFee Payment",
+        "Report Card": "tabReport Card",
+        "School Certificate": "tabSchool Certificate",
+        "Fee Statement": "tabStudent",
+    }[doctype]
+    rows = frappe.db.sql(f"SELECT name FROM `{table}` WHERE name = %s FOR UPDATE", (name,))
+    if not rows:
+        frappe.throw(_("Source record does not exist"), frappe.DoesNotExistError)
 
 
 def _verify_url(code):
@@ -123,10 +146,12 @@ def _archive(file_name, pdf, record):
 @frappe.whitelist(methods=["POST"])
 def issue(doctype, name):
     """Issue one private, QR-stamped PDF version. Reissues revoke previous versions."""
-    if frappe.session.user == "Guest" or not (ISSUER_ROLES & set(frappe.get_roles())):
-        frappe.throw(_("Only authorized school staff can issue verified reports"), frappe.PermissionError)
+    if frappe.session.user == "Guest" or not (ISSUE_ROLES_BY_TYPE.get(doctype, set()) & set(frappe.get_roles())):
+        frappe.throw(_("Only authorized school staff can issue this report"), frappe.PermissionError)
     licensing.require(MODULE.get(doctype, "core"), doctype)
     doc = _source(doctype, name)
+    _lock_source(doctype, name)
+    doc = _source(doctype, name)  # re-check state after acquiring lock
     code = secrets.token_urlsafe(32)
     pdf = _pdf_with_verification(doc, code)
     digest = hashlib.sha256(pdf).hexdigest()
@@ -141,6 +166,7 @@ def issue(doctype, name):
         "document_type": doctype, "document_name": name, "issued_by": frappe.session.user,
         "issued_on": now_datetime(), "pdf_hash": digest, "status": "Valid"
     })
+    record.flags.verification_issuance = True
     record.insert(ignore_permissions=True)
     file = _archive(f"{doctype.replace(' ', '_')}-{name}-{code[:8]}.pdf", pdf, record)
     return {"code": code, "verification_url": _verify_url(code),
@@ -190,9 +216,11 @@ def revoke(code, reason):
     if not reason or len(reason.strip()) < 8:
         frappe.throw(_("Provide a revocation reason (at least eight characters)"))
     doc = frappe.get_doc("Verified Document", code)
+    if not (ISSUE_ROLES_BY_TYPE.get(doc.document_type, set()) & set(frappe.get_roles())):
+        frappe.throw(_("Not allowed to revoke this type of document"), frappe.PermissionError)
     if doc.document_type == "Fee Statement":
         # a statement is a snapshot, not a DocType: its name is "<student>:<from>:<to>"
-        frappe.has_permission("Student", "read", doc.document_name.split(":", 1)[0], throw=True)
+        frappe.has_permission("Student", "write", doc.document_name.split(":", 1)[0], throw=True)
     else:
         frappe.has_permission(doc.document_type, "write", doc.document_name, throw=True)
     if doc.status == "Revoked":
@@ -246,7 +274,7 @@ def revoke_certificate(name, reason):
 @frappe.whitelist(methods=["POST"])
 def issue_statement(student, from_date=None, to_date=None):
     """Time-bound statement snapshot, never a live balance verification."""
-    if frappe.session.user == "Guest" or not (ISSUER_ROLES & set(frappe.get_roles())):
+    if frappe.session.user == "Guest" or not (ISSUE_ROLES_BY_TYPE["Fee Statement"] & set(frappe.get_roles())):
         frappe.throw(_("Not permitted"), frappe.PermissionError)
     licensing.require("fees", "Fee Statement")
     frappe.has_permission("Student", "read", student, throw=True)
@@ -257,17 +285,25 @@ def issue_statement(student, from_date=None, to_date=None):
         frappe.throw(_("Invalid statement date range"))
     # The reference key includes its period. Different periods are independent versions.
     key = f"{student}:{start}:{end}"
+    _lock_source("Fee Statement", student)
     source = frappe._dict(doctype="Fee Statement", name=key, student=student,
                           from_date=str(start), to_date=str(end))
     code = secrets.token_urlsafe(32)
     pdf = _pdf_with_verification(source, code)
     digest = hashlib.sha256(pdf).hexdigest()
+    for prior in frappe.get_all("Verified Document", filters={
+        "document_type": "Fee Statement", "document_name": key, "status": "Valid"
+    }, pluck="name"):
+        frappe.db.set_value("Verified Document", prior, {
+            "status": "Revoked", "revocation_reason": "Superseded by reissued statement"
+        })
     record = frappe.get_doc({
         "doctype": "Verified Document", "verification_code": code,
         "document_type": "Fee Statement", "document_name": key,
         "issued_by": frappe.session.user, "issued_on": now_datetime(),
         "pdf_hash": digest, "status": "Valid",
     })
+    record.flags.verification_issuance = True
     record.insert(ignore_permissions=True)
     file = _archive(f"Fee-Statement-{student}-{code[:8]}.pdf", pdf, record)
     return {"code": code, "verification_url": _verify_url(code), "document": record.name,

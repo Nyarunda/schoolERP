@@ -2,10 +2,11 @@
   "doctype": "DocType",
   "name": "SaaS eTIMS Invoice",
   "module": "Stemic Control",
-  "autoname": "format:ETI-{YYYY}-{#####}",
+  "autoname": "field:invoice_key",
   "engine": "InnoDB",
   "track_changes": 1,
   "field_order": [
+    "invoice_key",
     "tenant",
     "subscription",
     "external_invoice_no",
@@ -27,6 +28,15 @@
     "reviewed_on"
   ],
   "fields": [
+    {
+      "fieldname": "invoice_key",
+      "label": "Invoice Identity",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "unique": 1,
+      "read_only": 1,
+      "hidden": 1
+    },
     {
       "fieldname": "tenant",
       "fieldtype": "Link",
@@ -155,5 +165,6 @@
       "create": 1,
       "report": 1
     }
-  ]
+  ],
+  "naming_rule": "By fieldname"
 }

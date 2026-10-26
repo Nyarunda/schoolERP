@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import get_url, now_datetime
 from frappe.utils.file_manager import save_file
 
-SUPPORTED = {"Fee Payment", "Report Card"}
+SUPPORTED = {"Fee Payment", "Report Card", "Fee Statement", "School Certificate"}
 ISSUER_ROLES = {"School Admin", "System Manager", "Bursar", "Head Teacher"}
 CODE_PATTERN = re.compile(r"^[A-Za-z0-9_-]{32,100}$")
 HASH_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
@@ -31,8 +31,10 @@ def _source(doctype, name):
             frappe.throw(_("Fee Payment must be posted before issuing a verified receipt"))
         if frappe.db.get_value("Payment Entry", doc.payment_entry, "docstatus") != 1:
             frappe.throw(_("Linked accounting Payment Entry is not submitted"))
-    elif doc.status != "Published":
+    elif doctype == "Report Card" and doc.status != "Published":
         frappe.throw(_("Only published report cards can be verified"))
+    elif doctype == "School Certificate" and doc.status != "Approved":
+        frappe.throw(_("Only approved certificates can be verified"))
     return doc
 
 
@@ -47,6 +49,10 @@ def _is_current(row):
             ) == 1
         if row.document_type == "Report Card":
             return frappe.db.get_value("Report Card", row.document_name, "status") == "Published"
+        if row.document_type == "School Certificate":
+            return frappe.db.get_value("School Certificate", row.document_name, "status") == "Approved"
+        if row.document_type == "Fee Statement":
+            return True  # Historic, time-bound snapshot of the issued statement
     except Exception:
         return False
     return False
@@ -79,7 +85,13 @@ def _pdf_with_verification(source, code):
         '</p><p>' + html.escape(url) +
         '</p><small>Check this exact PDF on the official verification page.</small></td></tr></table></div>'
     )
-    original = frappe.get_print(source.doctype, source.name, as_pdf=False)
+    if source.doctype == "School Certificate":
+        original = _certificate_html(source)
+    elif source.doctype == "Fee Statement":
+        from school_erp.api.statement import render_fee_statement
+        original = render_fee_statement(source.student, source.from_date, source.to_date, full_page=True)
+    else:
+        original = frappe.get_print(source.doctype, source.name, as_pdf=False)
     if "</body>" in original.lower():
         position = original.lower().rfind("</body>")
         original = original[:position] + stamp + original[position:]
@@ -159,3 +171,77 @@ def revoke(code, reason):
         return {"status": "Revoked"}
     doc.db_set({"status": "Revoked", "revocation_reason": reason.strip()[:500]})
     return {"status": "Revoked"}
+
+
+def _certificate_html(doc):
+    import html
+    settings = frappe.get_cached_doc("School Settings")
+    student = frappe.get_doc("Student", doc.student)
+    esc = lambda value: html.escape(str(value or ""))
+    text = "<br>".join(esc(line) for line in (doc.body or "").splitlines())
+    return (f"<html><body><h2>{esc(settings.school_name)}</h2>"
+            f"<h3>{esc(doc.certificate_type)}</h3><p>Reference: {esc(doc.name)}</p>"
+            f"<p>Date: {esc(doc.issue_date)}</p><p>Student: {esc(student.student_name)}</p>"
+            f"<p>To: {esc(doc.recipient)}</p><div>{text}</div>"
+            f"<p>Approved by: {esc(doc.approved_by)}</p></body></html>")
+
+
+@frappe.whitelist(methods=["POST"])
+def approve_certificate(name):
+    if frappe.session.user == "Guest" or not ({"School Admin", "System Manager", "Head Teacher"} & set(frappe.get_roles())):
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+    doc = frappe.get_doc("School Certificate", name)
+    doc.check_permission("write")
+    if doc.status != "Draft":
+        frappe.throw(_("Only draft certificates can be approved"))
+    doc.db_set({"status": "Approved", "approved_by": frappe.session.user,
+                "approved_on": now_datetime(), "reference_number": name})
+    return {"status": "Approved"}
+
+
+@frappe.whitelist(methods=["POST"])
+def revoke_certificate(name, reason):
+    if frappe.session.user == "Guest" or not ({"School Admin", "System Manager", "Head Teacher"} & set(frappe.get_roles())):
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+    doc = frappe.get_doc("School Certificate", name)
+    doc.check_permission("write")
+    if doc.status != "Approved" or len((reason or "").strip()) < 8:
+        frappe.throw(_("Approved certificate and reason required"))
+    doc.db_set("status", "Revoked")
+    for code in frappe.get_all("Verified Document", filters={"document_type": "School Certificate",
+            "document_name": name, "status": "Valid"}, pluck="name"):
+        frappe.db.set_value("Verified Document", code, {
+            "status": "Revoked", "revocation_reason": reason.strip()[:500]})
+    return {"status": "Revoked"}
+
+
+@frappe.whitelist(methods=["POST"])
+def issue_statement(student, from_date=None, to_date=None):
+    """Time-bound statement snapshot, never a live balance verification."""
+    if frappe.session.user == "Guest" or not (ISSUER_ROLES & set(frappe.get_roles())):
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+    frappe.has_permission("Student", "read", student, throw=True)
+    from school_erp.api.statement import _default_period
+    from frappe.utils import getdate
+    start, end = _default_period(from_date, to_date)
+    if start > end or end > getdate():
+        frappe.throw(_("Invalid statement date range"))
+    # The reference key includes its period. Different periods are independent versions.
+    key = f"{student}:{start}:{end}"
+    source = frappe._dict(doctype="Fee Statement", name=key, student=student,
+                          from_date=str(start), to_date=str(end))
+    code = secrets.token_urlsafe(32)
+    pdf = _pdf_with_verification(source, code)
+    digest = hashlib.sha256(pdf).hexdigest()
+    record = frappe.get_doc({
+        "doctype": "Verified Document", "verification_code": code,
+        "document_type": "Fee Statement", "document_name": key,
+        "issued_by": frappe.session.user, "issued_on": now_datetime(),
+        "pdf_hash": digest, "status": "Valid",
+    })
+    record.insert(ignore_permissions=True)
+    file = save_file(f"Fee-Statement-{student}-{code[:8]}.pdf", pdf,
+                     "Verified Document", record.name, is_private=1)
+    record.db_set("file_url", file.file_url)
+    return {"code": code, "verification_url": _verify_url(code), "document": record.name,
+            "file_url": file.file_url}

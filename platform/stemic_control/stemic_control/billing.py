@@ -210,8 +210,14 @@ def validate_payment_for_submit(doc):
         )
     validate_payment(doc)
     # Drafts do not reserve references; the unique DB key is claimed on submit.
+    doc.reference_key = reference_key(doc.mode, doc.reference)
+
+
+def reference_key(mode, reference):
+    """The unique key for a payment reference: the same M-Pesa code (or bank reference) is recorded once per mode."""
     import hashlib
-    doc.reference_key = hashlib.sha256(f"{doc.mode}|{doc.reference}".encode()).hexdigest()
+
+    return hashlib.sha256(f"{mode}|{(reference or '').strip().upper()}".encode()).hexdigest()
 
 
 def apply_payment(doc):

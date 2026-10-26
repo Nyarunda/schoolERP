@@ -154,6 +154,22 @@ class TestSubscriptionBilling(TestCase):
         again = self.pay(wrong, 1000, ref=ref)["payment"]  # not blocked by the cancelled payment's key
         self.assertTrue(frappe.db.get_value("SaaS Payment", again, "reference_key"))
 
+    def test_backfill_gives_old_payments_their_key_and_reports_duplicates(self):
+        """Payments recorded before the unique key existed: keyed by the migration, duplicates left for a person."""
+        from stemic_control.patches.backfill_payment_reference_keys import execute
+
+        a, b = billing.create_invoice(self.sub, months=1), None
+        first = self.pay(a, 1000, ref="QOLD" + frappe.generate_hash(length=6).upper())["payment"]
+        second = self.pay(a, 1000)["payment"]
+        ref = frappe.db.get_value("SaaS Payment", first, "reference")
+        # as they were before the key: no key, and (in old data) the same reference twice
+        frappe.db.set_value("SaaS Payment", first, "reference_key", None)
+        frappe.db.set_value("SaaS Payment", second, {"reference_key": None, "reference": ref})
+        execute()
+        self.assertEqual(frappe.db.get_value("SaaS Payment", first, "reference_key"), billing.reference_key("M-Pesa", ref))
+        self.assertIsNone(frappe.db.get_value("SaaS Payment", second, "reference_key"))
+        self.assertTrue(frappe.db.exists("Error Log", {"method": "Payments left without a unique reference key"}))
+
     # ------------------------------------------------------------------ daily job
     def test_daily_marks_overdue_and_raises_renewals(self):
         inv = billing.create_invoice(self.sub, months=1)

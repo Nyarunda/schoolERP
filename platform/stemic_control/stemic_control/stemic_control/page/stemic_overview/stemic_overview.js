@@ -38,8 +38,8 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
     let selected = "home";
     let metrics = null;
     let busy = false;
-    let operations = [];
     let loadError = false;
+    let attention = null;  // operations_queue: what needs an operator (null = not loaded)
     const tabs = [["home","Overview"],["schools","Schools"],["billing","Billing"],["agents","Agents"]];
 
     function render() {
@@ -48,30 +48,12 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         description.className = "stemic-intro";
         description.textContent = __("Manage schools, subscriptions and provisioning from one control plane.");
         root.append(description);
-        const shortcuts = document.createElement("div");
-        shortcuts.className = "stemic-quick-actions";
-        for (const [label, action] of [
-            [__("New School"), () => frappe.new_doc("SaaS Tenant")],
-            [__("All Schools"), () => frappe.set_route("List", "SaaS Tenant")],
-            [__("Provisioning Jobs"), () => frappe.set_route("List", "SaaS Provisioning Job")],
-            [__("Domains"), () => frappe.set_route("List", "SaaS Domain")],
-            [__("Subscriptions"), () => frappe.set_route("List", "SaaS Subscription")],
-            [__("Agents"), () => frappe.set_route("List", "SaaS Agent")]
-        ]) {
-            const button = document.createElement("button");
-            button.className = "btn btn-default btn-sm";
-            button.type = "button";
-            button.textContent = label;
-            button.addEventListener("click", action);
-            shortcuts.append(button);
-        }
-        root.append(shortcuts);
         if (loadError) {
-            const message = document.createElement("p");
-            message.className = "alert alert-warning";
-            message.setAttribute("role", "alert");
-            message.textContent = __("Dashboard metrics could not be loaded. Select Refresh to try again.");
-            root.append(message);
+            const warning = document.createElement("div");
+            warning.className = "alert alert-warning";
+            warning.setAttribute("role", "alert");
+            warning.textContent = __("Metrics could not be loaded. Use Refresh to try again.");
+            root.append(warning);
         }
         const nav = document.createElement("div");
         nav.className = "stemic-tabs";
@@ -93,6 +75,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             const card = document.createElement("button");
             card.type = "button";
             card.className = "stemic-kpi-card";
+            card.setAttribute("aria-label", __(label) + ": " + (metrics?.[selected]?.[key] ?? __("Not available")));
             const heading = document.createElement("span");
             heading.className = "stemic-kpi-label";
             heading.textContent = __(label);
@@ -105,50 +88,83 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             card.append(heading,value,hint);
             if (filters !== null) {
                 card.addEventListener("click", () => {
-                    frappe.route_options = filters;
+                    frappe.route_options = {...filters};
                     frappe.set_route("List",doctype);
                 });
             } else {
-                card.disabled = true;
-                card.title = __("A matching filtered list is not available yet");
+                card.type = "button";
+                card.setAttribute("aria-disabled", "true");
+                card.title = __("Summary only — detailed report not yet available");
             }
             section.append(card);
         }
         root.append(section);
-        if (selected === "home") {
-            const heading = document.createElement("h3");
-            heading.className = "stemic-operations-heading";
-            heading.textContent = __("Needs Attention");
-            root.append(heading);
-            const feed = document.createElement("div");
-            feed.className = "stemic-operations-feed";
-            if (!operations.length) {
-                const empty = document.createElement("p");
-                empty.className = "text-muted";
-                empty.textContent = __("No provisioning, DNS or past-due exceptions currently listed.");
-                feed.append(empty);
-            }
-            for (const item of operations) {
-                const action = document.createElement("button");
-                action.type = "button";
-                action.className = "stemic-operations-item";
-                const name = document.createElement("strong");
-                name.textContent = item.label;
-                const detail = document.createElement("span");
-                detail.textContent = item.name;
-                const indicator = document.createElement("span");
-                indicator.className = item.severity === "critical" ? "stemic-risk-critical" : "stemic-risk-warning";
-                indicator.textContent = item.severity === "critical" ? __("Requires action") : __("Review");
-                action.append(name, detail, indicator);
-                action.addEventListener("click", () => frappe.set_route("Form", item.doctype, item.name));
-                feed.append(action);
-            }
-            root.append(feed);
-        }
+        if (selected === "home") root.append(attention_feed());
         const note = document.createElement("p");
         note.className = "stemic-note";
         note.textContent = __("Figures are counts from admin records, not independently verified infrastructure health or collected revenue.");
         root.append(note);
+    }
+    // "Needs attention": a few newest items per group, each naming the school and opening the record to act on
+    function attention_feed() {
+        const wrap = document.createElement("section");
+        wrap.className = "stemic-attention";
+        const heading = document.createElement("h3");
+        heading.className = "stemic-attention-title";
+        heading.textContent = __("Needs attention");
+        wrap.append(heading);
+        if (!attention) {
+            const note = document.createElement("p");
+            note.className = "text-muted";
+            note.textContent = busy ? __("Loading...") : __("Could not load the attention list. Use Refresh to try again.");
+            wrap.append(note);
+            return wrap;
+        }
+        const open = attention.groups.filter((g) => g.count);
+        if (!open.length) {
+            const clear = document.createElement("p");
+            clear.className = "stemic-attention-clear";
+            clear.textContent = __("Nothing needs attention: no failed sites, overdue payments, pending domains or sites being created.");
+            wrap.append(clear);
+            return wrap;
+        }
+        const grid = document.createElement("div");
+        grid.className = "stemic-attention-grid";
+        for (const group of open) {
+            const box = document.createElement("div");
+            box.className = `stemic-attention-group ${group.severity}`;
+            const head = document.createElement("div");
+            head.className = "stemic-attention-head";
+            const title = document.createElement("strong");
+            title.textContent = `${__(group.label)} (${group.count})`;
+            const all = document.createElement("button");
+            all.type = "button";
+            all.className = "btn btn-link btn-xs";
+            all.textContent = __("View all");
+            all.addEventListener("click", () => {
+                frappe.route_options = { ...group.filters };
+                frappe.set_route("List", group.doctype);
+            });
+            head.append(title, all);
+            box.append(head);
+            for (const item of group.items) {
+                const row = document.createElement("button");
+                row.type = "button";
+                row.className = "stemic-attention-item";
+                const school = document.createElement("strong");
+                school.textContent = item.school;
+                const detail = document.createElement("span");
+                detail.textContent = item.detail;
+                const when = document.createElement("small");
+                when.textContent = frappe.datetime.prettyDate(item.modified);
+                row.append(school, detail, when);
+                row.addEventListener("click", () => frappe.set_route("Form", item.doctype, item.name));
+                box.append(row);
+            }
+            grid.append(box);
+        }
+        wrap.append(grid);
+        return wrap;
     }
     async function refresh() {
         if (busy) return;
@@ -157,12 +173,10 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             const response = await frappe.call({ method: "stemic_control.api.dashboard_metrics", type: "GET" });
             metrics = response.message;
             loadError = false;
-            try {
-                const queue = await frappe.call({method: "stemic_control.api.operations_queue", type: "GET"});
-                operations = queue.message?.items || [];
-            } catch (queueError) {
-                operations = [];
-                console.warn("Stemic operations queue unavailable", queueError);
+            try {  // the KPI cards still work if this list cannot load
+                attention = (await frappe.call({ method: "stemic_control.api.operations_queue", type: "GET" })).message;
+            } catch (e) {
+                attention = null;
             }
         } catch (error) {
             loadError = true;

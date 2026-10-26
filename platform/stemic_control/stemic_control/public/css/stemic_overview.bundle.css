@@ -1,4 +1,4 @@
-.stemic-overview { padding: 18px 2px 40px; max-width: 1320px; margin: 0 auto; }
+.stemic-overview { padding: 18px 18px 40px; max-width: 1600px; margin: 0 auto; }
 .stemic-intro { color: var(--text-muted, #64748b); margin: 0 0 22px; }
 .stemic-tabs { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid var(--border-color, #e2e8f0); margin-bottom: 22px; padding-bottom: 12px; }
 .stemic-tab { border: 0; background: transparent; border-radius: 8px; padding: 9px 15px; color: var(--text-muted, #64748b); font-weight: 600; }
@@ -6,14 +6,31 @@
 .stemic-tab:focus-visible, .stemic-kpi-card:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
 .stemic-card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .stemic-kpi-card { text-align: left; min-height: 158px; display: flex; flex-direction: column; gap: 14px; background: var(--card-bg, #fff); color: var(--text-color, #1e293b); border: 1px solid var(--border-color, #e2e8f0); border-radius: 14px; padding: 22px; box-shadow: 0 3px 12px rgba(20,35,55,.04); transition: box-shadow .15s, transform .15s; cursor: pointer; }
-.stemic-kpi-card:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 7px 25px rgba(20,35,55,.10); }
-.stemic-kpi-card:disabled { cursor: default; opacity: .82; }
+.stemic-kpi-card:hover:not(:disabled):not([aria-disabled="true"]) { transform: translateY(-2px); box-shadow: 0 7px 25px rgba(20,35,55,.10); }
+.stemic-kpi-card:disabled, .stemic-kpi-card[aria-disabled="true"] { cursor: default; opacity: .82; }
 .stemic-kpi-label { font-size: 13px; font-weight: 600; color: var(--text-muted, #64748b); }
 .stemic-kpi-value { font-size: clamp(26px, 3vw, 36px); line-height: 1.1; letter-spacing: -.035em; }
 .stemic-kpi-hint { font-size: 12px; color: var(--text-muted, #64748b); margin-top: auto; }
 .stemic-note { margin-top: 24px; color: var(--text-muted, #64748b); font-size: 12px; }
+/* Needs attention */
+.stemic-attention { margin-top: 28px; }
+.stemic-attention-title { font-size: 17px; font-weight: 650; margin: 0 0 12px; }
+.stemic-attention-clear { color: var(--green-600, #15803d); font-weight: 600; }
+.stemic-attention-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.stemic-attention-group { border: 1px solid var(--border-color, #e2e8f0); border-left: 4px solid var(--sa-c); border-radius: 12px; padding: 12px 14px; background: var(--card-bg, #fff); }
+.stemic-attention-group.critical { --sa-c: var(--red-500, #ef4444); }
+.stemic-attention-group.warning { --sa-c: var(--orange-500, #f97316); }
+.stemic-attention-group.info { --sa-c: var(--blue-500, #3b82f6); }
+.stemic-attention-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.stemic-attention-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--border-color, #e2e8f0); background: transparent; color: var(--text-color); padding: 8px 2px; cursor: pointer; }
+.stemic-attention-item:hover { background: var(--subtle-fg, #f8fafc); }
+.stemic-attention-item:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.stemic-attention-item strong { font-size: 13px; overflow-wrap: anywhere; }
+.stemic-attention-item span { grid-column: 1; font-size: 12px; color: var(--text-muted, #64748b); overflow-wrap: anywhere; }
+.stemic-attention-item small { grid-column: 2; grid-row: 1; font-size: 11px; color: var(--text-muted, #64748b); white-space: nowrap; }
+@media(max-width: 1000px) { .stemic-attention-grid { grid-template-columns: 1fr; } }
 @media(max-width: 1000px) { .stemic-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media(max-width: 550px) { .stemic-card-grid { grid-template-columns: 1fr; } .stemic-overview { padding: 12px 0; } }
+@media(max-width: 550px) { .stemic-card-grid { grid-template-columns: 1fr; } .stemic-overview { padding: 12px 12px 32px; } }
 
 /* Claim a Domain dialog */
 .sc-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 14px; }
@@ -69,14 +86,7 @@
 .scx-h { font-weight: 600; margin: 4px 0 -4px; display: flex; justify-content: space-between; gap: 8px; }
 .scx-h span { font-weight: normal; color: var(--text-muted); font-size: var(--text-sm); }
 
-.stemic-quick-actions { display:flex;flex-wrap:wrap;gap:9px;margin:0 0 20px; }
-.stemic-operations-heading { font-size:17px;font-weight:650;margin:30px 0 14px; }
-.stemic-operations-feed { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px; }
-.stemic-operations-item { display:flex;align-items:center;flex-wrap:wrap;gap:8px;text-align:left;padding:14px 16px;border-radius:10px;border:1px solid var(--border-color,#ddd);background:var(--card-bg,#fff);color:var(--text-color,#222);cursor:pointer; }
-.stemic-operations-item strong { flex:1 1 170px;font-size:13px; }
-.stemic-operations-item span { font-size:12px;overflow-wrap:anywhere; }
-.stemic-operations-item:hover { box-shadow:0 4px 14px rgba(20,35,55,.08); }
-.stemic-operations-item:focus-visible {outline:2px solid var(--primary,#2563eb);outline-offset:2px;}
-.stemic-risk-critical {color:var(--red-600,#b91c1c);font-weight:700;}
-.stemic-risk-warning {color:var(--orange-600,#b45309);font-weight:700;}
-@media(max-width:700px){.stemic-operations-feed{grid-template-columns:1fr;}}
+/* Workspace dashboards: use the screen instead of Frappe's 900px column (see school_erp's dashboard CSS) */
+@media (min-width: 992px) {
+    html body:not(.full-width) [data-page-route="Workspaces"] .layout-main { max-width: min(100%, 1600px); }
+}

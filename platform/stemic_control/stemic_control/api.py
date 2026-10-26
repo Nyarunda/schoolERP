@@ -391,23 +391,41 @@ def revoke_license(license):
 
 
 @frappe.whitelist(methods=["GET"])
-def operations_queue(limit=8):
-    """Small, actionable control-plane exceptions feed, not synthetic system health."""
+def operations_queue(per_group=3):
+    """What needs an operator, grouped, newest first: each group's total, a few items naming the school, and the list
+    filters behind "View all". Every group is always present, so a busy one never hides another."""
     _admin()
-    limit = max(1, min(int(limit), 25))
-    items = []
-    definitions = (
-        ("SaaS Provisioning Job", {"status": "Failed"}, "Failed provisioning", "critical", "creation"),
-        ("SaaS Provisioning Job", {"status": ["in", ["Queued", "Running"]]}, "Provisioning in progress", "warning", "creation"),
-        ("SaaS Domain", {"status": "Pending Verification"}, "DNS verification required", "warning", "creation"),
-        ("SaaS Subscription", {"status": "Past Due"}, "Subscription past due", "critical", "creation"),
-    )
-    for doctype, filters, label, severity, date_field in definitions:
-        for item in frappe.get_all(doctype, filters=filters,
-                                   fields=["name", "modified"], order_by="modified desc",
-                                   limit_page_length=limit):
-            items.append({"doctype": doctype, "name": item.name,
-                          "label": label, "severity": severity,
-                          "modified": str(item.modified)})
-    items.sort(key=lambda item: (item["severity"] != "critical", item["modified"]), reverse=False)
-    return {"items": items[:limit], "total_visible": len(items), "is_truncated": len(items) > limit}
+    per_group = max(1, min(int(per_group), 10))
+    schools = {}
+
+    def school(tenant):
+        if tenant not in schools:
+            schools[tenant] = frappe.db.get_value("SaaS Tenant", tenant, "school_name") or tenant
+        return schools[tenant]
+
+    def last_error(tenant):
+        error = frappe.db.get_value("SaaS Provisioning Job", {"tenant": tenant, "status": "Failed"}, "last_error",
+                                   order_by="modified desc") or ""
+        return next((line.strip() for line in error.splitlines() if line.strip()), "")[:140]
+
+    groups = []
+    # (key, label, severity, doctype, filters, row fields, item -> (school, detail))
+    for key, label, severity, doctype, filters, fields, describe in (
+        ("failed_sites", "Sites that could not be created", "critical", "SaaS Tenant", {"status": "Failed"},
+         ["name", "school_name", "modified"], lambda r: (r.school_name, last_error(r.name) or r.name)),
+        ("overdue", "Payments overdue", "critical", "SaaS Subscription", {"status": ["in", ["Past Due", "Grace"]]},
+         ["name", "tenant", "plan", "status", "modified"], lambda r: (school(r.tenant), f"{r.plan} · {r.status}")),
+        ("dns", "Domains waiting for DNS", "warning", "SaaS Domain", {"status": "Pending Verification"},
+         ["name", "tenant", "modified"], lambda r: (school(r.tenant), r.name)),
+        ("creating", "Sites being created", "info", "SaaS Tenant", {"status": ["in", ["Pending", "Provisioning"]]},
+         ["name", "school_name", "status", "modified"], lambda r: (r.school_name, r.status)),
+    ):
+        rows = frappe.get_all(doctype, filters=filters, fields=fields, order_by="modified desc", limit_page_length=per_group)
+        items = []
+        for row in rows:
+            name_of_school, detail = describe(row)
+            items.append({"doctype": doctype, "name": row.name, "school": name_of_school, "detail": detail,
+                          "modified": str(row.modified)})
+        groups.append({"key": key, "label": label, "severity": severity, "doctype": doctype, "filters": filters,
+                       "count": frappe.db.count(doctype, filters), "items": items})
+    return {"groups": groups, "total": sum(g["count"] for g in groups)}

@@ -24,10 +24,14 @@ frappe.provide("school_dash");
 	school_dash.go = (route) => {
 		if (!route) return;
 		const [kind, ...rest] = route;
-		if (kind === "List" && rest[1]) {
+		if (kind === "Form" && rest[1] === "new") {
+			frappe.route_options = null;
+			frappe.new_doc(rest[0]);
+		} else if (kind === "List" && rest[1]) {
 			frappe.route_options = rest[1];
 			frappe.set_route("List", rest[0]);
 		} else {
+			frappe.route_options = null;
 			frappe.set_route(kind, ...rest);
 		}
 	};
@@ -41,12 +45,12 @@ frappe.provide("school_dash");
 			${body}
 		</div>`;
 
-	school_dash.kpi = ({ label, value, foot, bar, route, title }) => `
+	school_dash.kpi = ({ label, value, of, foot, bar, route, title }) => `
 		<div class="sd-card sd-kpi" ${route ? `data-route='${esc(JSON.stringify(route))}'` : ""} title="${esc(title || "")}">
 			<div class="sd-kpi-label">${esc(label)}</div>
-			<div class="sd-kpi-value">${value}</div>
+			<div class="sd-kpi-value">${esc(value)}${of != null ? `<span class="sd-kpi-of"> / ${esc(of)}</span>` : ""}</div>
 			${foot ? `<div class="sd-kpi-foot">${foot}</div>` : ""}
-			${bar != null ? `<div class="sd-bar" role="img" aria-label="${Math.round(bar)}%"><span style="width:${Math.max(0, Math.min(100, bar))}%"></span></div>` : ""}
+			${bar != null ? `<div class="sd-bar" role="img" aria-label="${Math.round(Number(bar) || 0)}%"><span style="width:${Math.max(0, Math.min(100, Number(bar) || 0))}%"></span></div>` : ""}
 		</div>`;
 
 	const ICON = { good: "✓", warning: "!", serious: "!", critical: "‼", muted: "•" };

@@ -2,6 +2,7 @@
 
 import ipaddress
 import re
+from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
 ACCEPT = {"ResultCode": "0", "ResultDesc": "Accepted"}
@@ -106,3 +107,41 @@ def normalize_payload(payload: dict) -> dict:
 		"transaction_type": payload.get("TransactionType") or "",
 		"org_account_balance": float(payload.get("OrgAccountBalance") or 0),
 	}
+
+
+def valid_money(value):
+	"""Validate provider amount as positive finite cents without floating-point coercion."""
+	try:
+		amount = Decimal(str(value))
+		return amount.is_finite() and amount > 0 and amount == amount.quantize(Decimal("0.01"))
+	except (InvalidOperation, TypeError, ValueError):
+		return False
+
+
+def valid_confirmation(data, shortcode, require_transaction_id=True):
+	"""Check C2B envelope before money may enter the posting pipeline.
+	`shortcode` may be one code or several (a Till is reported by its store number or its till number)."""
+	codes = {str(c).strip() for c in ([shortcode] if isinstance(shortcode, (str, int)) or shortcode is None else shortcode) if str(c or "").strip()}
+	return bool(
+		isinstance(data, dict)
+		and (not require_transaction_id or str(data.get("TransID") or "").strip())
+		and str(data.get("BusinessShortCode") or "").strip() in codes
+		and valid_money(data.get("TransAmount"))
+	)
+
+
+def valid_stk_metadata(meta, expected_amount, expected_phone):
+	"""Require a receipt, actual amount and matching payer before STK settlement."""
+	if not isinstance(meta, dict) or not str(meta.get("MpesaReceiptNumber") or "").strip():
+		return False
+	if not valid_money(meta.get("Amount")) or not valid_money(expected_amount):
+		return False
+	try:
+		if Decimal(str(meta["Amount"])) != Decimal(str(expected_amount)):
+			return False
+	except (InvalidOperation, TypeError, ValueError):
+		return False
+	# compare the last 9 digits so 2547..., 07... and +254 7... are the same number
+	phone = re.sub(r"\D", "", str(meta.get("PhoneNumber") or ""))[-9:]
+	expected = re.sub(r"\D", "", str(expected_phone or ""))[-9:]
+	return bool(len(phone) == 9 and phone == expected)

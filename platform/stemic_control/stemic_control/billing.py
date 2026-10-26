@@ -132,9 +132,6 @@ def validate_payment(doc):
     if flt(doc.amount) > flt(inv.outstanding) + 0.005:
         frappe.throw(f"That is more than the {flt(inv.outstanding):,.2f} still owed on {doc.invoice}", frappe.ValidationError)
     doc.reference = (doc.reference or "").strip().upper()
-    if doc.reference:
-        import hashlib
-        doc.reference_key = hashlib.sha256(f"{doc.mode}|{doc.reference}".encode()).hexdigest()
     if not doc.reference:
         frappe.throw("A non-empty payment reference is required", frappe.ValidationError)
     clash = frappe.db.get_value("SaaS Payment", {"mode": doc.mode, "reference": doc.reference, "docstatus": 1, "name": ("!=", doc.name)})
@@ -175,6 +172,9 @@ def validate_payment_for_submit(doc):
             frappe.ValidationError,
         )
     validate_payment(doc)
+    # Drafts do not reserve references; the unique DB key is claimed on submit.
+    import hashlib
+    doc.reference_key = hashlib.sha256(f"{doc.mode}|{doc.reference}".encode()).hexdigest()
 
 
 def apply_payment(doc):

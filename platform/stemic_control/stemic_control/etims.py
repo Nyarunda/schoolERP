@@ -46,15 +46,16 @@ def prepare_invoice(tenant, external_invoice_no, buyer_name, net_amount, vat_amo
         "vat_amount": str(tax), "total_amount": str(total),
         "tax_treatment": tax_treatment, "subscription": subscription or ""}
     digest = hashlib.sha256(json.dumps(source, sort_keys=True).encode()).hexdigest()
-    existing = frappe.db.get_value("SaaS eTIMS Invoice",
-        {"tenant": tenant, "external_invoice_no": external_invoice_no},
+    invoice_key = "ETI-" + hashlib.sha256(f"{tenant}|{external_invoice_no}".encode()).hexdigest().upper()[:40]
+    existing = frappe.db.get_value("SaaS eTIMS Invoice", invoice_key,
         ["name", "source_payload_hash"], as_dict=True)
     if existing:
         if existing.source_payload_hash != digest:
             frappe.throw(_("Source invoice changed; investigate before issuing another version"))
         return {"name": existing.name, "status": frappe.db.get_value("SaaS eTIMS Invoice", existing.name, "status")}
     doc = frappe.get_doc({"doctype": "SaaS eTIMS Invoice", **source,
-        "currency": "KES", "status": "Draft", "source_payload_hash": digest})
+        "currency": "KES", "status": "Draft", "source_payload_hash": digest,
+        "invoice_key": invoice_key})
     doc.flags.etims_service = True
     doc.insert(ignore_permissions=True)
     return {"name": doc.name, "status": "Draft"}

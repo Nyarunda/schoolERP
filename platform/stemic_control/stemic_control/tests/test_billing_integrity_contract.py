@@ -8,7 +8,8 @@ def test_subscription_creation_serialized():
     code = (ROOT / "billing.py").read_text()
     assert "SELECT name FROM `tabSaaS Subscription` WHERE name = %s FOR UPDATE" in code
     assert "def validate_payment_for_submit" in code
-    assert "SELECT name FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE" in code
+    assert "FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE" in code  # lock_invoice (it also reads docstatus)
+    assert "FOR UPDATE" in code.split("def submitted_payments", 1)[1].split("def ", 1)[0]  # locking read of the balance
     assert "def lock_invoice(invoice):" in code
 
 
@@ -23,7 +24,9 @@ def test_ref_key_is_database_unique():
     schema = json.loads((ROOT / "stemic_control" / "doctype" / "saas_payment" / "saas_payment.json").read_text())
     field = next(row for row in schema["fields"] if row["fieldname"] == "reference_key")
     assert field["unique"] == 1
-    assert 'hashlib.sha256(f"{doc.mode}|{doc.reference}".encode())' in (ROOT / "billing.py").read_text()
+    billing = (ROOT / "billing.py").read_text()
+    assert "doc.reference_key = reference_key(doc.mode, doc.reference)" in billing
+    assert 'hashlib.sha256(f"{mode}|' in billing.split("def reference_key", 1)[1].split("def ", 1)[0]
 
 
 def test_cancellation_paths_use_same_invoice_lock():

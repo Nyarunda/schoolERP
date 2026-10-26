@@ -51,7 +51,7 @@ class TestProvisioner(TestCase):
 
     def test_success_activates_school_and_stores_password(self):
         calls, fake = self.cli()
-        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch("os.path.isdir", return_value=False):
+        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", return_value=False):
             self.assertEqual(provisioner.run(self.job), "Succeeded")
         site = f"{self.slug}.localhost"
         new_site = next(c for c in calls if c[0] == "new-site")
@@ -69,7 +69,7 @@ class TestProvisioner(TestCase):
 
     def test_failure_marks_job_and_school_failed(self):
         calls, fake = self.cli(fail_new_site=True)
-        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch("os.path.isdir", side_effect=[False, True]):
+        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", side_effect=[False, True]):
             self.assertEqual(provisioner.run(self.job), "Failed")
         job = frappe.get_doc("SaaS Provisioning Job", self.job)
         self.assertEqual(job.status, "Failed")
@@ -100,7 +100,7 @@ class TestProvisioner(TestCase):
             if args[0] == "new-site":  # an operator gives up on the job while the site is still being built
                 api.record_job_result(self.job, "Failed", "Stopped by an operator")
             return LISTED if "list-apps" in args else ""
-        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch("os.path.isdir", return_value=False):
+        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", return_value=False):
             self.assertEqual(provisioner.run(self.job), "Closed by operator")
         self.assertEqual(frappe.db.get_value("SaaS Provisioning Job", self.job, "status"), "Failed")
         self.assertEqual(frappe.db.get_value("SaaS Tenant", self.slug, "status"), "Failed")

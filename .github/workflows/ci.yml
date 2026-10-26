@@ -24,10 +24,10 @@ jobs:
           node-version: 24
       - run: pip install pytest cryptography
       - run: bash scripts/check.sh
-      - name: Validate control-plane tax helpers
+      - name: Control plane checks (no bench)
         run: |
           python -m compileall -q platform/stemic_control/stemic_control
-          PYTHONPATH=platform/stemic_control python -m pytest -q platform/stemic_control/stemic_control/tests/test_tax_rules.py platform/stemic_control/stemic_control/tests/test_etims_integration_contract.py
+          PYTHONPATH=platform/stemic_control python -m pytest -q platform/stemic_control/stemic_control/tests/test_billing_integrity_contract.py platform/stemic_control/stemic_control/tests/test_tax_rules.py platform/stemic_control/stemic_control/tests/test_etims_integration_contract.py
 
   bench-tests:
     name: Integration tests (Frappe + ERPNext v16)
@@ -89,6 +89,19 @@ jobs:
           set -o pipefail
           cd ~/frappe-bench
           bench --site test.localhost run-tests --app school_erp 2>&1 | tee ~/tests.log
+      - name: Control plane tests (stemic_control on its own admin site)
+        run: |
+          set -o pipefail
+          cd ~/frappe-bench
+          # the app lives in this repository under platform/; install it the way a bench would
+          ln -s "$GITHUB_WORKSPACE/app/platform/stemic_control" apps/stemic_control
+          ./env/bin/pip install -q -e apps/stemic_control
+          grep -qx stemic_control sites/apps.txt || printf '\nstemic_control\n' >> sites/apps.txt
+          sed -i '/^$/d' sites/apps.txt
+          bench new-site admin.localhost --db-root-password root --admin-password admin \
+              --mariadb-user-host-login-scope='%' --install-app stemic_control
+          bench --site admin.localhost set-config allow_tests true
+          bench --site admin.localhost run-tests --app stemic_control 2>&1 | tee -a ~/tests.log
       - name: Show errors as annotations
         if: failure()
         run: |

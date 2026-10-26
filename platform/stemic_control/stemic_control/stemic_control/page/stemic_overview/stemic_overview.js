@@ -81,7 +81,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         if (selected === "tax") {
             const action = document.createElement("button");
             action.type = "button";
-            action.className = "btn btn-default btn-sm";
+            action.className = "btn btn-default btn-sm stemic-tab-action";
             action.textContent = __("Configure School Tax Profile");
             action.addEventListener("click", () => frappe.set_route("List", "SaaS Tax Profile"));
             root.append(action);

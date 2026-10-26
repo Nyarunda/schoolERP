@@ -7,6 +7,9 @@ class SaaSPayment(Document):
     def validate(self):
         billing.validate_payment(self)
 
+    def before_submit(self):
+        billing.validate_payment_for_submit(self)
+
     def on_submit(self):
         billing.apply_payment(self)
 

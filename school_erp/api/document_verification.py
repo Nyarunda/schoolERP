@@ -131,7 +131,7 @@ def verify(code=None):
         "issuer": frappe.get_site_config().get("school_verification_label") or "Issuing school"}
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True, methods=["GET"])
 def verify_hash(code=None, sha256=None):
     """Compare a browser-computed SHA-256 against the exact archived PDF without uploading it."""
     if not isinstance(code, str) or not CODE_PATTERN.fullmatch(code):

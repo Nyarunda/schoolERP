@@ -11,7 +11,7 @@ frappe.ui.form.on("School Certificate", {
    frm.add_custom_button(__("Issue Verified PDF"), () => frappe.call({
     method:"school_erp.api.document_verification.issue",
     args:{doctype:"School Certificate",name:frm.doc.name},
-    callback:r => {if (r.message) frappe.msgprint(__("Issued. Find the PDF in private attachments. Code: {0}",[frappe.utils.escape_html(r.message.code)])); frm.reload_doc();}
+    freeze:true, callback:r => {if (r.message) school_erp.show_verified_document(r.message); frm.reload_doc();}
    }));
    frm.add_custom_button(__("Revoke"), () => frappe.prompt([{
     fieldname:"reason",label:__("Reason"),fieldtype:"Small Text",reqd:1

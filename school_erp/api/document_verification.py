@@ -13,9 +13,12 @@ from urllib.parse import quote
 import frappe
 from frappe import _
 from frappe.utils import get_url, now_datetime
-from frappe.utils.file_manager import save_file
+
+from school_erp import licensing
 
 SUPPORTED = {"Fee Payment", "Report Card", "Fee Statement", "School Certificate"}
+# Licensed module each document belongs to; certificates are core (always on)
+MODULE = {"Fee Payment": "fees", "Report Card": "exams", "Fee Statement": "fees", "School Certificate": "core"}
 ISSUER_ROLES = {"School Admin", "System Manager", "Bursar", "Head Teacher"}
 CODE_PATTERN = re.compile(r"^[A-Za-z0-9_-]{32,100}$")
 HASH_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
@@ -100,11 +103,29 @@ def _pdf_with_verification(source, code):
     return get_pdf(original)
 
 
+def _archive(file_name, pdf, record):
+    """Store the PDF privately, byte for byte, and attach it to its Verified Document.
+
+    frappe.utils.file_manager.save_file is not used: when File re-reads a saved file it decodes it as text
+    (UTF-8, then Windows code pages) and writes it back as UTF-8, which alters some PDFs. Handing File the
+    bytes as content keeps them intact; the read-back proves it, since the fingerprint must match the file."""
+    file = frappe.get_doc({"doctype": "File", "file_name": file_name, "content": pdf, "is_private": 1,
+                           "attached_to_doctype": "Verified Document", "attached_to_name": record.name})
+    file.flags.ignore_duplicate_entry_error = True
+    file.insert(ignore_permissions=True)
+    with open(file.get_full_path(), "rb") as stored:
+        if hashlib.sha256(stored.read()).hexdigest() != record.pdf_hash:
+            frappe.throw(_("The archived PDF does not match its fingerprint; nothing was issued."))
+    record.db_set("file_url", file.file_url)
+    return file
+
+
 @frappe.whitelist(methods=["POST"])
 def issue(doctype, name):
     """Issue one private, QR-stamped PDF version. Reissues revoke previous versions."""
     if frappe.session.user == "Guest" or not (ISSUER_ROLES & set(frappe.get_roles())):
         frappe.throw(_("Only authorized school staff can issue verified reports"), frappe.PermissionError)
+    licensing.require(MODULE.get(doctype, "core"), doctype)
     doc = _source(doctype, name)
     code = secrets.token_urlsafe(32)
     pdf = _pdf_with_verification(doc, code)
@@ -121,9 +142,7 @@ def issue(doctype, name):
         "issued_on": now_datetime(), "pdf_hash": digest, "status": "Valid"
     })
     record.insert(ignore_permissions=True)
-    file = save_file(f"{doctype.replace(' ', '_')}-{name}-{code[:8]}.pdf",
-        pdf, "Verified Document", record.name, is_private=1)
-    record.db_set("file_url", file.file_url)
+    file = _archive(f"{doctype.replace(' ', '_')}-{name}-{code[:8]}.pdf", pdf, record)
     return {"code": code, "verification_url": _verify_url(code),
         "file_url": file.file_url, "document": record.name}
 
@@ -140,7 +159,12 @@ def verify(code=None):
     state = "Valid" if row.status == "Valid" and _is_current(row) else "Revoked"
     return {"status": state, "document_type": row.document_type,
         "issued_on": str(row.issued_on) if row.issued_on else None,
-        "issuer": frappe.get_site_config().get("school_verification_label") or "Issuing school"}
+        "issuer": _issuer()}
+
+
+def _issuer():
+    return (frappe.get_site_config().get("school_verification_label")
+            or frappe.db.get_single_value("School Settings", "school_name") or "Issuing school")
 
 
 @frappe.whitelist(allow_guest=True, methods=["GET"])
@@ -166,7 +190,11 @@ def revoke(code, reason):
     if not reason or len(reason.strip()) < 8:
         frappe.throw(_("Provide a revocation reason (at least eight characters)"))
     doc = frappe.get_doc("Verified Document", code)
-    frappe.has_permission(doc.document_type, "write", doc.document_name, throw=True)
+    if doc.document_type == "Fee Statement":
+        # a statement is a snapshot, not a DocType: its name is "<student>:<from>:<to>"
+        frappe.has_permission("Student", "read", doc.document_name.split(":", 1)[0], throw=True)
+    else:
+        frappe.has_permission(doc.document_type, "write", doc.document_name, throw=True)
     if doc.status == "Revoked":
         return {"status": "Revoked"}
     doc.db_set({"status": "Revoked", "revocation_reason": reason.strip()[:500]})
@@ -220,6 +248,7 @@ def issue_statement(student, from_date=None, to_date=None):
     """Time-bound statement snapshot, never a live balance verification."""
     if frappe.session.user == "Guest" or not (ISSUER_ROLES & set(frappe.get_roles())):
         frappe.throw(_("Not permitted"), frappe.PermissionError)
+    licensing.require("fees", "Fee Statement")
     frappe.has_permission("Student", "read", student, throw=True)
     from school_erp.api.statement import _default_period
     from frappe.utils import getdate
@@ -240,8 +269,6 @@ def issue_statement(student, from_date=None, to_date=None):
         "pdf_hash": digest, "status": "Valid",
     })
     record.insert(ignore_permissions=True)
-    file = save_file(f"Fee-Statement-{student}-{code[:8]}.pdf", pdf,
-                     "Verified Document", record.name, is_private=1)
-    record.db_set("file_url", file.file_url)
+    file = _archive(f"Fee-Statement-{student}-{code[:8]}.pdf", pdf, record)
     return {"code": code, "verification_url": _verify_url(code), "document": record.name,
             "file_url": file.file_url}

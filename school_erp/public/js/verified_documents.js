@@ -1,18 +1,29 @@
 // Issue the immutable QR-stamped PDF via a deliberate staff action.
+frappe.provide("school_erp");
+
+// What staff see once a verified PDF exists: open it, and the link anyone can use to check it
+school_erp.show_verified_document = function (r) {
+    const esc = frappe.utils.escape_html;
+    frappe.msgprint({
+        title: __("Verified document issued"),
+        indicator: "green",
+        message: `<p><a class="btn btn-sm btn-primary" href="${esc(r.file_url)}" target="_blank">${__("Open PDF")}</a></p>
+            <p>${__("Print or send this exact PDF. Anyone can scan its QR code, or open the link below, to check it is genuine.")}</p>
+            <p class="small"><a href="${esc(r.verification_url)}" target="_blank">${esc(r.verification_url)}</a></p>
+            <p class="small text-muted">${__("Issuing it again revokes this copy. The PDF is kept privately under Verified Documents.")}</p>`,
+    });
+};
+
 function school_issue_verified_document(frm) {
     frappe.confirm(__("Issue a new verified PDF? Any previous verification code for this document will be revoked."), () => {
         frappe.call({
             method: "school_erp.api.document_verification.issue",
             args: {doctype: frm.doctype, name: frm.doc.name},
             freeze: true,
+            freeze_message: __("Creating PDF..."),
             callback(r) {
                 if (!r.message) return;
-                frappe.msgprint({
-                    title: __("Verified document issued"),
-                    message: __("Verification code: {0}", [frappe.utils.escape_html(r.message.code)])
-                        + "<p>" + __("The PDF was saved as a private attachment. Use the private file link in the document's attachments to download it.") + "</p>",
-                    indicator: "green"
-                });
+                school_erp.show_verified_document(r.message);
                 frm.reload_doc();
             }
         });

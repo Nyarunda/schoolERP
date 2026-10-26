@@ -39,7 +39,7 @@
       const code = field.value.trim();
       const data = await request("/api/method/school_erp.api.document_verification.verify?code=" + encodeURIComponent(code));
       result.textContent = data.status === "Valid"
-        ? "VALID — " + data.document_type + ", issued " + (data.issued_on || "date unavailable")
+        ? "VALID — " + data.document_type + " issued by " + data.issuer + " on " + (data.issued_on || "date unavailable").slice(0, 16)
         : data.status === "Revoked" ? "REVOKED — This issued version is no longer valid." : "NOT FOUND — Check the issuing school and code.";
       compare.hidden = data.status !== "Valid";
     } catch (error) { result.textContent = "Could not check document right now."; }

@@ -93,6 +93,17 @@ class TestSubscriptionBilling(TestCase):
         self.assertEqual(frappe.db.get_value("SaaS Invoice", out["invoice"], ["status", "months"]), ("Paid", 3))
         self.assertEqual(frappe.db.get_value("SaaS Payment", out["payment"], "mode"), "Bank Transfer")
 
+    def test_manual_invoice_submit_rechecks_existing_unpaid_invoice(self):
+        existing = billing.create_invoice(self.sub, months=1)
+        self.assertTrue(existing)
+        other = frappe.get_doc({
+            "doctype": "SaaS Invoice", "tenant": self.tenant,
+            "subscription": self.sub, "issue_date": nowdate(),
+            "period_start": add_days(nowdate(), 11), "months": 1,
+        }).insert()
+        self.assertRaises(frappe.ValidationError, other.submit)
+        self.assertEqual(frappe.db.get_value("SaaS Invoice", other.name, "docstatus"), 0)
+
     def test_whitespace_payment_reference_rejected(self):
         invoice = billing.create_invoice(self.sub, months=1)
         payment = frappe.get_doc({

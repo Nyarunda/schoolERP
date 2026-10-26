@@ -44,7 +44,8 @@
       "fieldname": "external_invoice_no",
       "fieldtype": "Data",
       "label": "External Invoice No",
-      "reqd": 1
+      "reqd": 1,
+      "unique": 0
     },
     {
       "fieldname": "buyer_name",
@@ -124,7 +125,8 @@
     {
       "fieldname": "source_payload_hash",
       "fieldtype": "Data",
-      "label": "Source Payload Hash"
+      "label": "Source Payload Hash",
+      "read_only": 1
     },
     {
       "fieldname": "reviewed_by",

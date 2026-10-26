@@ -102,6 +102,10 @@ def create_invoice(subscription, months=None, period_start=None, discount_amount
 
 
 def _create_invoice(subscription, months=None, period_start=None, discount_amount=0, description=None):
+    # All creation paths (including the scheduler) serialize by subscription.
+    # InnoDB holds this row lock until the surrounding request commits.
+    if not frappe.db.sql("SELECT name FROM `tabSaaS Subscription` WHERE name = %s FOR UPDATE", (subscription,)):
+        frappe.throw("Unknown subscription", frappe.ValidationError)
     sub = frappe.get_doc("SaaS Subscription", subscription)
     if sub.status == "Cancelled":
         frappe.throw("A cancelled subscription cannot be invoiced", frappe.ValidationError)
@@ -128,6 +132,8 @@ def validate_payment(doc):
     if flt(doc.amount) > flt(inv.outstanding) + 0.005:
         frappe.throw(f"That is more than the {flt(inv.outstanding):,.2f} still owed on {doc.invoice}", frappe.ValidationError)
     doc.reference = (doc.reference or "").strip().upper()
+    if not doc.reference:
+        frappe.throw("A non-empty payment reference is required", frappe.ValidationError)
     clash = frappe.db.get_value("SaaS Payment", {"mode": doc.mode, "reference": doc.reference, "docstatus": 1, "name": ("!=", doc.name)})
     if clash:
         frappe.throw(f"{doc.mode} reference {doc.reference} is already recorded on {clash}", frappe.ValidationError)
@@ -137,6 +143,8 @@ def validate_payment(doc):
 def apply_payment(doc):
     """A payment was submitted: update its invoice, and if that is now paid, extend the subscription; pay commission."""
     inv = refresh_invoice(doc.invoice)
+    if flt(inv.paid_amount) > flt(inv.total) + 0.005:
+        frappe.throw("Submitted payments exceed invoiced amount; transaction rolled back", frappe.ValidationError)
     if inv.status == "Paid":
         sub = frappe.get_doc("SaaS Subscription", inv.subscription)
         if not sub.ends_on or getdate(inv.period_end) > getdate(sub.ends_on):

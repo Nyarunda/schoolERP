@@ -20,14 +20,14 @@ function school_issue_verified_document(frm) {
 }
 frappe.ui.form.on("Fee Payment", {
     refresh(frm) {
-        if (frm.doc.docstatus === 1 && frappe.user.has_role(["School Admin", "System Manager", "Bursar"])) {
+        if (frm.doc.docstatus === 1 && ["School Admin", "System Manager", "Bursar"].some(role => frappe.user.has_role(role))) {
             frm.add_custom_button(__("Issue Verified PDF"), () => school_issue_verified_document(frm));
         }
     }
 });
 frappe.ui.form.on("Report Card", {
     refresh(frm) {
-        if (frm.doc.status === "Published" && frappe.user.has_role(["School Admin", "System Manager", "Head Teacher"])) {
+        if (frm.doc.status === "Published" && ["School Admin", "System Manager", "Head Teacher"].some(role => frappe.user.has_role(role))) {
             frm.add_custom_button(__("Issue Verified PDF"), () => school_issue_verified_document(frm));
         }
     }

@@ -52,3 +52,37 @@ frappe.call("stemic_control.etims.prepare_invoice", {
 ```
 
 This creates an internal **Draft**, not a tax invoice registered at KRA.
+
+
+## Stage 2: submission workflow and seller segregation
+
+The same invoice registry now distinguishes `seller_scope = School` from `Stemic Platform`. Stemic platform subscription sales require a separately enabled `Stemic Tax Settings` Single DocType. The school tenant is the **buyer** for these invoices, not the registered seller.
+
+New operations:
+- `stemic_control.etims.queue_submission(name)`: authorizes the admin, enforces Ready status and explicit site-config opt-in; queues only.
+- `stemic_control.etims.submit_queued(name)`: background worker invokes a deployment-installed certified provider adapter. HTTP success **does not** equal KRA acceptance.
+- `stemic_control.etims.invoice_history(name)`: read-only audit history.
+- `stemic_control.etims.reconciliation_summary()`: operational status summary.
+- The invoice form adds Approve, Queue and History actions.
+- Audit events are append-only through the service path.
+
+Provider adapter is **not included**: each licensed integration must implement its approved KRA OSCU/VSCU or certified intermediary protocol and **independently verify** the KRA acknowledgement. No production credentials are bundled. Configure through per-site private site_config values only after implementation and certification:
+
+```json
+{
+  "stemic_etims_live_enabled": 0,
+  "stemic_etims_adapter": "stemic_control_integrations.your_certified_provider.submit"
+}
+```
+
+Adapter is a trusted Python function receiving a tenant-bound invoice dict and returns one of:
+
+- `{"status": "pending"}`: no conclusive acknowledgement, remain Pending Submission.
+- `{"status": "rejected", "reason": "..."}`: explicit verified tax authority/provider rejection.
+- `{"status": "accepted", "signature_verified": true, "provider_reference": "...", "kra_invoice_number": "...", "verification_evidence": "..."}`: only after independent verification of the returned authority control-unit evidence.
+
+The adapter must be installed by the deployment administrator, authenticate securely, make submission idempotent using `invoice_key`, provide lookup/reconciliation of uncertain outcomes and never blindly set `signature_verified`. This integration boundary is **not a certified KRA submission service on its own**. Retry a Pending Submission only by querying the upstream provider using its idempotency key, never by reissuing a new invoice blindly.
+
+The original School customer workflow and the platform subscription seller flow have different legal sellers; do not use a school PIN for Stemic invoices. All exempt/zero-rated/standard treatment remains subject to accountant review.
+
+**Still external to this PR:** provider mapping, credentials, signing/receipt-QR fields, a working bank/M-Pesa settlement reconciliation, provider lookup/retry workflow, tax authority certification and live end-to-end acceptance. Live configuration stays disabled until those exist.

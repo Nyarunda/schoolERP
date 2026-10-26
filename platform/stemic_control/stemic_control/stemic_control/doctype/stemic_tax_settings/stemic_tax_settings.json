@@ -1,0 +1,68 @@
+{
+  "doctype": "DocType",
+  "name": "Stemic Tax Settings",
+  "module": "Stemic Control",
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "issingle": 1,
+  "field_order": [
+    "seller_name",
+    "seller_pin",
+    "branch_id",
+    "integration_mode",
+    "enabled",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "seller_name",
+      "fieldtype": "Data",
+      "label": "Seller Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "seller_pin",
+      "fieldtype": "Data",
+      "label": "Seller Pin",
+      "reqd": 1
+    },
+    {
+      "fieldname": "branch_id",
+      "fieldtype": "Data",
+      "label": "Branch Id"
+    },
+    {
+      "fieldname": "integration_mode",
+      "fieldtype": "Select",
+      "label": "Integration Mode",
+      "options": "Manual\nCertified Integrator\nOSCU\nVSCU"
+    },
+    {
+      "fieldname": "enabled",
+      "fieldtype": "Check",
+      "label": "Enabled",
+      "default": "0"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    }
+  ]
+}

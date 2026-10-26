@@ -19,3 +19,12 @@ def test_balancing_and_manual_classification():
         validate_amounts("1000", "160", "1200", "Standard Rated")
     with pytest.raises(ValueError):
         validate_amounts("1000", "0", "1000", "Review Required")
+
+
+def test_reject_zero_amount_and_invalid_precision():
+    with pytest.raises(ValueError):
+        validate_amounts("0", "0", "0", "Exempt")
+    with pytest.raises(ValueError):
+        validate_amounts("12.345", "0", "12.345", "Exempt")
+    with pytest.raises(ValueError):
+        validate_amounts("NaN", "0", "100", "Exempt")

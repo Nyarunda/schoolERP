@@ -21,6 +21,14 @@
 
 ## Verify before merging
 
-Run `pytest school_erp/tests/test_mpesa_security.py` in the Bench environment and the project's `bash scripts/check.sh`, plus Frappe integration tests. Retest sandbox C2B registration (600000) and STK (174379) separately on a disposable school; the current settings share a shortcode. This branch is **not independently runtime tested** by the assistant.
+Run `pytest school_erp/tests/test_mpesa_security.py` in the Bench environment and the project's `bash scripts/check.sh`, plus Frappe integration tests. Retest sandbox C2B registration (600000) and STK (174379) separately on a disposable school; the current settings share a shortcode. Runtime results (26 October 2026, Daraja sandbox and a dev site):
+
+- Paybill C2B on 600000: Safaricom's confirmation reached the public URL, passed these checks and was posted by Student ID.
+- Paybill STK on 174379: the result arrived by Safaricom's callback.
+- Buy Goods confirmations sent to the public URL: one paid to the till number was matched by the payer's phone and posted. One paid to the store number from a masked phone was left Unmatched.
+- A foreign shortcode, an amount of 0.001 and a missing TransID were each refused with HTTP 400 and not stored.
+- Till STK and Till C2B simulate cannot be tested in the sandbox, which has no Buy Goods shortcode. Prove them with a small live payment.
+
+Two defects found in review were fixed: Till payments were refused (a till is reported by its store or its till number), and the STK payer-phone check never normalised numbers (`r"\\D"`).
 
 **Do not enable live automatic posting solely on the strength of these changes.** Existing site data and uncommitted local changes were not touched.

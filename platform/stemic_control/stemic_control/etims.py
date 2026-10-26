@@ -1,4 +1,4 @@
-"""eTIMS preparation and review. No live KRA submission is performed by this module."""
+"""Reviewed tax invoices and controlled certified-provider integration boundary."""
 import hashlib
 import json
 import re
@@ -95,7 +95,7 @@ def compliance_overview():
             "submitted": count("SaaS eTIMS Invoice", {"status": "Submitted"}),
             "rejected": count("SaaS eTIMS Invoice", {"status": "Rejected"}),
             "profiles": count("SaaS Tax Profile", {"enabled": 1}),
-            "live_submission_enabled": False}
+            "live_submission_enabled": bool(frappe.conf.get("stemic_etims_live_enabled"))}
 
 
 def _audit(invoice, event_type, old_status=None, new_status=None, details=""):
@@ -103,6 +103,7 @@ def _audit(invoice, event_type, old_status=None, new_status=None, details=""):
         "event_type": event_type, "old_status": old_status,
         "new_status": new_status, "details": str(details or "")[:500],
         "recorded_on": now_datetime(), "actor": frappe.session.user})
+    event.flags.etims_event = True
     event.insert(ignore_permissions=True)
 
 

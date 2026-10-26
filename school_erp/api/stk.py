@@ -19,7 +19,7 @@ from frappe import _
 from frappe.utils import add_to_date, cint, flt, now_datetime
 
 from school_erp import licensing
-from school_erp.logic.paybill import account_key
+from school_erp.logic.paybill import account_key, stk_parties
 from school_erp.logic.text import normalize_phone
 
 EAT = timezone(timedelta(hours=3))  # Daraja timestamps are East Africa Time
@@ -71,17 +71,18 @@ def initiate(student: str, amount, phone: str, requested_by: str | None = None) 
 		frappe.throw(_("Enter a valid Safaricom number, e.g. 0712 345 678"))
 
 	ts = _timestamp()
+	transaction_type, party_b = stk_parties(settings.mpesa_account_type, settings.mpesa_shortcode, settings.paybill_number)
 	payload = {
 		"BusinessShortCode": settings.mpesa_shortcode,
 		"Password": _password(settings.mpesa_shortcode, settings.get_password("mpesa_passkey"), ts),
 		"Timestamp": ts,
-		"TransactionType": "CustomerPayBillOnline",
+		"TransactionType": transaction_type,
 		"Amount": amount,
 		"PartyA": msisdn,
-		"PartyB": settings.mpesa_shortcode,
+		"PartyB": party_b,
 		"PhoneNumber": msisdn,
 		"CallBackURL": callback_url(settings),
-		"AccountReference": account_key(student)[:12],  # Daraja limit: 12 characters
+		"AccountReference": account_key(student)[:12],  # Daraja limit: 12 characters (a Till ignores it; the request links the student)
 		"TransactionDesc": "School fees",
 	}
 	req = frappe.get_doc({"doctype": "STK Push Request", "student": student, "amount": amount, "phone": msisdn,
@@ -95,7 +96,7 @@ def initiate(student: str, amount, phone: str, requested_by: str | None = None) 
 	except Exception as e:
 		req.db_set({"status": "Failed", "result_desc": f"Could not reach M-Pesa: {e}"[:140]})
 		frappe.db.commit()
-		frappe.throw(_("Could not reach M-Pesa right now. Please try again or pay via Paybill."))
+		frappe.throw(_("Could not reach M-Pesa right now. Please try again shortly."))
 	if str(body.get("ResponseCode")) != "0":
 		req.db_set({"status": "Failed", "result_desc": (body.get("errorMessage") or body.get("ResponseDescription") or str(body))[:140]})
 		frappe.db.commit()

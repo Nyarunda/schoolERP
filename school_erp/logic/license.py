@@ -137,6 +137,8 @@ def evaluate(key: str, public_key_b64: str, today: date, site: str | None = None
 		"expires": None,
 		"days_left": None,
 		"max_students": 0,
+		"issued": None,
+		"site": None,
 		"message": "No license key. Only Students, Classes and Streams are available.",
 	}
 	if not key:
@@ -158,6 +160,8 @@ def evaluate(key: str, public_key_b64: str, today: date, site: str | None = None
 		licensed_to=payload.get("school"),
 		expires=expires.isoformat() if expires else None,
 		max_students=int(payload.get("max_students") or 0),
+		issued=payload.get("issued"),
+		site=payload.get("site"),
 	)
 
 	if not expires:

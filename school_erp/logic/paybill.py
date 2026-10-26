@@ -9,6 +9,29 @@ REJECT_ACCOUNT = {"ResultCode": "C2B00012", "ResultDesc": "Rejected"}  # invalid
 REJECT_AMOUNT = {"ResultCode": "C2B00013", "ResultDesc": "Rejected"}  # invalid amount
 REJECT_OTHER = {"ResultCode": "C2B00016", "ResultDesc": "Rejected"}  # other error
 
+# School Settings > M-Pesa account type. A Till (Buy Goods) has no account number: payments carry no Student ID.
+PAYBILL, TILL = "Paybill", "Till (Buy Goods)"
+
+
+def is_till(account_type: str | None) -> bool:
+	return (account_type or "").startswith("Till")
+
+
+def pay_line(account_type: str | None, number: str | None, account: str | None) -> str:
+	"""How a parent pays, in one line for SMS, statements and receipts."""
+	if not number:
+		return ""
+	if is_till(account_type):
+		return f"M-Pesa Buy Goods, Till {number}"
+	return f"M-Pesa Paybill {number}, Account {account}" if account else f"M-Pesa Paybill {number}"
+
+
+def stk_parties(account_type: str | None, shortcode: str, till_number: str | None) -> tuple[str, str]:
+	"""(TransactionType, PartyB) for an STK push. A Till is paid to the till number, authenticated by its store number."""
+	if is_till(account_type):
+		return "CustomerBuyGoodsOnline", till_number or shortcode
+	return "CustomerPayBillOnline", shortcode
+
 # Safaricom refuses callback URLs that contain these words
 FORBIDDEN_URL_WORDS = ("mpesa", "m-pesa", "safaricom", "exec", "exe", "cmd", "sql", "query")
 

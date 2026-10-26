@@ -71,6 +71,11 @@ def _frappe_cli(*args, timeout=600, secrets_=()) -> str:
     return output
 
 
+def _site_dir_exists(site: str) -> bool:
+    """Whether the bench already has a folder for this site (tests replace this, not os.path.isdir itself)."""
+    return os.path.isdir(os.path.join(_bench(), "sites", site))
+
+
 def check_ready(site: str) -> None:
     """Independent readiness check: the site answers on its own database and lists every required app."""
     listed = _frappe_cli("--site", site, "list-apps", timeout=120)
@@ -120,7 +125,7 @@ def run(job: str) -> str:
     password = None
     try:
         root = _root_password()
-        if os.path.isdir(os.path.join(_bench(), "sites", site)):
+        if _site_dir_exists(site):
             raise ProvisioningError(f"Site {site} already exists on this bench; refusing to overwrite it")
         password = secrets.token_urlsafe(14)
         args = ["new-site", site, "--db-root-password", root, "--admin-password", password]
@@ -161,7 +166,7 @@ def run(job: str) -> str:
 
 def _drop_partial_site(site) -> str:
     """Remove what a failed new-site left behind so the school can be retried cleanly."""
-    if not os.path.isdir(os.path.join(_bench(), "sites", site)):
+    if not _site_dir_exists(site):
         return ""
     try:
         _frappe_cli("drop-site", site, "--db-root-password", _root_password(), "--no-backup", "--force",

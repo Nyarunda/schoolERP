@@ -1,0 +1,157 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS eTIMS Invoice",
+  "module": "Stemic Control",
+  "autoname": "format:ETI-{YYYY}-{#####}",
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "field_order": [
+    "tenant",
+    "subscription",
+    "external_invoice_no",
+    "buyer_name",
+    "buyer_pin",
+    "seller_pin",
+    "tax_treatment",
+    "currency",
+    "net_amount",
+    "vat_amount",
+    "total_amount",
+    "status",
+    "provider_reference",
+    "kra_invoice_number",
+    "submitted_on",
+    "last_error",
+    "source_payload_hash",
+    "reviewed_by",
+    "reviewed_on"
+  ],
+  "fields": [
+    {
+      "fieldname": "tenant",
+      "fieldtype": "Link",
+      "label": "Tenant",
+      "options": "SaaS Tenant",
+      "reqd": 1
+    },
+    {
+      "fieldname": "subscription",
+      "fieldtype": "Link",
+      "label": "Subscription",
+      "options": "SaaS Subscription"
+    },
+    {
+      "fieldname": "external_invoice_no",
+      "fieldtype": "Data",
+      "label": "External Invoice No",
+      "reqd": 1
+    },
+    {
+      "fieldname": "buyer_name",
+      "fieldtype": "Data",
+      "label": "Buyer Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "buyer_pin",
+      "fieldtype": "Data",
+      "label": "Buyer Pin"
+    },
+    {
+      "fieldname": "seller_pin",
+      "fieldtype": "Data",
+      "label": "Seller Pin",
+      "reqd": 1
+    },
+    {
+      "fieldname": "tax_treatment",
+      "fieldtype": "Select",
+      "label": "Tax Treatment",
+      "options": "Review Required\nExempt\nZero Rated\nStandard Rated",
+      "reqd": 1,
+      "default": "Review Required"
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Data",
+      "label": "Currency"
+    },
+    {
+      "fieldname": "net_amount",
+      "fieldtype": "Currency",
+      "label": "Net Amount",
+      "reqd": 1
+    },
+    {
+      "fieldname": "vat_amount",
+      "fieldtype": "Currency",
+      "label": "Vat Amount"
+    },
+    {
+      "fieldname": "total_amount",
+      "fieldtype": "Currency",
+      "label": "Total Amount",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Draft\nReady\nPending Submission\nSubmitted\nRejected\nCancelled",
+      "default": "Draft",
+      "read_only": 1
+    },
+    {
+      "fieldname": "provider_reference",
+      "fieldtype": "Data",
+      "label": "Provider Reference"
+    },
+    {
+      "fieldname": "kra_invoice_number",
+      "fieldtype": "Data",
+      "label": "Kra Invoice Number"
+    },
+    {
+      "fieldname": "submitted_on",
+      "fieldtype": "Datetime",
+      "label": "Submitted On"
+    },
+    {
+      "fieldname": "last_error",
+      "fieldtype": "Small Text",
+      "label": "Last Error"
+    },
+    {
+      "fieldname": "source_payload_hash",
+      "fieldtype": "Data",
+      "label": "Source Payload Hash"
+    },
+    {
+      "fieldname": "reviewed_by",
+      "fieldtype": "Link",
+      "label": "Reviewed By",
+      "options": "User"
+    },
+    {
+      "fieldname": "reviewed_on",
+      "fieldtype": "Datetime",
+      "label": "Reviewed On"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    }
+  ]
+}

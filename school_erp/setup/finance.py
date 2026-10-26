@@ -63,6 +63,36 @@ def grant_bank_tools():
 				update_permission_property(doctype, role, 0, ptype, value, validate=False)
 
 
+# Students are customers too (one per student, Customer.student set). Everyone else is a normal customer and lives
+# in this group, so Finance can keep the two apart: fees for students, invoices for customers.
+CUSTOMER_GROUP = "School Customers"
+
+
+def student_group():
+	return frappe.db.get_single_value("School Settings", "customer_group") or "Students"
+
+
+def ensure_customer_group():
+	if not frappe.db.exists("Customer Group", "All Customer Groups"):
+		return
+	if not frappe.db.exists("Customer Group", CUSTOMER_GROUP):
+		frappe.get_doc({"doctype": "Customer Group", "customer_group_name": CUSTOMER_GROUP,
+						"parent_customer_group": "All Customer Groups"}).insert(ignore_permissions=True)
+	default = frappe.db.get_single_value("Selling Settings", "customer_group")
+	if not default or default == student_group():
+		frappe.db.set_single_value("Selling Settings", "customer_group", CUSTOMER_GROUP)  # new customers are not students
+
+
+def keep_students_apart(doc, method=None):
+	"""Customer validate hook: a student's account is in the students group, and only students are."""
+	group = student_group()
+	if doc.get("student"):
+		doc.customer_group = group
+	elif doc.customer_group == group:
+		doc.customer_group = CUSTOMER_GROUP if frappe.db.exists("Customer Group", CUSTOMER_GROUP) else "All Customer Groups"
+
+
 def setup_finance():
 	grant_bank_tools()
 	sync_all_users()
+	ensure_customer_group()

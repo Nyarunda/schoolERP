@@ -145,3 +145,36 @@ class TestFinance(TestCase):
 		self.assertIn("Bank Reconciliation Tool", [l.link_to for l in ws.links])
 		for card in ("Owed to Suppliers", "Paid to Suppliers This Month", "Owed by Other Customers", "Unreconciled Bank Lines"):
 			self.assertTrue(frappe.db.exists("Number Card", card), card)
+
+	# ------------------------------------------------------------------ students vs customers
+	def test_students_and_normal_customers_are_kept_apart(self):
+		from school_erp.setup.finance import CUSTOMER_GROUP, student_group
+
+		self.assertEqual(frappe.db.get_single_value("Selling Settings", "customer_group"), CUSTOMER_GROUP)
+		hall = frappe.get_doc({"doctype": "Customer", "customer_name": f"Church Hall Hire {frappe.generate_hash(length=4)}",
+							   "customer_group": student_group()}).insert()  # put in the students group by mistake
+		self.assertEqual(hall.customer_group, CUSTOMER_GROUP)
+
+		student = frappe.get_doc({"doctype": "Student", "first_name": "apart", "last_name": "test", "stream": "Grade 4 Test",
+								  "guardians": [{"guardian_name": "Grace Test", "relation": "Mother", "mobile_no": "0712345678"}]}).insert()
+		self.assertEqual(frappe.db.get_value("Customer", student.customer, "customer_group"), student_group())
+
+		s = frappe.get_doc("School Settings")
+		income = frappe.db.get_value("Account", {"company": s.company, "root_type": "Income", "is_group": 0})
+		for customer, amount in ((hall.name, 5000), (student.customer, 7000)):
+			si = frappe.get_doc({"doctype": "Sales Invoice", "customer": customer, "company": s.company, "posting_date": nowdate(),
+								 "due_date": nowdate(), "items": [{"item_code": "School Service (test)", "qty": 1, "rate": amount,
+																   "income_account": income, "cost_center": s.cost_center}]})
+			si.insert()
+			si.submit()
+
+		from school_erp.school.report.customer_balances.customer_balances import execute
+
+		_c, rows, *_ = execute({"as_on": nowdate()})
+		names = {r.customer for r in rows}
+		self.assertIn(hall.name, names)
+		self.assertNotIn(student.customer, names)  # students' balances are in Fee Balances
+		self.assertEqual(flt(next(r for r in rows if r.customer == hall.name).outstanding), 5000)
+
+		card = frappe.get_doc("Number Card", "Outstanding Fees")
+		self.assertIn(["Sales Invoice", "student", "is", "set"], frappe.parse_json(card.filters_json))

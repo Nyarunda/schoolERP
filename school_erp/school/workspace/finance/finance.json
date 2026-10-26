@@ -10,7 +10,7 @@
    "label": "Money Received"
   }
  ],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Finance</b></span>\", \"col\": 12}}, {\"id\": \"fnc0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Owed to Suppliers\", \"col\": 3}}, {\"id\": \"fnc1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paid to Suppliers This Month\", \"col\": 3}}, {\"id\": \"fnc2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Owed by Other Customers\", \"col\": 3}}, {\"id\": \"fnc3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Unreconciled Bank Lines\", \"col\": 3}}, {\"id\": \"fch0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Supplier Payments\", \"col\": 6}}, {\"id\": \"fch1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Money Received\", \"col\": 6}}, {\"id\": \"sh\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Quick actions</b></span>\", \"col\": 12}}, {\"id\": \"fsc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"New Supplier Bill\", \"col\": 4}}, {\"id\": \"fsc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Pay or Receive\", \"col\": 4}}, {\"id\": \"fsc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"New Customer Invoice\", \"col\": 4}}, {\"id\": \"fsc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Reconciliation\", \"col\": 4}}, {\"id\": \"fsc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Accounts Payable\", \"col\": 4}}, {\"id\": \"fsc5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profit and Loss\", \"col\": 4}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"fcd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Suppliers & Bills\", \"col\": 4}}, {\"id\": \"fcd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Customers & Invoices\", \"col\": 4}}, {\"id\": \"fcd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Payments\", \"col\": 4}}, {\"id\": \"fcd3\", \"type\": \"card\", \"data\": {\"card_name\": \"Banking & Reconciliation\", \"col\": 4}}, {\"id\": \"fcd4\", \"type\": \"card\", \"data\": {\"card_name\": \"Tax\", \"col\": 4}}, {\"id\": \"fcd5\", \"type\": \"card\", \"data\": {\"card_name\": \"Statements & Ledgers\", \"col\": 4}}, {\"id\": \"fcd6\", \"type\": \"card\", \"data\": {\"card_name\": \"Financial Reports\", \"col\": 4}}]",
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Finance</b></span>\", \"col\": 12}}, {\"id\": \"fnc0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Owed to Suppliers\", \"col\": 3}}, {\"id\": \"fnc1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paid to Suppliers This Month\", \"col\": 3}}, {\"id\": \"fnc2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Owed by Other Customers\", \"col\": 3}}, {\"id\": \"fnc3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Unreconciled Bank Lines\", \"col\": 3}}, {\"id\": \"fch0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Supplier Payments\", \"col\": 6}}, {\"id\": \"fch1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Money Received\", \"col\": 6}}, {\"id\": \"sh\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h5\\\"><b>Quick actions</b></span>\", \"col\": 12}}, {\"id\": \"fsc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"New Supplier Bill\", \"col\": 3}}, {\"id\": \"fsc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Pay or Receive\", \"col\": 3}}, {\"id\": \"fsc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customers\", \"col\": 3}}, {\"id\": \"fsc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Customer Invoices\", \"col\": 3}}, {\"id\": \"fsc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"New Customer Invoice\", \"col\": 3}}, {\"id\": \"fsc5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Bank Reconciliation\", \"col\": 3}}, {\"id\": \"fsc6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Accounts Payable\", \"col\": 3}}, {\"id\": \"fsc7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Profit and Loss\", \"col\": 3}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"fcd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Suppliers & Bills\", \"col\": 4}}, {\"id\": \"fcd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Payments\", \"col\": 4}}, {\"id\": \"fcd3\", \"type\": \"card\", \"data\": {\"card_name\": \"Banking & Reconciliation\", \"col\": 4}}, {\"id\": \"fcd4\", \"type\": \"card\", \"data\": {\"card_name\": \"Tax\", \"col\": 4}}, {\"id\": \"fcd5\", \"type\": \"card\", \"data\": {\"card_name\": \"Statements & Ledgers\", \"col\": 4}}, {\"id\": \"fcd6\", \"type\": \"card\", \"data\": {\"card_name\": \"Financial Reports\", \"col\": 4}}]",
  "creation": "2026-10-26 16:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -73,48 +73,6 @@
    "label": "Expense Category",
    "link_count": 0,
    "link_to": "Expense Category",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Customers & Invoices",
-   "link_count": 3,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Customer",
-   "link_count": 0,
-   "link_to": "Customer",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Sales Invoice",
-   "link_count": 0,
-   "link_to": "Sales Invoice",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Fee Payment",
-   "link_count": 0,
-   "link_to": "Fee Payment",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -282,7 +240,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Statements & Ledgers",
-   "link_count": 5,
+   "link_count": 6,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -291,7 +249,18 @@
    "dependencies": "",
    "hidden": 0,
    "is_query_report": 1,
-   "label": "Accounts Receivable",
+   "label": "Customer Balances",
+   "link_count": 0,
+   "link_to": "Customer Balances",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Accounts Receivable (all)",
    "link_count": 0,
    "link_to": "Accounts Receivable",
    "link_type": "Report",
@@ -407,7 +376,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-26 16:00:00.000000",
+ "modified": "2026-10-26 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Finance",
@@ -449,6 +418,24 @@
    "label": "Pay or Receive",
    "link_to": "Payment Entry",
    "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Customers",
+   "link_to": "Customer",
+   "type": "DocType",
+   "stats_filter": "[[\"Customer\",\"student\",\"is\",\"not set\"]]",
+   "format": "{} customers"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Customer Invoices",
+   "link_to": "Sales Invoice",
+   "type": "DocType",
+   "stats_filter": "[[\"Sales Invoice\",\"student\",\"is\",\"not set\"],[\"Sales Invoice\",\"docstatus\",\"=\",1],[\"Sales Invoice\",\"outstanding_amount\",\">\",0]]",
+   "format": "{} unpaid"
   },
   {
    "color": "Blue",

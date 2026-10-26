@@ -7,6 +7,7 @@
   "track_changes": 1,
   "field_order": [
     "invoice_key",
+    "seller_scope",
     "tenant",
     "subscription",
     "external_invoice_no",
@@ -165,6 +166,14 @@
       "fieldtype": "Datetime",
       "label": "Reviewed On",
       "read_only": 1
+    },
+    {
+      "fieldname": "seller_scope",
+      "fieldtype": "Select",
+      "label": "Legal Seller",
+      "options": "School\nStemic Platform",
+      "read_only": 1,
+      "default": "School"
     }
   ],
   "permissions": [

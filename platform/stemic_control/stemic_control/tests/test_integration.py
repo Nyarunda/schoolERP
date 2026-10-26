@@ -151,3 +151,31 @@ class TestControlPlane(TestCase):
         frappe.set_user("Guest")
         self.assertRaises(frappe.PermissionError, api.overview)
         self.assertRaises(frappe.PermissionError, api.register_tenant, "X", "guest-school", "a@b.test")
+
+    def test_attention_feed_names_schools_and_hides_retried_failures(self):
+        failed = self.tenant()
+        frappe.db.set_value("SaaS Tenant", failed, "status", "Failed")
+        job = frappe.get_doc({"doctype": "SaaS Provisioning Job", "tenant": failed, "action": "Create Site",
+                              "idempotency_key": "att-" + frappe.generate_hash(length=10), "status": "Queued"}).insert()
+        frappe.db.set_value("SaaS Provisioning Job", job.name, {"status": "Failed", "last_error": "\nDatabase refused\nmore"})
+        self.slug = "retried-" + frappe.generate_hash(length=6).lower()
+        retried = self.tenant()  # its old job failed, but the school was queued again
+        frappe.db.set_value("SaaS Tenant", retried, "status", "Pending")
+
+        groups = {g["key"]: g for g in api.operations_queue(per_group=10)["groups"]}
+        self.assertEqual(set(groups), {"failed_sites", "overdue", "dns", "creating"})  # every group, even when empty
+        failed_item = next(i for i in groups["failed_sites"]["items"] if i["name"] == failed)
+        self.assertEqual((failed_item["school"], failed_item["detail"]), ("Greenfield Academy", "Database refused"))
+        self.assertNotIn(retried, [i["name"] for i in groups["failed_sites"]["items"]])
+        self.assertIn(retried, [i["name"] for i in groups["creating"]["items"]])
+        self.assertEqual(groups["failed_sites"]["count"], frappe.db.count("SaaS Tenant", {"status": "Failed"}))
+        self.assertLessEqual(len(api.operations_queue(per_group=1)["groups"][0]["items"]), 1)
+
+    def test_attention_feed_is_for_platform_admins_only(self):
+        user = "agent-" + frappe.generate_hash(length=6) + "@stemic.test"
+        frappe.get_doc({"doctype": "User", "email": user, "first_name": "Agent", "send_welcome_email": 0,
+            "roles": [{"role": "Stemic Agent"}]}).insert(ignore_permissions=True)
+        frappe.set_user(user)
+        self.assertRaises(frappe.PermissionError, api.operations_queue)
+        frappe.set_user("Guest")
+        self.assertRaises(frappe.PermissionError, api.operations_queue)

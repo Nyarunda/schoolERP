@@ -48,6 +48,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
     let tax = null;
     let busy = false;
     let loadError = false;
+    let attention = null;  // operations_queue: what needs an operator (null = not loaded)
     const tabs = [["home","Overview"],["schools","Schools"],["billing","Billing"],["agents","Agents"],["tax","Kenya Tax & eTIMS"]];
 
     function render() {
@@ -115,6 +116,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             section.append(card);
         }
         root.append(section);
+        if (selected === "home") root.append(attention_feed());
         if (selected === "tax") {
             const disclaimer = document.createElement("p");
             disclaimer.className = "stemic-note";
@@ -126,6 +128,67 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         note.textContent = __("Figures are counts from admin records, not independently verified infrastructure health or collected revenue.");
         root.append(note);
     }
+    // "Needs attention": a few newest items per group, each naming the school and opening the record to act on
+    function attention_feed() {
+        const wrap = document.createElement("section");
+        wrap.className = "stemic-attention";
+        const heading = document.createElement("h3");
+        heading.className = "stemic-attention-title";
+        heading.textContent = __("Needs attention");
+        wrap.append(heading);
+        if (!attention) {
+            const note = document.createElement("p");
+            note.className = "text-muted";
+            note.textContent = busy ? __("Loading...") : __("Could not load the attention list. Use Refresh to try again.");
+            wrap.append(note);
+            return wrap;
+        }
+        const open = attention.groups.filter((g) => g.count);
+        if (!open.length) {
+            const clear = document.createElement("p");
+            clear.className = "stemic-attention-clear";
+            clear.textContent = __("Nothing needs attention: no failed sites, overdue payments, pending domains or sites being created.");
+            wrap.append(clear);
+            return wrap;
+        }
+        const grid = document.createElement("div");
+        grid.className = "stemic-attention-grid";
+        for (const group of open) {
+            const box = document.createElement("div");
+            box.className = `stemic-attention-group ${group.severity}`;
+            const head = document.createElement("div");
+            head.className = "stemic-attention-head";
+            const title = document.createElement("strong");
+            title.textContent = `${__(group.label)} (${group.count})`;
+            const all = document.createElement("button");
+            all.type = "button";
+            all.className = "btn btn-link btn-xs";
+            all.textContent = __("View all");
+            all.addEventListener("click", () => {
+                frappe.route_options = { ...group.filters };
+                frappe.set_route("List", group.doctype);
+            });
+            head.append(title, all);
+            box.append(head);
+            for (const item of group.items) {
+                const row = document.createElement("button");
+                row.type = "button";
+                row.className = "stemic-attention-item";
+                const school = document.createElement("strong");
+                school.textContent = item.school;
+                const detail = document.createElement("span");
+                detail.textContent = item.detail;
+                const when = document.createElement("small");
+                when.textContent = frappe.datetime.prettyDate(item.modified);
+                row.append(school, detail, when);
+                row.addEventListener("click", () => frappe.set_route("Form", item.doctype, item.name));
+                box.append(row);
+            }
+            grid.append(box);
+        }
+        wrap.append(grid);
+        return wrap;
+    }
     async function refresh() {
         if (busy) return;
         busy = true; render();
@@ -133,6 +196,11 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             const response = await frappe.call({ method: "stemic_control.api.dashboard_metrics", type: "GET" });
             metrics = response.message;
             loadError = false;
+            try {  // the KPI cards still work if this list cannot load
+                attention = (await frappe.call({ method: "stemic_control.api.operations_queue", type: "GET" })).message;
+            } catch (e) {
+                attention = null;
+            }
             try {
                 const taxReply = await frappe.call({method:"stemic_control.etims.compliance_overview", type:"GET"});
                 tax = taxReply.message;

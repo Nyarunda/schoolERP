@@ -12,6 +12,23 @@
 .stemic-kpi-value { font-size: clamp(26px, 3vw, 36px); line-height: 1.1; letter-spacing: -.035em; }
 .stemic-kpi-hint { font-size: 12px; color: var(--text-muted, #64748b); margin-top: auto; }
 .stemic-note { margin-top: 24px; color: var(--text-muted, #64748b); font-size: 12px; }
+/* Needs attention */
+.stemic-attention { margin-top: 28px; }
+.stemic-attention-title { font-size: 17px; font-weight: 650; margin: 0 0 12px; }
+.stemic-attention-clear { color: var(--green-600, #15803d); font-weight: 600; }
+.stemic-attention-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.stemic-attention-group { border: 1px solid var(--border-color, #e2e8f0); border-left: 4px solid var(--sa-c); border-radius: 12px; padding: 12px 14px; background: var(--card-bg, #fff); }
+.stemic-attention-group.critical { --sa-c: var(--red-500, #ef4444); }
+.stemic-attention-group.warning { --sa-c: var(--orange-500, #f97316); }
+.stemic-attention-group.info { --sa-c: var(--blue-500, #3b82f6); }
+.stemic-attention-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.stemic-attention-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--border-color, #e2e8f0); background: transparent; color: var(--text-color); padding: 8px 2px; cursor: pointer; }
+.stemic-attention-item:hover { background: var(--subtle-fg, #f8fafc); }
+.stemic-attention-item:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.stemic-attention-item strong { font-size: 13px; overflow-wrap: anywhere; }
+.stemic-attention-item span { grid-column: 1; font-size: 12px; color: var(--text-muted, #64748b); overflow-wrap: anywhere; }
+.stemic-attention-item small { grid-column: 2; grid-row: 1; font-size: 11px; color: var(--text-muted, #64748b); white-space: nowrap; }
+@media(max-width: 1000px) { .stemic-attention-grid { grid-template-columns: 1fr; } }
 @media(max-width: 1000px) { .stemic-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media(max-width: 550px) { .stemic-card-grid { grid-template-columns: 1fr; } .stemic-overview { padding: 12px 12px 32px; } }
 

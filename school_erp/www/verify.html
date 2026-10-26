@@ -1,0 +1,67 @@
+{% extends "templates/web.html" %}
+{% block page_content %}
+<section style="max-width:640px;margin:32px auto;padding:24px;border:1px solid #ddd;border-radius:12px">
+  <h2>Verify a School Document</h2>
+  <p>Check the status of a school-issued receipt or report card. Your PDF stays on your device.</p>
+  <label for="verification-code">Verification code</label>
+  <input id="verification-code" class="form-control" maxlength="100" autocomplete="off" placeholder="Code on the report" />
+  <button id="verify-btn" class="btn btn-primary" style="margin-top:12px">Verify Document</button>
+  <p id="verify-result" role="status" aria-live="polite" style="margin-top:18px"></p>
+  <div id="pdf-compare" hidden style="margin-top:20px">
+    <label for="verification-file">Optional: compare your downloaded PDF</label>
+    <input id="verification-file" type="file" accept="application/pdf,.pdf" class="form-control">
+    <p id="hash-result" role="status" aria-live="polite"></p>
+  </div>
+  <p style="margin-top:24px;color:#64748b;font-size:12px">Only documents issued by this school site can be verified here. A valid code alone does not prove that a modified PDF is authentic: compare the file to check its exact contents.</p>
+</section>
+<script>
+(() => {
+  const field = document.getElementById("verification-code");
+  const result = document.getElementById("verify-result");
+  const compare = document.getElementById("pdf-compare");
+  const file = document.getElementById("verification-file");
+  const hashResult = document.getElementById("hash-result");
+  const params = new URLSearchParams(location.search);
+  field.value = params.get("code") || "";
+  const request = async (path, body) => {
+    const response = await fetch(path, body ? {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body), credentials: "same-origin"
+    } : {credentials:"same-origin"});
+    if (!response.ok) throw new Error("Verification service unavailable");
+    return (await response.json()).message;
+  };
+  document.getElementById("verify-btn").addEventListener("click", async () => {
+    result.textContent = "Checking...";
+    compare.hidden = true;
+    hashResult.textContent = "";
+    try {
+      const code = field.value.trim();
+      const data = await request("/api/method/school_erp.api.document_verification.verify?code=" + encodeURIComponent(code));
+      result.textContent = data.status === "Valid"
+        ? "VALID — " + data.document_type + ", issued " + (data.issued_on || "date unavailable")
+        : data.status === "Revoked" ? "REVOKED — This issued version is no longer valid." : "NOT FOUND — Check the issuing school and code.";
+      compare.hidden = data.status !== "Valid";
+    } catch (error) { result.textContent = "Could not check document right now."; }
+  });
+  file.addEventListener("change", async () => {
+    const selected = file.files && file.files[0];
+    if (!selected) return;
+    hashResult.textContent = "Comparing file...";
+    try {
+      if (selected.size > 15 * 1024 * 1024) throw Error("File too large");
+      const bytes = await selected.arrayBuffer();
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      const hex = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2,"0")).join("");
+      const data = await request("/api/method/school_erp.api.document_verification.verify_hash", {
+        code: field.value.trim(), sha256: hex
+      });
+      hashResult.textContent = data.status === "Valid" && data.matches
+        ? "EXACT MATCH — This PDF matches the school's issued copy."
+        : "NO MATCH — This PDF is different, or its verification has been revoked.";
+    } catch (error) { hashResult.textContent = "Unable to compare this file."; }
+  });
+  if (field.value) document.getElementById("verify-btn").click();
+})();
+</script>
+{% endblock %}

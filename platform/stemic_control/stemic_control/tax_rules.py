@@ -24,6 +24,8 @@ def validate_amounts(net, tax, total, treatment):
     if treatment not in TREATMENTS:
         raise ValueError("Choose an approved tax classification")
     net, tax, total = money(net), money(tax), money(total)
+    if total <= 0:
+        raise ValueError("Invoice total must be positive")
     if net + tax != total:
         raise ValueError("Invoice total must equal net plus tax")
     if treatment in {"Exempt", "Zero Rated"} and tax != 0:

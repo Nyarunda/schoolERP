@@ -132,7 +132,7 @@ def submit_queued(name):
     if not frappe.conf.get("stemic_etims_live_enabled"):
         return {"status": "Disabled"}
     adapter_path = frappe.conf.get("stemic_etims_adapter") or ""
-    if not re.fullmatch(r"[a-z_][a-z_0-9]*(?:\\.[a-z_][a-z_0-9]*)+", adapter_path):
+    if not re.fullmatch(r"[a-z_][a-z_0-9]*(?:\.[a-z_][a-z_0-9]*)+", adapter_path):
         frappe.throw(_("Invalid integration adapter path"))
     # Restrict registered adapter to deployment-controlled code, never a user-supplied method path.
     if not adapter_path.startswith("stemic_control_integrations."):

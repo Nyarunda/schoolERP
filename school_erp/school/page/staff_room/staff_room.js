@@ -40,14 +40,25 @@ class StaffRoom {
 	}
 
 	load() {
-		if (this.loading) return;
+		// One request at a time; a refresh asked for meanwhile runs when the current one finishes
+		if (this.loading) {
+			this.queued = true;
+			return;
+		}
 		this.loading = true;
-		frappe.call("school_erp.api.dashboard.staff_room").then(({ message }) => {
+		// xcall returns a real Promise (frappe.call's jQuery promise has no .finally)
+		frappe.xcall("school_erp.api.dashboard.staff_room").then((message) => {
 			this.data = message;
 			this.loaded_at = Date.now();
 			this.render();
-		}).catch(() => frappe.show_alert({message: __("Unable to refresh staff room"), indicator: "red"}))
-			.finally(() => { this.loading = false; });
+		}).catch(() => frappe.show_alert({ message: __("Unable to refresh staff room"), indicator: "red" }))
+			.finally(() => {
+				this.loading = false;
+				if (this.queued) {
+					this.queued = false;
+					this.load();
+				}
+			});
 	}
 
 	acknowledge(btn) {

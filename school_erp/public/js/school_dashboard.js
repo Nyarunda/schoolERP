@@ -45,10 +45,10 @@ frappe.provide("school_dash");
 			${body}
 		</div>`;
 
-	school_dash.kpi = ({ label, value, foot, bar, route, title }) => `
+	school_dash.kpi = ({ label, value, of, foot, bar, route, title }) => `
 		<div class="sd-card sd-kpi" ${route ? `data-route='${esc(JSON.stringify(route))}'` : ""} title="${esc(title || "")}">
 			<div class="sd-kpi-label">${esc(label)}</div>
-			<div class="sd-kpi-value">${esc(value)}</div>
+			<div class="sd-kpi-value">${esc(value)}${of != null ? `<span class="sd-kpi-of"> / ${esc(of)}</span>` : ""}</div>
 			${foot ? `<div class="sd-kpi-foot">${foot}</div>` : ""}
 			${bar != null ? `<div class="sd-bar" role="img" aria-label="${Math.round(Number(bar) || 0)}%"><span style="width:${Math.max(0, Math.min(100, Number(bar) || 0))}%"></span></div>` : ""}
 		</div>`;

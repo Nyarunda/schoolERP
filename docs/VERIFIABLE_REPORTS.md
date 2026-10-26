@@ -46,3 +46,14 @@ Test scripts: `pytest school_erp/tests/test_document_verification_policy.py` and
 - No public personal data, fees, marks, or PDF download is returned by the API.
 - For PDFs printed through other routes, verification is only available when the **Issued Verified PDF** action is used. An ordinary printout lacks this guarantee.
 - Retain private PDF backups, audit events, and robust tenant-specific URLs. Do not allow an unauthenticated user to request issuance.
+
+## Extended document support (review update)
+
+- **Fee Statement**: call `school_erp.api.document_verification.issue_statement` with `student`, optional `from_date` and `to_date`. This issues a time-bound PDF snapshot using the existing fee statement rendering logic. Later changes to fees do not alter that issued historical file. The method is restricted to authorized issuing staff.
+- **School Certificate**: create a Draft `School Certificate`, select Admission Letter / Transfer Letter / Clearance Certificate, and enter the official text. Approve, issue a private QR-stamped PDF, and revoke through the form buttons.
+- A certificate may not be issued until approved. Once approved, protected letter content cannot be edited through a normal document save.
+- The public `/verify` endpoint keeps disclosing only status, document type, issue timestamp, and configured issuer label.
+
+**Still outstanding and not claimed as implemented:** a central cross-tenant verification registry/service and telco-connected USSD verification. These require secure school identity federation, independent signing/storage, an external USSD gateway shortcode/credentials, provider callbacks, abuse controls and data-minimization reviews. A fake USSD simulator is not a production USSD implementation.
+
+**Tests not executed by the assistant.** Install/migrate on a disposable Frappe site and verify approval, issuance, historical statement PDF, revocation, exact hash matching, private file restrictions, and page rendering before deployment. Keep PR in draft until tested.

@@ -86,3 +86,10 @@ The adapter must be installed by the deployment administrator, authenticate secu
 The original School customer workflow and the platform subscription seller flow have different legal sellers; do not use a school PIN for Stemic invoices. All exempt/zero-rated/standard treatment remains subject to accountant review.
 
 **Still external to this PR:** provider mapping, credentials, signing/receipt-QR fields, a working bank/M-Pesa settlement reconciliation, provider lookup/retry workflow, tax authority certification and live end-to-end acceptance. Live configuration stays disabled until those exist.
+
+
+### Stemic subscription invoice preparation
+
+Administrators can prepare the Stemic SaaS company's own eTIMS invoice with `stemic_control.etims.prepare_platform_subscription_invoice`. Supply the approved accounting invoice reference, subscription ID, reviewed amount breakdown, tax treatment and optional school buyer PIN. The legal seller is the separate `Stemic Tax Settings` tax identity, not the customer's `SaaS Tax Profile`.
+
+This is not a billing-ledger engine; the accounting source invoice must be created and reconciled separately, and discounts/credit notes must be represented accurately before a certified integration is enabled.

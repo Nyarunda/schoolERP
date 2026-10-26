@@ -132,12 +132,42 @@ def validate_payment(doc):
     if flt(doc.amount) > flt(inv.outstanding) + 0.005:
         frappe.throw(f"That is more than the {flt(inv.outstanding):,.2f} still owed on {doc.invoice}", frappe.ValidationError)
     doc.reference = (doc.reference or "").strip().upper()
+    if doc.reference:
+        import hashlib
+        doc.reference_key = hashlib.sha256(f"{doc.mode}|{doc.reference}".encode()).hexdigest()
     if not doc.reference:
         frappe.throw("A non-empty payment reference is required", frappe.ValidationError)
     clash = frappe.db.get_value("SaaS Payment", {"mode": doc.mode, "reference": doc.reference, "docstatus": 1, "name": ("!=", doc.name)})
     if clash:
         frappe.throw(f"{doc.mode} reference {doc.reference} is already recorded on {clash}", frappe.ValidationError)
     doc.tenant = inv.tenant
+
+
+
+def validate_payment_for_submit(doc):
+    """Recheck the live balance under an invoice row lock immediately before submit.
+
+    Do not trust the previously calculated outstanding field: the same invoice
+    may have received another payment since the draft was validated.
+    """
+    if not frappe.db.sql(
+        "SELECT name FROM `tabSaaS Invoice` WHERE name = %s AND docstatus = 1 FOR UPDATE",
+        (doc.invoice,),
+    ):
+        frappe.throw("Invoice is not submitted", frappe.ValidationError)
+    paid = frappe.db.sql(
+        "SELECT COALESCE(SUM(amount), 0) FROM `tabSaaS Payment` "
+        "WHERE invoice = %s AND docstatus = 1 AND name != %s",
+        (doc.invoice, doc.name),
+    )[0][0]
+    total = frappe.db.get_value("SaaS Invoice", doc.invoice, "total")
+    remaining = flt(flt(total) - flt(paid), 2)
+    if remaining <= 0 or flt(doc.amount) > remaining + 0.005:
+        frappe.throw(
+            f"Payment exceeds the current invoice balance of {remaining:,.2f}",
+            frappe.ValidationError,
+        )
+    validate_payment(doc)
 
 
 def apply_payment(doc):

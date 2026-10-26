@@ -28,6 +28,14 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             ["past_due","Past Due","SaaS Subscription",{status:"Past Due"},"Requires attention"],
             ["expiring_soon","Expiring in 30 Days","SaaS Subscription",null,"Upcoming renewals"]
         ],
+        tax: [
+            ["draft","Needs Review","SaaS eTIMS Invoice",{status:"Draft"},"Prepared invoices awaiting finance review"],
+            ["ready","Ready for Integration","SaaS eTIMS Invoice",{status:"Ready"},"Not yet submitted to KRA"],
+            ["pending","Pending Submission","SaaS eTIMS Invoice",{status:"Pending Submission"},"Awaiting provider processing"],
+            ["submitted","Submitted to KRA","SaaS eTIMS Invoice",{status:"Submitted"},"Use provider acknowledgements, not local assumptions"],
+            ["rejected","Rejected","SaaS eTIMS Invoice",{status:"Rejected"},"Investigate provider error"],
+            ["profiles","Enabled Tax Profiles","SaaS Tax Profile",{enabled:1},"School seller tax configurations"]
+        ],
         agents: [
             ["total_agents","Total Agents","SaaS Agent",{},"Registered agents"],
             ["active_agents","Active Agents","SaaS Agent",{status:"Active"},"Currently enabled"],
@@ -37,9 +45,10 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
     };
     let selected = "home";
     let metrics = null;
+    let tax = null;
     let busy = false;
     let loadError = false;
-    const tabs = [["home","Overview"],["schools","Schools"],["billing","Billing"],["agents","Agents"]];
+    const tabs = [["home","Overview"],["schools","Schools"],["billing","Billing"],["agents","Agents"],["tax","Kenya Tax & eTIMS"]];
 
     function render() {
         root.replaceChildren();
@@ -68,19 +77,27 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             nav.append(btn);
         }
         root.append(nav);
+        if (selected === "tax") {
+            const action = document.createElement("button");
+            action.type = "button";
+            action.className = "btn btn-default btn-sm";
+            action.textContent = __("Configure School Tax Profile");
+            action.addEventListener("click", () => frappe.set_route("List", "SaaS Tax Profile"));
+            root.append(action);
+        }
         const section = document.createElement("div");
         section.className = "stemic-card-grid";
         for (const [key,label,doctype,filters,helper] of groups[selected]) {
             const card = document.createElement("button");
             card.type = "button";
             card.className = "stemic-kpi-card";
-            card.setAttribute("aria-label", __(label) + ": " + (metrics?.[selected]?.[key] ?? __("Not available")));
+            card.setAttribute("aria-label", __(label) + ": " + ((selected === "tax" ? tax?.[key] : metrics?.[selected]?.[key]) ?? __("Not available")));
             const heading = document.createElement("span");
             heading.className = "stemic-kpi-label";
             heading.textContent = __(label);
             const value = document.createElement("strong");
             value.className = "stemic-kpi-value";
-            value.textContent = busy || !metrics ? "—" : String(metrics[selected][key] ?? "—");
+            value.textContent = busy || !metrics ? "—" : String((selected === "tax" ? tax?.[key] : metrics?.[selected]?.[key]) ?? "—");
             const hint = document.createElement("span");
             hint.className = "stemic-kpi-hint";
             hint.textContent = __(helper);
@@ -98,6 +115,12 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             section.append(card);
         }
         root.append(section);
+        if (selected === "tax") {
+            const disclaimer = document.createElement("p");
+            disclaimer.className = "stemic-note";
+            disclaimer.textContent = __("Preparation only. This integration has not submitted an invoice to KRA. Configure a certified OSCU/VSCU pathway and complete KRA testing before enabling live submissions.");
+            root.append(disclaimer);
+        }
         const note = document.createElement("p");
         note.className = "stemic-note";
         note.textContent = __("Figures are counts from admin records, not independently verified infrastructure health or collected revenue.");
@@ -110,6 +133,12 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             const response = await frappe.call({ method: "stemic_control.api.dashboard_metrics", type: "GET" });
             metrics = response.message;
             loadError = false;
+            try {
+                const taxReply = await frappe.call({method:"stemic_control.etims.compliance_overview", type:"GET"});
+                tax = taxReply.message;
+            } catch (error) {
+                tax = null;
+            }
         } catch (error) {
             loadError = true;
             frappe.msgprint({title: __("Dashboard unavailable"), message: __("Unable to load platform metrics."), indicator: "red"});

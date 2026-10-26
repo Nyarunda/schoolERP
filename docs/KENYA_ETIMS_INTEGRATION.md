@@ -93,3 +93,10 @@ The original School customer workflow and the platform subscription seller flow 
 Administrators can prepare the Stemic SaaS company's own eTIMS invoice with `stemic_control.etims.prepare_platform_subscription_invoice`. Supply the approved accounting invoice reference, subscription ID, reviewed amount breakdown, tax treatment and optional school buyer PIN. The legal seller is the separate `Stemic Tax Settings` tax identity, not the customer's `SaaS Tax Profile`.
 
 This is not a billing-ledger engine; the accounting source invoice must be created and reconciled separately, and discounts/credit notes must be represented accurately before a certified integration is enabled.
+
+
+### Safe provider reconciliation
+
+A Pending Submission invoice can be checked through `stemic_control.etims.reconcile_invoice(name)` from the invoice form. It performs **lookup only**, never a second submission, using `stemic_etims_lookup_adapter` in private site config. The lookup adapter must be an installed audited function under `stemic_control_integrations`, identify the invoice by `invoice_key` (and provider reference), validate the signed KRA/provider response, and return the same acceptance-evidence contract as the submission adapter. Unknown results remain Pending; they must not be converted to Rejected on a network timeout. Neither adapter is bundled here.
+
+Keep both `stemic_etims_live_enabled` and all provider credentials unset until certification, trusted adapter implementation, and actual Frappe testing are complete.

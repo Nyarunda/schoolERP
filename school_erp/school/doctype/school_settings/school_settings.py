@@ -2,10 +2,12 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 from school_erp import licensing
 from school_erp.logic.license import MODULES
+from school_erp.logic.paybill import is_till
 
 
 class SchoolSettings(Document):
@@ -22,8 +24,13 @@ class SchoolSettings(Document):
 			self.mpesa_callback_token = frappe.generate_hash(length=32)
 		if self.mpesa_shortcode:
 			self.mpesa_shortcode = self.mpesa_shortcode.strip()
-			if not self.paybill_number:
+			# a Paybill's public number is its short code; a Till's is the till, which differs from its store number
+			if not self.paybill_number and not is_till(self.mpesa_account_type):
 				self.paybill_number = self.mpesa_shortcode
+		if is_till(self.mpesa_account_type):
+			self.mpesa_validate_account = 0  # a Till payment has no account number to check
+			if not self.paybill_number:
+				frappe.msgprint(_("Enter the Till number parents pay to in 'Paybill / Till Number'."), title=_("Till number missing"), indicator="orange")
 		if self.mpesa_callback_base_url:
 			from school_erp.logic.paybill import url_problems
 

@@ -114,6 +114,8 @@
 	.pp-pb b { font-size: 16px; letter-spacing: .02em; }
 	.pp-copy { border: 0; background: var(--pp-bg); color: var(--pp-muted); width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 	.pp-copy:hover { color: var(--pp-a); } .pp-copy.done { color: var(--pp-green); }
+	.pp-till { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: center; }
+	.pp-till-note { font-size: 12.5px; color: var(--pp-muted); line-height: 1.45; }
 
 	/* quick actions */
 	.pp-quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
@@ -250,12 +252,17 @@
 					{% if c.balance > 0.5 and c.due %}<div class="pp-due">{{ _("Due by") }} {{ c.due }}</div>{% endif %}
 				</div>
 				<div class="pp-btns">
-					{% if can_pay and c.balance > 0.5 %}<button class="pp-btn mpesa" data-pay="{{ c.id }}" data-name="{{ c.first_name }}" data-amount="{{ c.balance|round|int }}">{{ icon("phone") }}{{ _("Pay with M-Pesa") }}</button>{% endif %}
+					{% if can_pay and c.balance > 0.5 %}<button class="pp-btn mpesa" data-pay="{{ c.id }}" data-name="{{ c.first_name }}" data-amount="{{ c.balance|round|int }}" data-phone="{{ c.payer_phone or phone }}">{{ icon("phone") }}{{ _("Pay with M-Pesa") }}</button>{% endif %}
 					<a class="pp-btn" href="{{ stmt }}" target="_blank">{{ icon("doc") }}{{ _("Statement") }}</a>
 				</div>
 			</div>
 
-			{% if school.paybill %}
+			{% if school.paybill and school.till %}
+			<div class="pp-paybill pp-till">
+				<div class="pp-pb"><div><div class="pp-lbl">{{ _("Buy Goods Till No.") }}</div><b>{{ school.paybill }}</b></div><button class="pp-copy" data-copy="{{ school.paybill }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
+				<div class="pp-till-note">{% if can_pay %}{{ _("Till payments carry no student number. Use Pay with M-Pesa above so the payment goes straight to {0}.").format(c.first_name) }}{% else %}{{ _("Till payments carry no student number: send the M-Pesa message to the school office so it is credited to {0}.").format(c.first_name) }}{% endif %}</div>
+			</div>
+			{% elif school.paybill %}
 			<div class="pp-paybill">
 				<div class="pp-pb"><div><div class="pp-lbl">{{ _("Paybill No.") }}</div><b>{{ school.paybill }}</b></div><button class="pp-copy" data-copy="{{ school.paybill }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
 				<div class="pp-pb"><div><div class="pp-lbl">{{ _("Account No.") }}</div><b>{{ c.id }}</b></div><button class="pp-copy" data-copy="{{ c.id }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
@@ -370,10 +377,17 @@
 	const show = (msg, cls) => { status.style.display = "block"; status.className = "pp-status " + (cls || ""); status.textContent = msg; };
 	const call = async (method, args) => {
 		const r = await fetch("/api/method/school_erp.api.portal." + method, {
-			method: "POST", headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": frappe.csrf_token },
+			method: "POST",
+			// Accept: JSON so the server answers errors as JSON too, not as an HTML error page
+			headers: { "Content-Type": "application/json", "Accept": "application/json", "X-Frappe-CSRF-Token": frappe.csrf_token },
 			body: JSON.stringify(args),
 		});
-		const j = await r.json();
+		let j;
+		try {
+			j = await r.json();
+		} catch (e) {
+			throw new Error("{{ _('The school server did not respond properly. Please try again in a moment.') }}");
+		}
 		if (!r.ok) {
 			let m = "{{ _('Something went wrong') }}";
 			try { m = JSON.parse(JSON.parse(j._server_messages)[0]).message; } catch (e) { /* keep default */ }
@@ -386,6 +400,7 @@
 		const full = parseInt(b.dataset.amount, 10);
 		$("#pp-title").textContent = "{{ _('Pay fees for') }} " + b.dataset.name;
 		amount.value = full;
+		if (b.dataset.phone) $("#pp-phone").value = b.dataset.phone;  // the parent's number on this child's record
 		const presets = $("#pp-presets");
 		presets.innerHTML = "";
 		[[full, "{{ _('Full balance') }}"], [Math.ceil(full / 2), "{{ _('Half') }}"]].forEach(([v, label]) => {
@@ -411,7 +426,12 @@
 				tries += 1;
 				try {
 					const s = await call("payment_status", { request: r.request });
-					if (s.status === "Paid") { clearInterval(timer); show("{{ _('Payment received. Thank you!') }} " + (s.receipt ? "(" + s.receipt + ")" : ""), "ok"); }
+					if (s.status === "Paid") {
+						clearInterval(timer);
+						show("{{ _('Payment received. Thank you!') }} " + (s.receipt ? "(" + s.receipt + ")" : ""), "ok");
+						// close by itself and show the new balance
+						setTimeout(() => { sheet.classList.remove("open"); location.reload(); }, 2500);
+					}
 					else if (s.status === "Cancelled" || s.status === "Failed") { clearInterval(timer); show((s.message || "{{ _('The payment was not completed.') }}"), "bad"); go.disabled = false; }
 				} catch (e) { /* keep polling */ }
 				if (tries > 30) { clearInterval(timer); show("{{ _('Still waiting. If you paid, the balance will update shortly.') }}"); go.disabled = false; }

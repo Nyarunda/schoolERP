@@ -2,3 +2,4 @@
 
 [post_model_sync]
 school_erp.patches.set_timetable_session_times
+school_erp.patches.mpesa_till_texts

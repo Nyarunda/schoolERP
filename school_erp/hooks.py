@@ -22,7 +22,8 @@ after_install = "school_erp.setup.install.after_install"
 after_migrate = "school_erp.setup.install.after_migrate"
 before_tests = "school_erp.tests.utils.before_tests"
 
-app_include_js = ["/assets/school_erp/js/school_erp.js", "/assets/school_erp/js/school_dashboard.js"]
+app_include_js = ["/assets/school_erp/js/school_erp.js", "/assets/school_erp/js/school_dashboard.js",
+	"/assets/school_erp/js/verified_documents.js"]
 app_include_css = ["school_dashboard.bundle.css"]
 
 boot_session = "school_erp.licensing.boot_session"
@@ -67,6 +68,7 @@ has_permission = {
 
 doctype_js = {
 	"Sales Invoice": "public/js/sales_invoice.js",
+	"School Certificate": "public/js/school_certificate.js",
 }
 
 # Custom SMS sender (used when School Settings > SMS Provider = "Custom Hook").

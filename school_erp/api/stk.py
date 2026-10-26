@@ -19,7 +19,7 @@ from frappe import _
 from frappe.utils import add_to_date, cint, flt, now_datetime
 
 from school_erp import licensing
-from school_erp.logic.paybill import account_key
+from school_erp.logic.paybill import account_key, stk_parties, valid_stk_metadata
 from school_erp.logic.text import normalize_phone
 
 EAT = timezone(timedelta(hours=3))  # Daraja timestamps are East Africa Time
@@ -71,17 +71,18 @@ def initiate(student: str, amount, phone: str, requested_by: str | None = None) 
 		frappe.throw(_("Enter a valid Safaricom number, e.g. 0712 345 678"))
 
 	ts = _timestamp()
+	transaction_type, party_b = stk_parties(settings.mpesa_account_type, settings.mpesa_shortcode, settings.paybill_number)
 	payload = {
 		"BusinessShortCode": settings.mpesa_shortcode,
 		"Password": _password(settings.mpesa_shortcode, settings.get_password("mpesa_passkey"), ts),
 		"Timestamp": ts,
-		"TransactionType": "CustomerPayBillOnline",
+		"TransactionType": transaction_type,
 		"Amount": amount,
 		"PartyA": msisdn,
-		"PartyB": settings.mpesa_shortcode,
+		"PartyB": party_b,
 		"PhoneNumber": msisdn,
 		"CallBackURL": callback_url(settings),
-		"AccountReference": account_key(student)[:12],  # Daraja limit: 12 characters
+		"AccountReference": account_key(student)[:12],  # Daraja limit: 12 characters (a Till ignores it; the request links the student)
 		"TransactionDesc": "School fees",
 	}
 	req = frappe.get_doc({"doctype": "STK Push Request", "student": student, "amount": amount, "phone": msisdn,
@@ -95,7 +96,7 @@ def initiate(student: str, amount, phone: str, requested_by: str | None = None) 
 	except Exception as e:
 		req.db_set({"status": "Failed", "result_desc": f"Could not reach M-Pesa: {e}"[:140]})
 		frappe.db.commit()
-		frappe.throw(_("Could not reach M-Pesa right now. Please try again or pay via Paybill."))
+		frappe.throw(_("Could not reach M-Pesa right now. Please try again shortly."))
 	if str(body.get("ResponseCode")) != "0":
 		req.db_set({"status": "Failed", "result_desc": (body.get("errorMessage") or body.get("ResponseDescription") or str(body))[:140]})
 		frappe.db.commit()
@@ -128,6 +129,15 @@ def apply_result(checkout_request_id: str, result_code, result_desc: str, meta: 
 		return req.name
 
 	meta = meta or {}
+	if source == "query" and not meta.get("MpesaReceiptNumber"):
+		req.db_set({"result_desc": "Provider query reports success; waiting for a receipt-bearing confirmation"})
+		frappe.db.commit()
+		return req.name
+	if not valid_stk_metadata(meta, req.amount, req.phone):
+		req.db_set({"result_desc": "STK success lacks matching provider receipt, amount or phone; requires investigation"})
+		frappe.db.commit()
+		frappe.log_error(title="STK result needs reconciliation", message=f"Checkout {checkout_request_id}: incomplete or mismatched success metadata")
+		return req.name
 	receipt = str(meta.get("MpesaReceiptNumber") or "").upper()
 	if not receipt:
 		# a status query says "paid" but carries no receipt: wait for the callback / C2B confirmation
@@ -139,7 +149,7 @@ def apply_result(checkout_request_id: str, result_code, result_desc: str, meta: 
 	raw = {
 		"TransactionType": "STK Push", "TransID": receipt,
 		"TransTime": str(meta.get("TransactionDate") or now_datetime().strftime("%Y%m%d%H%M%S")),
-		"TransAmount": str(meta.get("Amount") or req.amount), "BusinessShortCode": _settings().mpesa_shortcode,
+		"TransAmount": str(meta["Amount"]), "BusinessShortCode": _settings().mpesa_shortcode,
 		"BillRefNumber": req.student, "MSISDN": str(meta.get("PhoneNumber") or req.phone), "FirstName": "Parent Portal",
 	}
 	tx = record_confirmation(raw, source="STK Push")
@@ -170,7 +180,9 @@ def callback():
 		finally:
 			frappe.set_user(previous)
 	except Exception:
+		frappe.db.rollback()
 		frappe.log_error(title="STK callback could not be processed", message=json.dumps(raw)[:4000])
+		return _json_response(REJECT_OTHER, status=503)
 	return _json_response(ACCEPT)
 
 

@@ -75,7 +75,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Received\nPosted\nUnmatched\nFailed\nIgnored"
+   "options": "Received\nPosted\nUnmatched\nNeeds Review\nFailed\nIgnored"
   },
   {
    "description": "Set this for an Unmatched payment, then click Post to Student",
@@ -189,7 +189,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-22 16:00:00.000000",
+ "modified": "2026-10-26 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "M-Pesa Transaction",

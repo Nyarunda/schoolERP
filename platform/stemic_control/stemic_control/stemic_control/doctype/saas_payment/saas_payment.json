@@ -17,7 +17,8 @@
     "mode",
     "reference",
     "notes",
-    "amended_from"
+    "amended_from",
+    "reference_key"
   ],
   "fields": [
     {
@@ -100,6 +101,15 @@
       "options": "SaaS Payment",
       "read_only": 1,
       "hidden": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "reference_key",
+      "fieldtype": "Data",
+      "label": "Unique Reference Key",
+      "unique": 1,
+      "hidden": 1,
+      "read_only": 1,
       "no_copy": 1
     }
   ],

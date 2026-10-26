@@ -23,7 +23,9 @@
       "fieldname": "tenant",
       "label": "Tenant",
       "options": "SaaS Tenant",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
     },
     {
       "fieldtype": "Data",
@@ -39,7 +41,8 @@
       "label": "Action",
       "options": "Create Site\nAttach Domain\nSuspend\nResume",
       "reqd": 1,
-      "read_only": 1
+      "read_only": 1,
+      "in_list_view": 1
     },
     {
       "fieldtype": "Select",
@@ -54,7 +57,8 @@
       "fieldname": "attempts",
       "label": "Attempts",
       "default": 0,
-      "read_only": 1
+      "read_only": 1,
+      "in_list_view": 1
     },
     {
       "fieldtype": "Long Text",
@@ -84,7 +88,7 @@
     }
   ],
   "creation": "2026-10-25 20:00:00.000000",
-  "modified": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-25 22:00:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator"
 }

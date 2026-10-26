@@ -147,6 +147,9 @@ def queue_provisioning(tenant, request_key):
     if school.status != "Pending":
         school.status = "Pending"
         school.save()
+    from stemic_control import provisioner
+
+    provisioner.enqueue(job.name)  # no-op unless the local provisioner is switched on
     # The privileged infrastructure provisioner must independently validate and claim this job.
     # Merely queueing a job does NOT create a site or run an OS command.
     return job.name
@@ -239,3 +242,149 @@ def dashboard_metrics():
             "referred_active_schools": count("SaaS Tenant", {"agent": ["is", "set"], "status": "Active"}),
         },
     }
+
+
+@frappe.whitelist(methods=["GET"])
+def platform_info():
+    """What the admin screens need to preview hostnames before a domain is claimed."""
+    _admin()
+    return {"platform_domain": platform_domain(), "reserved": sorted(RESERVED)}
+
+
+@frappe.whitelist(methods=["POST"])
+def provision_now(job):
+    """Hand a queued Create Site job to the local provisioner's background worker."""
+    _admin()
+    from stemic_control import provisioner
+
+    if not provisioner.enabled():
+        frappe.throw("The local provisioner is not switched on (stemic_local_provisioner in site_config)", frappe.ValidationError)
+    if frappe.db.get_value("SaaS Provisioning Job", job, "status") != "Queued":
+        frappe.throw("Only a Queued job can be provisioned", frappe.ValidationError)
+    provisioner.enqueue(job)
+    return {"job": job, "status": "Queued for the provisioner"}
+
+
+@frappe.whitelist(methods=["POST"])
+def site_access(tenant):
+    """Where a provisioned school site is and its Administrator password (platform admins only)."""
+    _admin()
+    from frappe.utils.password import get_decrypted_password
+
+    doc = frappe.get_doc("SaaS Tenant", tenant)
+    doc.check_permission("read")
+    if not doc.canonical_site:
+        frappe.throw("This school has no site yet", frappe.ValidationError)
+    return {"site": doc.canonical_site, "user": "Administrator",
+            "password": get_decrypted_password("SaaS Tenant", tenant, "site_admin_password", raise_exception=False)}
+
+
+@frappe.whitelist(methods=["POST"])
+def process_queue_now():
+    """Manual run of the provisioner's 5-minute check: hand waiting jobs to a worker, fail abandoned ones."""
+    _admin()
+    from stemic_control import provisioner
+
+    if not provisioner.enabled():
+        frappe.throw("The local provisioner is not switched on (stemic_local_provisioner in site_config)", frappe.ValidationError)
+    return {"handed_to_worker": provisioner.process_queue()}
+
+
+@frappe.whitelist(methods=["POST"])
+def provision_tenant_now(tenant):
+    """Manual nudge for a school stuck in Pending: hand its queued Create Site job to the provisioner."""
+    _admin()
+    job = frappe.db.get_value("SaaS Provisioning Job", {"tenant": tenant, "action": "Create Site", "status": "Queued"},
+                              "name", order_by="creation desc")
+    if not job:
+        frappe.throw("This school has no queued site job. Use Queue Provisioning.", frappe.ValidationError)
+    return provision_now(job)
+
+
+@frappe.whitelist(methods=["GET"])
+def plan_catalogue():
+    """School ERP modules a plan can include, for the plan form."""
+    _admin()
+    return [{"code": code, "label": label} for code, label in policy.MODULES.items()]
+
+
+@frappe.whitelist(methods=["GET"])
+def plan_summary(plan):
+    """Who is on a plan and what it earns."""
+    _admin()
+    by_status = {}
+    for status in frappe.get_all("SaaS Subscription", filters={"plan": plan}, pluck="status"):
+        by_status[status] = by_status.get(status, 0) + 1
+    price = frappe.db.get_value("SaaS Plan", plan, "monthly_price") or 0
+    return {"by_status": by_status, "total": sum(by_status.values()), "mrr": price * by_status.get("Active", 0)}
+
+
+@frappe.whitelist(methods=["GET"])
+def subscription_summary(subscription):
+    """What the subscription form shows next to its fields: the school, the plan and the license in force."""
+    sub = frappe.get_doc("SaaS Subscription", subscription)
+    sub.check_permission("read")
+    from stemic_control import licensing
+
+    tenant = frappe.db.get_value("SaaS Tenant", sub.tenant, ["school_name", "status", "canonical_site"], as_dict=True) or {}
+    plan = frappe.db.get_value("SaaS Plan", sub.plan, ["monthly_price", "student_limit", "enabled"], as_dict=True) or {}
+    license = frappe.db.get_value("SaaS License", {"subscription": sub.name}, ["name", "status", "expires_on", "issued_on"],
+                                  as_dict=True, order_by="creation desc")
+    return {"tenant": tenant, "plan": plan, "modules": [policy.MODULES[m] for m in licensing.plan_modules(sub.plan)],
+            "license": license, "can_sign": licensing.can_sign(), "next": sorted(policy.SUBSCRIPTION_TRANSITIONS.get(sub.status, ())),
+            "licensable": sub.status in policy.LICENSABLE}
+
+
+@frappe.whitelist(methods=["POST"])
+def set_subscription_status(subscription, status, payment_ref=None):
+    """Operator billing switch (Activate, Past Due, Grace, Suspend, Cancel). Activating needs the payment reference."""
+    _admin()
+    doc = frappe.get_doc("SaaS Subscription", subscription)
+    if status == "Active" and not (payment_ref or "").strip():
+        frappe.throw("Enter the payment reference to activate a subscription", frappe.ValidationError)
+    doc.status = status
+    if payment_ref:
+        doc.external_payment_ref = payment_ref.strip()
+    doc.save()  # SaaSSubscription.validate refuses moves the policy does not allow
+    return {"subscription": doc.name, "status": doc.status}
+
+
+@frappe.whitelist(methods=["POST"])
+def renew_subscription(subscription, months, payment_ref):
+    """Extend a paid subscription by whole months from its end (or today, if it has lapsed) and make it Active."""
+    _admin()
+    months = int(months)
+    if months not in (1, 3, 6, 12, 24):
+        frappe.throw("Renew for 1, 3, 6, 12 or 24 months", frappe.ValidationError)
+    if not (payment_ref or "").strip():
+        frappe.throw("Enter the payment reference for the renewal", frappe.ValidationError)
+    from frappe.utils import add_months, getdate, nowdate
+
+    doc = frappe.get_doc("SaaS Subscription", subscription)
+    if doc.status == "Cancelled":
+        frappe.throw("A cancelled subscription cannot be renewed; start a new one", frappe.ValidationError)
+    base = max(getdate(doc.ends_on or nowdate()), getdate(nowdate()))
+    doc.ends_on = add_months(base, months)
+    doc.status = "Active"
+    doc.external_payment_ref = payment_ref.strip()
+    doc.save()
+    return {"subscription": doc.name, "ends_on": str(doc.ends_on)}
+
+
+@frappe.whitelist(methods=["POST"])
+def issue_license(subscription):
+    """Sign a School ERP key from the subscription (plan modules, student limit, end date, the school's site)."""
+    _admin()
+    from stemic_control import licensing
+
+    return {"license": licensing.issue(subscription)}
+
+
+@frappe.whitelist(methods=["POST"])
+def revoke_license(license):
+    """Mark a key revoked. A key already pasted into a school keeps working until it expires (it is checked offline)."""
+    _admin()
+    if frappe.db.get_value("SaaS License", license, "status") != "Issued":
+        frappe.throw("Only an issued license can be revoked", frappe.ValidationError)
+    frappe.db.set_value("SaaS License", license, "status", "Revoked")
+    return {"license": license, "status": "Revoked"}

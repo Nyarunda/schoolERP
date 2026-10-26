@@ -10,28 +10,70 @@
   "naming_rule": "Expression",
   "engine": "InnoDB",
   "field_order": [
+    "summary_html",
+    "details_section",
     "tenant",
+    "school_name",
     "plan",
+    "plan_price",
+    "agent",
+    "cb_period",
     "status",
     "starts_on",
     "ends_on",
-    "external_payment_ref",
-    "agent"
+    "external_payment_ref"
   ],
   "fields": [
     {
+      "fieldtype": "HTML",
+      "fieldname": "summary_html"
+    },
+    {
+      "fieldtype": "Section Break",
+      "fieldname": "details_section",
+      "label": "Details"
+    },
+    {
       "fieldtype": "Link",
       "fieldname": "tenant",
-      "label": "Tenant",
+      "label": "School ID",
       "options": "SaaS Tenant",
-      "reqd": 1
+      "reqd": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "school_name",
+      "label": "School",
+      "fetch_from": "tenant.school_name",
+      "read_only": 1,
+      "in_list_view": 1
     },
     {
       "fieldtype": "Link",
       "fieldname": "plan",
       "label": "Plan",
       "options": "SaaS Plan",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldtype": "Currency",
+      "fieldname": "plan_price",
+      "label": "Monthly Price",
+      "fetch_from": "plan.monthly_price",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "agent",
+      "label": "Sales Agent",
+      "options": "SaaS Agent"
+    },
+    {
+      "fieldtype": "Column Break",
+      "fieldname": "cb_period"
     },
     {
       "fieldtype": "Select",
@@ -39,7 +81,10 @@
       "label": "Status",
       "options": "Trial\nActive\nPast Due\nGrace\nSuspended\nCancelled",
       "default": "Trial",
-      "read_only": 1
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Changed with the Actions menu."
     },
     {
       "fieldtype": "Date",
@@ -50,19 +95,16 @@
     {
       "fieldtype": "Date",
       "fieldname": "ends_on",
-      "label": "Ends On"
+      "label": "Ends On",
+      "in_list_view": 1,
+      "description": "The license key stops working 14 days after this date unless renewed."
     },
     {
       "fieldtype": "Data",
       "fieldname": "external_payment_ref",
-      "label": "Subscription Payment Reference",
-      "read_only": 1
-    },
-    {
-      "fieldtype": "Link",
-      "fieldname": "agent",
-      "label": "Sales Agent",
-      "options": "SaaS Agent"
+      "label": "Payment Reference",
+      "read_only": 1,
+      "description": "Set when the subscription is activated or renewed (M-Pesa code, bank ref or invoice)."
     }
   ],
   "permissions": [
@@ -91,7 +133,10 @@
     }
   ],
   "creation": "2026-10-25 20:00:00.000000",
-  "modified": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-26 12:30:00.000000",
   "modified_by": "Administrator",
-  "owner": "Administrator"
+  "owner": "Administrator",
+  "title_field": "school_name",
+  "search_fields": "school_name,plan,status",
+  "sort_field": "modified"
 }

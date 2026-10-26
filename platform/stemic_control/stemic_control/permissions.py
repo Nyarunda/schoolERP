@@ -34,10 +34,12 @@ def agent_query(user=None):
     return "" if _platform(user) else f"`tabSaaS Agent`.user = {frappe.db.escape(user)}"
 
 
-def _own_rows(doc, ptype, user, matches) -> bool | None:
+def _own_rows(doc, ptype, user, matches) -> bool:
     user = user or frappe.session.user
     if _platform(user):
-        return None  # role permissions decide
+        # Frappe treats any falsy answer from a has_permission hook as a denial, so "no objection" must be True;
+        # role permissions still decide what a platform user may do
+        return True
     return ptype == "read" and matches(user)
 
 
@@ -51,3 +53,8 @@ def subscription_has_permission(doc, ptype=None, user=None):
 
 def agent_has_permission(doc, ptype=None, user=None):
     return _own_rows(doc, ptype, user, lambda u: doc.user == u)
+
+
+def has_app_permission():
+    """The Stemic Control tile on the Apps screen is for platform administrators."""
+    return _platform(frappe.session.user)

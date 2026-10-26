@@ -10,21 +10,32 @@
   "naming_rule": "By fieldname",
   "engine": "InnoDB",
   "field_order": [
+    "sb_domain",
     "tenant",
     "hostname",
+    "cb_domain",
     "domain_type",
+    "is_primary",
+    "sb_verification",
     "status",
-    "verification_token",
     "verified_on",
-    "is_primary"
+    "cb_verification",
+    "verification_token"
   ],
   "fields": [
     {
+      "fieldname": "sb_domain",
+      "fieldtype": "Section Break",
+      "label": "Domain"
+    },
+    {
       "fieldtype": "Link",
       "fieldname": "tenant",
-      "label": "Tenant",
+      "label": "School",
       "options": "SaaS Tenant",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
     },
     {
       "fieldtype": "Data",
@@ -34,11 +45,28 @@
       "unique": 1
     },
     {
+      "fieldname": "cb_domain",
+      "fieldtype": "Column Break"
+    },
+    {
       "fieldtype": "Select",
       "fieldname": "domain_type",
       "label": "Domain Type",
       "options": "Stemic Subdomain\nCustom Domain",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldtype": "Check",
+      "fieldname": "is_primary",
+      "label": "Primary Domain",
+      "default": 0,
+      "read_only": 1
+    },
+    {
+      "fieldname": "sb_verification",
+      "fieldtype": "Section Break",
+      "label": "Verification"
     },
     {
       "fieldtype": "Select",
@@ -49,24 +77,22 @@
       "read_only": 1
     },
     {
-      "fieldtype": "Data",
-      "fieldname": "verification_token",
-      "label": "Verification Token",
-      "read_only": 1,
-      "hidden": 1
-    },
-    {
       "fieldtype": "Datetime",
       "fieldname": "verified_on",
       "label": "Verified On",
       "read_only": 1
     },
     {
-      "fieldtype": "Check",
-      "fieldname": "is_primary",
-      "label": "Primary Domain",
-      "default": 0,
-      "read_only": 1
+      "fieldname": "cb_verification",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "verification_token",
+      "label": "Verification Value",
+      "read_only": 1,
+      "hidden": 1,
+      "depends_on": "eval:doc.domain_type=='Custom Domain'"
     }
   ],
   "permissions": [
@@ -90,7 +116,8 @@
     }
   ],
   "creation": "2026-10-25 20:00:00.000000",
-  "modified": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-25 23:00:00.000000",
   "modified_by": "Administrator",
-  "owner": "Administrator"
+  "owner": "Administrator",
+  "quick_entry": 0
 }

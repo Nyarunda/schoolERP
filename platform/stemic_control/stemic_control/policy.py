@@ -24,6 +24,35 @@ JOB_TRANSITIONS = {
     "Succeeded": set(),
     "Failed": set(),  # retry with a new idempotency key
 }
+# Subscription billing states an operator may move between (renewing always ends in Active)
+SUBSCRIPTION_TRANSITIONS = {
+    "Trial": {"Active", "Past Due", "Cancelled"},
+    "Active": {"Past Due", "Cancelled"},
+    "Past Due": {"Active", "Grace", "Suspended", "Cancelled"},
+    "Grace": {"Active", "Suspended", "Cancelled"},
+    "Suspended": {"Active", "Cancelled"},
+    "Cancelled": set(),
+}
+# Statuses in which a school may hold a working license key
+LICENSABLE = {"Trial", "Active", "Past Due", "Grace"}
+
+# School ERP module codes and labels; must match school_erp.logic.license.MODULES
+MODULES = {
+    "fees": "Fees, Payments & Statements",
+    "timetable": "Timetable",
+    "transport": "Transport",
+    "lunch": "Lunch",
+    "activities": "Games & Activities",
+    "messaging": "SMS & Email to Parents",
+    "mpesa": "M-Pesa Paybill Auto-posting",
+    "staff": "Staff, Leave & Duty Reports",
+    "welfare": "Discipline & Complaints",
+    "expenses": "Expenses & Approvals",
+    "transport_ops": "Driver Daily Logs & Vehicles",
+    "exams": "Exams & Report Cards",
+    "portal": "Parent Portal & Online Fee Payment",
+}
+
 # Tenant status a job moves its tenant to: (action, job status) -> tenant status
 JOB_EFFECT = {
     ("Create Site", "Running"): "Provisioning",

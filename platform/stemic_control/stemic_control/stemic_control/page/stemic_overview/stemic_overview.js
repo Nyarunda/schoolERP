@@ -1,6 +1,6 @@
 frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
     const page = frappe.ui.make_app_page({
-        parent: wrapper, title: "Stemic Schools", single_column: true
+        parent: wrapper, title: __("Stemic Schools"), single_column: true
     });
     page.set_primary_action(__("New School"), () => frappe.new_doc("SaaS Tenant"), "add");
     const root = document.createElement("div");
@@ -44,7 +44,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         root.replaceChildren();
         const description = document.createElement("p");
         description.className = "stemic-intro";
-        description.textContent = "Manage schools, subscriptions and provisioning from one control plane.";
+        description.textContent = __("Manage schools, subscriptions and provisioning from one control plane.");
         root.append(description);
         const nav = document.createElement("div");
         nav.className = "stemic-tabs";
@@ -53,7 +53,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             const btn = document.createElement("button");
             btn.type = "button";
             btn.className = "stemic-tab" + (selected === id ? " selected" : "");
-            btn.textContent = label;
+            btn.textContent = __(label);
             btn.setAttribute("role","tab");
             btn.setAttribute("aria-selected", String(selected === id));
             btn.addEventListener("click", () => { selected = id; render(); });
@@ -68,13 +68,13 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             card.className = "stemic-kpi-card";
             const heading = document.createElement("span");
             heading.className = "stemic-kpi-label";
-            heading.textContent = label;
+            heading.textContent = __(label);
             const value = document.createElement("strong");
             value.className = "stemic-kpi-value";
             value.textContent = busy || !metrics ? "—" : String(metrics[selected][key] ?? "—");
             const hint = document.createElement("span");
             hint.className = "stemic-kpi-hint";
-            hint.textContent = helper;
+            hint.textContent = __(helper);
             card.append(heading,value,hint);
             if (filters !== null) {
                 card.addEventListener("click", () => {
@@ -83,21 +83,21 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
                 });
             } else {
                 card.disabled = true;
-                card.title = "A matching filtered list is not available yet";
+                card.title = __("A matching filtered list is not available yet");
             }
             section.append(card);
         }
         root.append(section);
         const note = document.createElement("p");
         note.className = "stemic-note";
-        note.textContent = "Figures are counts from admin records, not independently verified infrastructure health or collected revenue.";
+        note.textContent = __("Figures are counts from admin records, not independently verified infrastructure health or collected revenue.");
         root.append(note);
     }
     async function refresh() {
         if (busy) return;
         busy = true; render();
         try {
-            const response = await frappe.call("stemic_control.api.dashboard_metrics");
+            const response = await frappe.call({ method: "stemic_control.api.dashboard_metrics", type: "GET" });
             metrics = response.message;
         } catch (error) {
             frappe.msgprint({title: __("Dashboard unavailable"), message: __("Unable to load platform metrics."), indicator: "red"});

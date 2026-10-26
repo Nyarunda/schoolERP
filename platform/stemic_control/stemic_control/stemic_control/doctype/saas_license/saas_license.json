@@ -10,39 +10,76 @@
   "naming_rule": "Expression",
   "engine": "InnoDB",
   "field_order": [
+    "summary_html",
+    "details_section",
     "tenant",
+    "school_name",
     "subscription",
-    "signed_key",
+    "plan",
+    "site",
+    "cb_terms",
+    "status",
+    "issued_on",
     "expires_on",
-    "status"
+    "max_students",
+    "modules",
+    "key_section",
+    "signed_key"
   ],
   "fields": [
     {
+      "fieldtype": "HTML",
+      "fieldname": "summary_html"
+    },
+    {
+      "fieldtype": "Section Break",
+      "fieldname": "details_section",
+      "label": "Details"
+    },
+    {
       "fieldtype": "Link",
       "fieldname": "tenant",
-      "label": "Tenant",
+      "label": "School ID",
       "options": "SaaS Tenant",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "school_name",
+      "label": "School",
+      "fetch_from": "tenant.school_name",
+      "read_only": 1,
+      "in_list_view": 1
     },
     {
       "fieldtype": "Link",
       "fieldname": "subscription",
       "label": "Subscription",
       "options": "SaaS Subscription",
-      "reqd": 1
-    },
-    {
-      "fieldtype": "Long Text",
-      "fieldname": "signed_key",
-      "label": "Signed License Key",
-      "read_only": 1,
-      "hidden": 1
-    },
-    {
-      "fieldtype": "Date",
-      "fieldname": "expires_on",
-      "label": "Expires On",
+      "reqd": 1,
       "read_only": 1
+    },
+    {
+      "fieldtype": "Link",
+      "fieldname": "plan",
+      "label": "Plan",
+      "options": "SaaS Plan",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "site",
+      "label": "Site",
+      "read_only": 1,
+      "description": "The key only works on this site."
+    },
+    {
+      "fieldtype": "Column Break",
+      "fieldname": "cb_terms"
     },
     {
       "fieldtype": "Select",
@@ -50,7 +87,48 @@
       "label": "Status",
       "options": "Pending\nIssued\nRevoked",
       "default": "Pending",
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldtype": "Date",
+      "fieldname": "issued_on",
+      "label": "Issued On",
       "read_only": 1
+    },
+    {
+      "fieldtype": "Date",
+      "fieldname": "expires_on",
+      "label": "Expires On",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldtype": "Int",
+      "fieldname": "max_students",
+      "label": "Student Limit",
+      "read_only": 1,
+      "description": "0 = no limit"
+    },
+    {
+      "fieldtype": "Small Text",
+      "fieldname": "modules",
+      "label": "Modules",
+      "read_only": 1
+    },
+    {
+      "fieldtype": "Section Break",
+      "fieldname": "key_section",
+      "label": "Key",
+      "collapsible": 1
+    },
+    {
+      "fieldtype": "Long Text",
+      "fieldname": "signed_key",
+      "label": "Signed License Key",
+      "read_only": 1,
+      "hidden": 1
     }
   ],
   "permissions": [
@@ -74,7 +152,9 @@
     }
   ],
   "creation": "2026-10-25 20:00:00.000000",
-  "modified": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-26 12:30:00.000000",
   "modified_by": "Administrator",
-  "owner": "Administrator"
+  "owner": "Administrator",
+  "title_field": "school_name",
+  "search_fields": "school_name,site,status"
 }

@@ -18,14 +18,18 @@
     "primary_domain",
     "agent",
     "subscription",
-    "notes"
+    "notes",
+    "sb_site",
+    "site_admin_password"
   ],
   "fields": [
     {
       "fieldtype": "Data",
       "fieldname": "school_name",
       "label": "School Name",
-      "reqd": 1
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
     },
     {
       "fieldtype": "Data",
@@ -66,7 +70,9 @@
       "fieldtype": "Link",
       "fieldname": "agent",
       "label": "Agent",
-      "options": "SaaS Agent"
+      "options": "SaaS Agent",
+      "in_list_view": 1,
+      "in_standard_filter": 1
     },
     {
       "fieldtype": "Link",
@@ -79,6 +85,21 @@
       "fieldtype": "Small Text",
       "fieldname": "notes",
       "label": "Notes"
+    },
+    {
+      "fieldname": "sb_site",
+      "fieldtype": "Section Break",
+      "label": "Site Access",
+      "collapsible": 1,
+      "depends_on": "eval:doc.canonical_site"
+    },
+    {
+      "fieldname": "site_admin_password",
+      "fieldtype": "Password",
+      "label": "Site Administrator Password",
+      "read_only": 1,
+      "no_copy": 1,
+      "print_hide": 1
     }
   ],
   "permissions": [
@@ -107,7 +128,9 @@
     }
   ],
   "creation": "2026-10-25 20:00:00.000000",
-  "modified": "2026-10-25 20:00:00.000000",
+  "modified": "2026-10-25 23:30:00.000000",
   "modified_by": "Administrator",
-  "owner": "Administrator"
+  "owner": "Administrator",
+  "title_field": "school_name",
+  "show_title_field_in_link": 1
 }

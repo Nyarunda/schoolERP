@@ -129,6 +129,24 @@ class TestControlPlane(TestCase):
         self.assertFalse(frappe.has_permission("SaaS Tenant", "write", own))
         self.assertRaises(frappe.PermissionError, api.overview)
 
+    def test_platform_admins_can_open_records(self):
+        """Only Administrator skips permission hooks; a real operator must still open any school or subscription."""
+        user = "operator-" + frappe.generate_hash(length=6) + "@stemic.test"
+        frappe.get_doc({"doctype": "User", "email": user, "first_name": "Operator", "send_welcome_email": 0,
+            "roles": [{"role": "Stemic Platform Admin"}]}).insert(ignore_permissions=True)
+        tenant = self.tenant()
+        plan = frappe.db.get_value("SaaS Plan", {}) or frappe.get_doc({"doctype": "SaaS Plan",
+            "plan_name": "Plan " + frappe.generate_hash(length=4), "enabled": 1}).insert().name
+        sub = frappe.get_doc({"doctype": "SaaS Subscription", "tenant": tenant, "plan": plan,
+            "starts_on": frappe.utils.nowdate()}).insert().name
+
+        frappe.set_user(user)
+        for doctype, name in (("SaaS Tenant", tenant), ("SaaS Subscription", sub)):
+            self.assertTrue(frappe.has_permission(doctype, "read", name), doctype)
+            self.assertTrue(frappe.has_permission(doctype, "write", name), doctype)
+        self.assertEqual(frappe.get_doc("SaaS Tenant", tenant).slug, tenant)
+        self.assertIn("schools", api.dashboard_metrics())
+
     def test_guest_cannot_call_admin_apis(self):
         frappe.set_user("Guest")
         self.assertRaises(frappe.PermissionError, api.overview)

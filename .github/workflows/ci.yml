@@ -24,6 +24,10 @@ jobs:
           node-version: 24
       - run: pip install pytest cryptography
       - run: bash scripts/check.sh
+      - name: Validate control-plane tax helpers
+        run: |
+          python -m compileall -q platform/stemic_control/stemic_control
+          PYTHONPATH=platform/stemic_control python -m pytest -q platform/stemic_control/stemic_control/tests/test_tax_rules.py
 
   bench-tests:
     name: Integration tests (Frappe + ERPNext v16)

@@ -277,12 +277,27 @@ class TestSchoolFlow(TestCase):
 		tx = frappe.get_doc("M-Pesa Transaction", name)
 		self.assertEqual((tx.status, tx.fee_payment), ("Needs Review", None))
 		self.assertIn("999999", tx.error)
-		self.assertIsNone(hold_for_review(raw, problems))  # a retry does not duplicate it
+		self.assertEqual(hold_for_review(raw, problems), name)  # a retry is acknowledged, not duplicated
+		self.assertEqual(frappe.db.count("M-Pesa Transaction", {"trans_id": raw["TransID"]}), 1)
 
 		retry_pending()  # never posted automatically
 		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "status"), "Needs Review")
 
-		self.assertEqual(assign_and_post(name, s.name)["status"], "Posted")  # the bursar checked it and posts it
+		self.assertRaises(frappe.ValidationError, assign_and_post, name, s.name)  # not without saying what was checked
+		bursar = "bursar-" + frappe.generate_hash(length=6) + "@school.test"
+		frappe.get_doc({"doctype": "User", "email": bursar, "first_name": "Bursar", "send_welcome_email": 0,
+						"roles": [{"role": "Bursar"}]}).insert(ignore_permissions=True)
+		frappe.set_user(bursar)
+		try:  # a bursar alone cannot release it
+			self.assertRaises(frappe.PermissionError, assign_and_post, name, s.name, "STMT-OCT-17", "Seen on the statement")
+		finally:
+			frappe.set_user("Administrator")
+		self.assertEqual(frappe.db.get_value("M-Pesa Transaction", name, "status"), "Needs Review")
+
+		out = assign_and_post(name, s.name, "STMT-OCT-17 line 42", "Amount and payer match the Safaricom statement")
+		self.assertEqual(out["status"], "Posted")
+		tx.reload()
+		self.assertEqual((tx.verified_reference, tx.verified_by), ("STMT-OCT-17 line 42", "Administrator"))
 		self.assertIsNone(hold_for_review({**raw, "TransID": ""}, problems))  # nothing to key it on: log only
 
 	def test_till_payment_matched_by_payer_phone(self):

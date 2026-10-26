@@ -289,17 +289,39 @@ def _post(name, student=None):
 		return "Failed"
 
 
+# Who may release a payment held for review: it failed our checks, so someone senior confirms it with Safaricom
+RELEASE_ROLES = {"School Admin", "Accounts Manager", "System Manager"}
+
+
 @frappe.whitelist()
-def assign_and_post(name, student=None):
-	"""Bursar button: post an Unmatched/Failed/Needs Review payment (optionally to a chosen student)."""
+def assign_and_post(name, student=None, verified_reference=None, verification_note=None):
+	"""Bursar button: post an Unmatched/Failed payment (optionally to a chosen student).
+
+	A Needs Review payment is never posted on its own say-so: a School Admin or accountant first checks it against the
+	Safaricom statement and records where (verified_reference) and why (verification_note)."""
 	frappe.has_permission("M-Pesa Transaction", "write", name, throw=True)
 	frappe.has_permission("Fee Payment", "submit", throw=True)
 	if frappe.db.get_value("M-Pesa Transaction", name, "status") == "Needs Review":
-		frappe.throw(_("Reconcile rejected callback evidence with Safaricom before posting"), frappe.PermissionError)
+		release_for_posting(name, verified_reference, verification_note)
 	if student:
 		frappe.db.set_value("M-Pesa Transaction", name, "student", student)
 	status = post_transaction(name, student)
 	return {"status": status, "error": frappe.db.get_value("M-Pesa Transaction", name, "error")}
+
+
+def release_for_posting(name, verified_reference, verification_note):
+	if not (RELEASE_ROLES & set(frappe.get_roles())):
+		frappe.throw(_("A School Admin or accountant must check this payment against the Safaricom statement before it is posted."),
+					 frappe.PermissionError)
+	reference, note = (verified_reference or "").strip(), (verification_note or "").strip()
+	if not reference or len(note) < 8:
+		frappe.throw(_("Enter the Safaricom statement or transaction reference you checked it against, and why it is genuine."))
+	tx = frappe.get_doc("M-Pesa Transaction", name, for_update=True)
+	if tx.status != "Needs Review":
+		return
+	tx.db_set({"status": "Received", "verified_reference": reference[:140], "verified_by": frappe.session.user,
+			   "verified_on": now_datetime(), "verification_note": note[:500],
+			   "error": f"Released after checking against Safaricom ({reference[:60]}). Was: {tx.error or ''}"[:1000]})
 
 
 def retry_pending():

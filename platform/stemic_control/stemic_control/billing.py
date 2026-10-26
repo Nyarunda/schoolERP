@@ -122,6 +122,31 @@ def _create_invoice(subscription, months=None, period_start=None, discount_amoun
     return inv.name
 
 
+
+def validate_invoice_for_submit(doc):
+    """Guard the form-submit path too; users can submit invoices outside the create API."""
+    if not frappe.db.sql(
+        "SELECT name FROM `tabSaaS Subscription` WHERE name = %s FOR UPDATE",
+        (doc.subscription,),
+    ):
+        frappe.throw("Unknown subscription", frappe.ValidationError)
+    conflicting = frappe.db.get_value(
+        "SaaS Invoice",
+        {
+            "subscription": doc.subscription,
+            "docstatus": 1,
+            "status": ("in", OPEN),
+            "name": ("!=", doc.name),
+        },
+        "name",
+    )
+    if conflicting:
+        frappe.throw(
+            f"Invoice {conflicting} is still unpaid; cannot submit another invoice",
+            frappe.ValidationError,
+        )
+
+
 # ----------------------------------------------------------------------------- payments
 def validate_payment(doc):
     inv = frappe.db.get_value("SaaS Invoice", doc.invoice, ["docstatus", "outstanding", "tenant"], as_dict=True)

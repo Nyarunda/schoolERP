@@ -109,7 +109,7 @@ def validate():
 		frappe.log_error(title="Paybill validation refused", message=reason)
 		return _json_response(pb.REJECT_OTHER)
 	data = pb.normalize_payload(_payload())
-	if data["amount"] <= 0:
+	if not pb.valid_confirmation(_payload(), settings.mpesa_shortcode, require_transaction_id=False):
 		return _json_response(pb.REJECT_AMOUNT)
 	if settings.mpesa_validate_account and not pb.is_till(settings.mpesa_account_type) and not find_student(data["bill_ref_number"]):
 		return _json_response(pb.REJECT_ACCOUNT)
@@ -125,16 +125,22 @@ def confirm():
 	if reason:
 		frappe.log_error(title="Paybill confirmation refused", message=f"{reason}\n{json.dumps(raw)[:2000]}")
 		return _json_response(pb.REJECT_OTHER, status=403)
+	if not pb.valid_confirmation(raw, settings.mpesa_shortcode):
+		frappe.log_error(title="Invalid Paybill confirmation", message=json.dumps(raw)[:2000])
+		return _json_response(pb.REJECT_OTHER, status=400)
 	try:
 		record_confirmation(raw, source="Safaricom")
 	except Exception:
-		# The money is already received; never make Safaricom think we lost it. Log loudly.
+		frappe.db.rollback()
 		frappe.log_error(title="Paybill confirmation could not be stored", message=json.dumps(raw)[:4000])
+		return _json_response(pb.REJECT_OTHER, status=503)
 	return _json_response(pb.ACCEPT)
 
 
 def record_confirmation(raw: dict, source: str = "Safaricom") -> str:
-	"""Store the transaction (idempotent) and queue posting. Returns the M-Pesa code."""
+	"""Store a validated transaction (idempotent) and queue posting."""
+	if source == "Safaricom" and not pb.valid_confirmation(raw, _settings().mpesa_shortcode):
+		frappe.throw(_("Invalid Paybill confirmation envelope"))
 	data = pb.normalize_payload(raw)
 	if not data["trans_id"]:
 		frappe.throw(_("Missing TransID"))

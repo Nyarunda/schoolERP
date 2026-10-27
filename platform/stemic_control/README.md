@@ -51,6 +51,31 @@ bench --site admin.stemischools.com migrate
 
 Only run after reviewing app import paths and local Bench permissions. Do not use the `school.localhost` tenant site as admin.
 
+## Keeping it running (production)
+
+Scheduled jobs run on the background workers, so if the workers stop, nothing scheduled inside Frappe can report it.
+Three things cover that:
+
+1. **Restart what crashes.** On a production server run `sudo bench setup production <user>`. It installs supervisor
+   (or systemd) and nginx, and supervisor restarts the web server, workers and scheduler when they stop. `bench start`
+   is for development only: it stops when its terminal closes.
+2. **The watchdog.** `scripts/watchdog.py` checks the machinery from outside the workers: workers running, the
+   scheduler enabled and ticking, jobs not waiting too long, school site jobs not stuck (`stemic_control.health`).
+   Add it to the server user's crontab (`crontab -e`):
+
+       */5 * * * *  cd /home/<user>/frappe-bench/sites && ../env/bin/python ../apps/stemic_control/scripts/watchdog.py <admin site>
+
+   It emails the platform admins (System Manager / Stemic Platform Admin users with an email address) straight to the
+   mail server, without the job queue, when a problem starts, every hour while it lasts and once when it clears.
+   **It needs a default outgoing Email Account**; without one it prints the alert, and cron mails that to the server's
+   user. It also records an Error Log entry.
+3. **The Control Center shows it.** The Home page's attention list starts with "Background jobs not running" when
+   anything is wrong, and the Setup Check lists each part.
+
+**Backups:** `scripts/restore_check.py <admin site> <school site>` proves a school's backup restores (see its header).
+Keep each school's `encryption_key` (in its `site_config.json`) somewhere other than its server: the backup does not
+contain it, and without it a restored school's stored passwords and secrets are unreadable.
+
 ## APIs
 
 Authenticated platform admin only:

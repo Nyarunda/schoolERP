@@ -113,6 +113,24 @@ class TestEtims(TestCase):
         profile.branch_id = "00"
         self.assertRaises(frappe.ValidationError, profile.save)  # but cannot be enabled without a valid PIN
 
+    def test_a_new_profile_needs_only_the_school_and_its_name(self):
+        other = api.register_tenant("Form School", "form-" + frappe.generate_hash(length=6).lower(), "head@form.test")
+        profile = frappe.get_doc({"doctype": "SaaS Tax Profile", "tenant": other}).insert()  # what the New form sends
+        self.assertEqual((profile.seller_name, profile.integration_mode, profile.default_tax_treatment),
+                         ("Form School", "Manual", "Review Required"))
+        profile.seller_pin = " p05 1234567x "
+        profile.save()
+        self.assertEqual(profile.seller_pin, "P051234567X")  # typed with spaces and in lower case
+        profile.seller_pin = "P05123456"
+        self.assertRaises(frappe.ValidationError, profile.save)
+        profile.reload()
+        profile.enabled = 1
+        self.assertRaises(frappe.ValidationError, profile.save)  # no branch yet
+        profile.reload()  # a refused save leaves the copy in memory out of date
+        profile.update({"enabled": 1, "branch_id": "00"})
+        profile.save()
+        self.assertTrue(frappe.db.get_value("SaaS Tax Profile", other, "enabled"))
+
     def test_tax_records_are_for_platform_admins_only(self):
         user = "agent-" + frappe.generate_hash(length=6) + "@stemic.test"
         frappe.get_doc({"doctype": "User", "email": user, "first_name": "Agent", "send_welcome_email": 0,

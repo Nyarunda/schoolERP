@@ -6,64 +6,123 @@
   "engine": "InnoDB",
   "track_changes": 1,
   "field_order": [
+    "readiness_html",
+    "school_section",
     "tenant",
-    "seller_pin",
     "seller_name",
+    "kra_section",
+    "seller_pin",
     "branch_id",
+    "kra_column",
     "integration_mode",
-    "enabled",
+    "tax_section",
     "default_tax_treatment",
+    "tax_column",
+    "enabled",
+    "notes_section",
     "notes"
   ],
   "fields": [
     {
-      "fieldname": "tenant",
-      "fieldtype": "Link",
-      "label": "Tenant",
-      "options": "SaaS Tenant",
-      "reqd": 1,
-      "unique": 1
+      "fieldname": "readiness_html",
+      "fieldtype": "HTML",
+      "label": "Readiness"
     },
     {
-      "fieldname": "seller_pin",
-      "fieldtype": "Data",
-      "label": "Seller Pin",
-      "mandatory_depends_on": "eval:doc.enabled",
-      "description": "KRA PIN, e.g. P051234567X. Needed before the profile can be enabled."
+      "fieldname": "school_section",
+      "fieldtype": "Section Break",
+      "label": "School"
+    },
+    {
+      "fieldname": "tenant",
+      "fieldtype": "Link",
+      "label": "School",
+      "options": "SaaS Tenant",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "The school this KRA registration belongs to. Each school has one tax profile."
     },
     {
       "fieldname": "seller_name",
       "fieldtype": "Data",
-      "label": "Seller Name",
-      "reqd": 1
+      "label": "Registered Name",
+      "reqd": 1,
+      "fetch_from": "tenant.school_name",
+      "fetch_if_empty": 1,
+      "in_list_view": 1,
+      "description": "The name exactly as it appears on the school's KRA PIN certificate. Filled from the school; change it if KRA has a different name."
+    },
+    {
+      "fieldname": "kra_section",
+      "fieldtype": "Section Break",
+      "label": "KRA Registration"
+    },
+    {
+      "fieldname": "seller_pin",
+      "fieldtype": "Data",
+      "label": "KRA PIN",
+      "mandatory_depends_on": "eval:doc.enabled",
+      "description": "11 characters: P or A, nine digits, then a letter (for example P051234567X). A draft can be saved without it.",
+      "length": 11,
+      "in_list_view": 1
     },
     {
       "fieldname": "branch_id",
       "fieldtype": "Data",
-      "label": "Branch Id"
+      "label": "KRA Branch ID",
+      "length": 10,
+      "description": "The eTIMS branch the school's invoices are issued from, usually 00 for the head office."
+    },
+    {
+      "fieldname": "kra_column",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "integration_mode",
       "fieldtype": "Select",
-      "label": "Integration Mode",
-      "options": "Manual\nCertified Integrator\nOSCU\nVSCU"
+      "label": "eTIMS Connection",
+      "options": "Manual\nCertified Integrator\nOSCU\nVSCU",
+      "default": "Manual",
+      "description": "Manual: tax invoices are prepared here and filed by the school. The other modes need a certified provider set up by Stemic."
     },
     {
-      "fieldname": "enabled",
-      "fieldtype": "Check",
-      "label": "Enabled"
+      "fieldname": "tax_section",
+      "fieldtype": "Section Break",
+      "label": "Tax Invoices"
     },
     {
       "fieldname": "default_tax_treatment",
       "fieldtype": "Select",
-      "label": "Default Tax Treatment",
+      "label": "Usual VAT Treatment",
       "options": "Review Required\nExempt\nZero Rated\nStandard Rated",
-      "default": "Review Required"
+      "default": "Review Required",
+      "description": "What the school's sales usually are. Education is normally Exempt. Each invoice is still reviewed."
+    },
+    {
+      "fieldname": "tax_column",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "enabled",
+      "fieldtype": "Check",
+      "label": "Ready for Tax Invoices",
+      "in_list_view": 1,
+      "description": "Tick once the PIN and branch are confirmed. Only then can tax invoices be prepared for this school."
+    },
+    {
+      "fieldname": "notes_section",
+      "fieldtype": "Section Break",
+      "label": "Notes",
+      "collapsible": 1,
+      "collapsible_depends_on": "notes"
     },
     {
       "fieldname": "notes",
       "fieldtype": "Small Text",
-      "label": "Notes"
+      "label": "Notes",
+      "description": "Anything the next person should know, for example where the PIN certificate is kept."
     }
   ],
   "permissions": [
@@ -82,5 +141,10 @@
       "report": 1
     }
   ],
-  "modified": "2026-10-26 14:00:00.000000"
+  "modified": "2026-10-27 12:00:00.000000",
+  "title_field": "seller_name",
+  "show_title_field_in_link": 1,
+  "search_fields": "seller_pin",
+  "sort_field": "modified",
+  "sort_order": "DESC"
 }

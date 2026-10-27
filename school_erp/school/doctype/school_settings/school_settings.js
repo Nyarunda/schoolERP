@@ -130,9 +130,20 @@ const MODULE_HELP = {
 
 function render_license(frm) {
 	const $w = frm.get_field("license_status_html").$wrapper;
-	frappe.call("school_erp.licensing.license_overview").then(({ message: s }) => $w.html(license_panel(frm, s)).find(".sl-copy").on("click", (e) => {
-		frappe.utils.copy_to_clipboard($(e.currentTarget).data("copy"));
-	}));
+	frappe.call("school_erp.licensing.license_overview").then(({ message: s }) => {
+		$w.html(license_panel(frm, s));
+		$w.find(".sl-copy").on("click", (e) => frappe.utils.copy_to_clipboard($(e.currentTarget).data("copy")));
+		$w.find(".sl-install").on("click", () => install_key(frm));
+	});
+}
+
+// The key on its own: works before the rest of School Settings (school name, company) has been filled in
+function install_key(frm) {
+	frappe.prompt({ fieldname: "key", fieldtype: "Small Text", label: __("License key from your vendor"), reqd: 1 }, ({ key }) =>
+		frappe.call({ method: "school_erp.licensing.install_key", args: { key }, freeze: true }).then(() => {
+			frappe.show_alert({ message: __("License key installed"), indicator: "green" });
+			frm.reload_doc();
+		}), __("Install license key"), __("Install"));
 }
 
 function license_panel(frm, s) {
@@ -248,6 +259,7 @@ function license_panel(frm, s) {
 		${more ? `<div class="text-muted small">${__("{0} more module(s) can be added to this license by your vendor; they stay hidden until then.", [more])}</div>` : ""}
 		<div class="sl-site">${__("This site")}: <code>${esc(s.this_site)}</code>
 			<button class="btn btn-xs btn-default sl-copy" data-copy="${esc(s.this_site)}">${__("Copy")}</button>
+			<button class="btn btn-xs btn-primary sl-install">${s.status === "unlicensed" ? __("Install Key") : __("Install New Key")}</button>
 			<span class="text-muted">${__("Your vendor needs this name to make a key for this school.")}</span></div>
 	</div>`;
 }

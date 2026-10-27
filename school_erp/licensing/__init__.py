@@ -203,6 +203,29 @@ def daily_license_check():
 	get_state(refresh=True)
 
 
+@frappe.whitelist(methods=["POST"])
+def install_key(key):
+	"""Save a license key on its own. A new school gets its key before it has filled in School Settings (school name,
+	company), so the whole form cannot be saved yet; the key is checked here instead and only the license fields change."""
+	frappe.has_permission("School Settings", "write", throw=True)
+	key = "".join((key or "").split())
+	state = lic.evaluate(key, PUBLIC_KEY, getdate(nowdate()), site=frappe.local.site)
+	if state["status"] in ("unlicensed", "invalid"):
+		frappe.throw(_(state["message"]), title=_("License key not accepted"))
+	frappe.db.set_single_value("School Settings", {
+		"license_key": key,
+		"license_status": f"{state['status'].title()}: {state['message']}",
+		"licensed_to": state["licensed_to"],
+		"license_expiry": state["expires"],
+		"max_students": state["max_students"],
+		"licensed_modules": ", ".join(lic.MODULES[m] for m in state["modules"] if m in lic.MODULES) or "Core only",
+	})
+	frappe.clear_document_cache("School Settings", "School Settings")
+	clear_cache()
+	frappe.publish_realtime("school_erp_license_changed", user=frappe.session.user)
+	return license_overview()
+
+
 @frappe.whitelist()
 def license_overview():
 	"""Everything the License tab in School Settings shows: the saved key's state, usage and the full module list."""

@@ -238,8 +238,14 @@ def process_queue() -> int:
     cutoff = add_to_date(now_datetime(), minutes=-STALE_RUNNING)
     for name in frappe.get_all("SaaS Provisioning Job", filters={"status": "Running", "action": "Create Site",
                                                                   "modified": ("<", cutoff)}, pluck="name"):
-        _set_job(name, "Failed", f"No progress for {STALE_RUNNING} minutes; the worker probably stopped. Queue it again.")
         tenant = frappe.db.get_value("SaaS Provisioning Job", name, "tenant")
+        message = f"No progress for {STALE_RUNNING} minutes; the worker probably stopped. Queue it again."
+        # STALE_RUNNING is past the worker's own time limit, so nothing is still building: remove what it left half
+        # made, or the retry would refuse with "site already exists". A school that has its site keeps it.
+        slug, has_site = frappe.db.get_value("SaaS Tenant", tenant, ["slug", "canonical_site"]) or (None, None)
+        if slug and not has_site:
+            message += _drop_partial_site(site_name(slug))
+        _set_job(name, "Failed", message)
         if policy.can_move(policy.TENANT_TRANSITIONS, frappe.db.get_value("SaaS Tenant", tenant, "status"), "Failed"):
             _set_tenant(tenant, "Failed")
     frappe.db.commit()

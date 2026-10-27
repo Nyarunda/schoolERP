@@ -10,10 +10,8 @@ frappe.ui.form.on("SaaS Tenant", {
         // Manual fallbacks for the automated provisioner
         if (frm.doc.status === "Pending") {
             frm.add_custom_button(__("Provision Now"), () =>
-                frappe.call({ method: "stemic_control.api.provision_tenant_now", args: { tenant: frm.doc.name } }).then(() => {
-                    frappe.show_alert({ message: __("Handed to the provisioner"), indicator: "blue" });
-                    setTimeout(() => frm.reload_doc(), 4000);
-                }), __("Actions"));
+                frappe.call({ method: "stemic_control.api.provision_tenant_now", args: { tenant: frm.doc.name } })
+                    .then(() => provisioning_dialog(frm)), __("Actions"));
         }
         approval_actions(frm);
         if (["Approved", "Failed"].includes(frm.doc.status) && frm.doc.approved_on) {
@@ -22,10 +20,7 @@ frappe.ui.form.on("SaaS Tenant", {
                     method: "stemic_control.api.queue_provisioning",
                     args: { tenant: frm.doc.name, request_key: `${frm.doc.name}-${Date.now()}` },
                     freeze: true,
-                }).then(({ message }) => {
-                    frappe.show_alert({ message: __("Queued {0}", [message]), indicator: "green" });
-                    frm.reload_doc();
-                }), __("Actions"));
+                }).then(() => provisioning_dialog(frm)), __("Actions"));
         }
         if (["Approved", "Failed"].includes(frm.doc.status) && frm.doc.approved_on && !frm.doc.canonical_site) {
             frm.add_custom_button(__("Link Existing Site"), () => link_existing_site(frm), __("Actions"));
@@ -61,6 +56,76 @@ function approval_actions(frm) {
     }
     if (frm.doc.status === "Pending Approval") ask(__("Approve"), "approve_tenant", "note", __("Approved"));
     if (["Pending Approval", "Approved", "Failed"].includes(frm.doc.status)) ask(__("Reject"), "reject_tenant", "reason", __("Rejected"));
+}
+
+// After Provision Now / Queue / Retry: say what the provisioner is doing, and what happened or went wrong
+function provisioning_dialog(frm) {
+    const esc = frappe.utils.escape_html;
+    const d = new frappe.ui.Dialog({ title: __("Creating the site for {0}", [frm.doc.school_name]),
+                                     fields: [{ fieldname: "info", fieldtype: "HTML" }] });
+    const $info = d.fields_dict.info.$wrapper;
+    let timer, done = false;
+    const stop = () => { clearTimeout(timer); done = true; };
+    d.onhide = () => { stop(); frm.reload_doc(); };
+    d.show();
+    const ago = (from, now) => Math.max(0, Math.round((frappe.datetime.str_to_obj(now) - frappe.datetime.str_to_obj(from)) / 1000));
+    const minutes = (s) => (s < 90 ? __("{0} s", [s]) : __("{0} min", [Math.round(s / 60)]));
+    const steps = (at, bad) => [__("Queued"), __("Creating the site"), __("Done")].map((label, i) => {
+        const state = i < at ? "done" : i === at ? (bad ? "bad" : at === 2 ? "done" : "now") : "todo";
+        const [bg, fg] = { done: ["var(--green-500)", "#fff"], now: ["var(--blue-500)", "#fff"], bad: ["var(--red-500)", "#fff"],
+                           todo: ["var(--gray-200)", "var(--gray-600)"] }[state];
+        return `<div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+            <span style="flex:none;width:22px;height:22px;border-radius:50%;background:${bg};color:${fg};font-size:11px;font-weight:600;
+                         display:inline-flex;align-items:center;justify-content:center">${state === "done" ? "✓" : state === "bad" ? "!" : i + 1}</span>
+            <span class="small" style="font-weight:${state === "now" || state === "bad" ? 600 : 400}">${label}</span></div>`;
+    }).join("");
+    const box = (tone, title, body) => `<div style="display:flex;gap:6px;margin-bottom:14px">${body.steps}</div>
+        <div style="font-weight:600;color:var(--${tone}-600);margin-bottom:6px">${title}</div>${body.text || ""}`;
+
+    const poll = () => frappe.xcall("stemic_control.api.provisioning_progress", { tenant: frm.doc.name }, "GET").then((p) => {
+        if (done) return;
+        const j = p.job, more = (s) => `<div class="text-muted small" style="margin-top:6px">${s}</div>`;
+        const link = j ? `<a href="/app/saas-provisioning-job/${encodeURIComponent(j.name)}">${esc(j.name)}</a>` : "";
+        let html, finished = false;
+        if (!j) {
+            html = box("gray", __("No site job yet"), { steps: steps(0), text: more(__("Queue Provisioning creates one.")) });
+            finished = true;
+        } else if (j.status === "Queued") {
+            const waited = ago(j.queued_on, p.now);
+            const stuck = waited > 60 && (p.workers === 0 || !p.local_provisioner);
+            html = box(stuck ? "orange" : "blue", stuck ? __("Still waiting for the provisioner") : __("Waiting for the provisioner to pick it up"), {
+                steps: steps(0), text: more(__("Job {0}, queued {1} ago.", [link, minutes(waited)]))
+                    + (!p.local_provisioner ? more(__("The local provisioner is switched off (stemic_local_provisioner), so an external provisioner must take this job."))
+                        : p.workers === 0 ? more(__("No background worker is running, so nothing will pick it up. Start one: {0}", ["<code>bench start</code>"]))
+                            : waited > 60 ? more(__("A worker is running but has not taken it yet; it may be busy with another job.")) : ""),
+            });
+        } else if (j.status === "Running") {
+            html = box("blue", __("Creating the site: database, ERPNext and School ERP"), {
+                steps: steps(1), text: more(__("Running for {0}. This usually takes 3 to 8 minutes; you can close this and come back.", [minutes(ago(j.updated_on, p.now))]))
+                    + more(__("Job {0}{1}", [link, j.environment ? ` · ${esc(j.environment)}` : ""])),
+            });
+        } else if (j.status === "Succeeded") {
+            html = box("green", __("The site is ready"), { steps: steps(2), text: more(__("{0} is live. Open it from Open Site.", [`<b>${esc(p.site || "")}</b>`])) });
+            finished = true;
+            if (p.site) d.set_primary_action(__("Open Site"), () => { d.hide(); open_site(frm); });
+        } else if (j.refused) {
+            html = box("red", __("The provisioner refused to build it"), {
+                steps: steps(0, true), text: `<ul style="margin:0;padding-left:18px">${j.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>`
+                    + more(__("Nothing was created. Fix the above, then use Actions > Queue Provisioning. Job {0}.", [link])),
+            });
+            finished = true;
+        } else {
+            html = box("red", __("Creating the site failed"), {
+                steps: steps(1, true), text: (j.error ? `<div style="color:var(--red-600)">${esc(j.error)}</div>` : "")
+                    + (j.cleanup ? more(esc(j.cleanup)) : "")
+                    + more(__("The full error is on job {0}; fix it, then use Actions > Retry Provisioning.", [link])),
+            });
+            finished = true;
+        }
+        $info.html(html);
+        if (finished) stop(); else timer = setTimeout(poll, 3000);
+    }).catch(() => { $info.html(`<div style="color:var(--red-600)">${__("Could not read the provisioning status.")}</div>`); stop(); });
+    poll();
 }
 
 // Pending / Provisioning: refresh until it settles (the overview card says what is happening)

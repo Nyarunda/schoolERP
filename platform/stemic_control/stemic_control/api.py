@@ -307,6 +307,41 @@ def provision_tenant_now(tenant):
 
 
 @frappe.whitelist(methods=["GET"])
+def provisioning_progress(tenant):
+    """What the provisioning dialog shows: the school's latest site job, where it is, and why it stopped if it did."""
+    _admin()
+    school = frappe.get_doc("SaaS Tenant", tenant)
+    school.check_permission("read")
+    job = frappe.db.get_value("SaaS Provisioning Job", {"tenant": tenant, "action": "Create Site"},
+                              ["name", "status", "attempts", "last_error", "environment", "creation", "modified"],
+                              as_dict=True, order_by="creation desc")
+    try:
+        from frappe.utils.background_jobs import get_workers
+
+        workers = len(get_workers())
+    except Exception:
+        workers = None  # Redis not reachable: unknown
+    from stemic_control import provisioner
+
+    out = {"tenant_status": school.status, "site": school.canonical_site, "workers": workers,
+           "local_provisioner": provisioner.enabled(), "now": str(now_datetime()), "job": None}
+    if job:
+        error = (job.last_error or "").strip()
+        refused = error.startswith("Refused:")
+        out["job"] = {
+            "name": job.name, "status": job.status, "attempts": job.attempts, "environment": job.environment,
+            "queued_on": str(job.creation), "updated_on": str(job.modified), "refused": refused,
+            # a refusal's reasons, or the error's first useful line (not a traceback's header or frames)
+            "reasons": [r.strip().rstrip(".") for r in error[len("Refused:"):].split(";") if r.strip()] if refused else [],
+            "error": next((line.strip() for line in error.splitlines()
+                           if line.strip() and not line.startswith(("Traceback", "  File", "    "))), "")[:300],
+            # what became of a half-made site (provisioner._drop_partial_site's line), if anything was made
+            "cleanup": next((line.strip() for line in error.splitlines() if "partly created site" in line), ""),
+        }
+    return out
+
+
+@frappe.whitelist(methods=["GET"])
 def plan_catalogue():
     """School ERP modules a plan can include, for the plan form."""
     _admin()

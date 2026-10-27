@@ -130,6 +130,21 @@ class TestProvisioner(TestCase):
         api.record_job_result(self.job, "Running")
         self.assertRaises(frappe.ValidationError, api.record_job_result, self.job, "Succeeded")
 
+    def test_an_abandoned_build_is_failed_and_its_half_made_site_removed(self):
+        """A worker that died mid-build (e.g. the machine restarted) leaves a Running job and part of a site."""
+        frappe.db.set_value("SaaS Provisioning Job", self.job, "status", "Running")
+        old = frappe.utils.add_to_date(frappe.utils.now_datetime(), minutes=-(provisioner.STALE_RUNNING + 5))
+        frappe.db.sql("UPDATE `tabSaaS Provisioning Job` SET modified = %s WHERE name = %s", (old, self.job))
+        calls, fake = self.cli()
+        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", return_value=True):
+            provisioner.process_queue()
+        self.assertEqual([c[:2] for c in calls if c[0] == "drop-site"], [("drop-site", f"{self.slug}.localhost")])
+        job = frappe.db.get_value("SaaS Provisioning Job", self.job, ["status", "last_error"], as_dict=True)
+        self.assertEqual(job.status, "Failed")
+        self.assertIn(f"The partly created site {self.slug}.localhost was removed", job.last_error)
+        progress = api.provisioning_progress(self.slug)["job"]
+        self.assertIn("was removed", progress["cleanup"])  # the dialog says what became of it
+
     def test_operator_mark_failed_while_running_is_respected(self):
         def fake(*args, **kwargs):
             if args[0] == "new-site":  # an operator gives up on the job while the site is still being built

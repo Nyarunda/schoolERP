@@ -180,3 +180,27 @@ class TestOnboarding(TestCase):
         self.assertEqual(result, "Succeeded")
         self.assertEqual([c[0] for c in calls if c[0] == "new-site"], ["new-site"])
         self.assertEqual(frappe.db.get_value("SaaS Tenant", self.slug, "status"), "Active")
+
+    # ------------------------------------------------------------------ what the provisioning dialog is told
+    def test_provisioning_progress_says_what_happened(self):
+        self.assertIsNone(api.provisioning_progress(self.slug)["job"])  # nothing queued yet
+        sub = make_eligible(self.slug)
+        job = self.queue()
+        p = api.provisioning_progress(self.slug)
+        self.assertEqual((p["job"]["name"], p["job"]["status"], p["job"]["refused"]), (job, "Queued", False))
+        self.assertIn("workers", p)
+
+        onboarding.revoke_billing_exception(sub)
+        self.build(job)  # refused: no longer eligible
+        p = api.provisioning_progress(self.slug)["job"]
+        self.assertTrue(p["refused"])
+        self.assertIn("No paid subscription, approved free trial or approved internal subscription", p["reasons"])
+
+        frappe.db.set_value("SaaS Provisioning Job", job, "last_error",
+                            "Traceback (most recent call last):\n  File \"x.py\", line 1\nProvisioningError: new-site failed: database error")
+        p = api.provisioning_progress(self.slug)["job"]
+        self.assertFalse(p["refused"])
+        self.assertEqual(p["error"], "ProvisioningError: new-site failed: database error")  # not the traceback header
+
+        frappe.set_user("Guest")
+        self.assertRaises(frappe.PermissionError, api.provisioning_progress, self.slug)

@@ -175,6 +175,27 @@ class TestSchoolFlow(TestCase):
 		finally:
 			set_license(ALL_MODULES)
 
+	def test_apis_and_reports_that_read_directly_respect_the_license(self):
+		"""Direct reads (frappe.get_all / frappe.db) skip the permission hooks, so these check the license themselves."""
+		from school_erp.api import billing as billing_api, welfare
+		from school_erp.school.report.fee_collection import fee_collection
+		from school_erp.school.report.income_vs_expenses import income_vs_expenses
+
+		try:
+			set_license(["exams"])
+			self.assertRaises(frappe.PermissionError, fee_collection.execute, {})
+			self.assertRaises(frappe.PermissionError, billing_api.fee_matrix, frappe.db.get_value("School Term", self.term, "school_year"))
+			frappe.set_user("Guest")
+			self.assertRaises(frappe.PermissionError, welfare.complaint_status, "CMP-0001", "0712345678")
+			frappe.set_user("Administrator")
+
+			set_license(["fees"])  # income without expenses: the report runs, with no expense figures
+			_columns, rows, *_ = income_vs_expenses.execute({})
+			self.assertTrue(all(r["expenses"] == 0 for r in rows))
+		finally:
+			frappe.set_user("Administrator")
+			set_license(ALL_MODULES)
+
 	def test_student_limit_says_how_many_the_school_has(self):
 		active = frappe.db.count("Student", {"status": "Active"})
 		try:

@@ -354,6 +354,7 @@ def copy_fee_structures(from_term, to_term, increase_percent=0, round_to=0):
 
 
 @frappe.whitelist()
+@licensing.licensed("School Fee Structure")
 def fee_matrix(school_year):
 	"""Total fees per class (rows) per term (columns) for a year, for the Fee Structure form/report."""
 	terms = frappe.get_all("School Term", filters={"school_year": school_year}, order_by="start_date", pluck="name")

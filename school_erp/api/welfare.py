@@ -52,6 +52,7 @@ def sms_complainant(doc, template, **extra):
 
 @frappe.whitelist(allow_guest=True)
 @rate_limit(limit=20, seconds=60 * 60)
+@licensing.licensed("Complaint")
 def complaint_status(ref, phone):
 	"""Public status lookup. Needs the reference AND the phone number used, and reveals only status/resolution."""
 	ref = (ref or "").strip().upper()

@@ -6,8 +6,10 @@ from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
 from school_erp.api.report_utils import col, date_range
+from school_erp import licensing
 
 
+@licensing.licensed("Fee Payment")
 def execute(filters=None):
 	"""Per month: fees billed, fees collected, school expenses approved, and the cash difference."""
 	f = frappe._dict(filters or {})
@@ -18,8 +20,8 @@ def execute(filters=None):
 		where docstatus=1 and is_return=0 and ifnull(student,'')!='' and posting_date between %s and %s group by 1""", (fd, td))
 	collected = by_month("""select date_format(posting_date,'%%Y-%%m'), sum(amount) from `tabFee Payment`
 		where docstatus=1 and posting_date between %s and %s group by 1""", (fd, td))
-	spent = by_month("""select date_format(posting_date,'%%Y-%%m'), sum(amount) from `tabSchool Expense`
-		where docstatus=1 and status='Approved' and posting_date between %s and %s group by 1""", (fd, td))
+	spent = {} if licensing._hidden("School Expense") else by_month("""select date_format(posting_date,'%%Y-%%m'), sum(amount)
+		from `tabSchool Expense` where docstatus=1 and status='Approved' and posting_date between %s and %s group by 1""", (fd, td))
 	months = sorted(set(billed) | set(collected) | set(spent))
 	data = [{"month": m, "billed": billed.get(m, 0), "collected": collected.get(m, 0), "expenses": spent.get(m, 0),
 			 "net": collected.get(m, 0) - spent.get(m, 0)} for m in months]

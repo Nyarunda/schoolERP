@@ -1,5 +1,6 @@
 """License enforcement inside Frappe. Rules live in school_erp.logic.license."""
 
+import functools
 import json
 
 import frappe
@@ -77,6 +78,25 @@ def licensed_read(doc, ptype=None, user=None, debug=False):
 	"""has_permission hook: nobody opens, reads or prints a record of a module the school has not licensed.
 	A hook can only deny (True means "no objection"), so the DocType's other rules still decide otherwise."""
 	return not _hidden(doc.doctype)
+
+
+def licensed(*doctypes):
+	"""Decorator for APIs and report execute() that read these DocTypes directly (frappe.get_all / frappe.db, which
+	bypass the permission hooks): refused when the school's license hides any of them."""
+
+	def wrap(fn):
+		@functools.wraps(fn)
+		def inner(*args, **kwargs):
+			hidden = [dt for dt in doctypes if _hidden(dt)]
+			if hidden:
+				label = lic.MODULES.get(lic.DOCTYPE_MODULE.get(hidden[0]), hidden[0])
+				frappe.throw(_("{0} is not part of this school's subscription.").format(_(label)),
+							 title=_("Not in subscription"), exc=frappe.PermissionError)
+			return fn(*args, **kwargs)
+
+		return inner
+
+	return wrap
 
 
 def licensed_query(user=None, doctype=None):

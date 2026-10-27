@@ -6,8 +6,10 @@ from frappe import _
 from frappe.utils import flt
 
 from school_erp.api.report_utils import col
+from school_erp import licensing
 
 
+@licensing.licensed("Exam Mark Sheet")
 def execute(filters=None):
 	"""Mean score per subject per stream for an exam, with grade spread."""
 	f = frappe._dict(filters or {})

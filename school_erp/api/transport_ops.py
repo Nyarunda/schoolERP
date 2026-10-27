@@ -19,6 +19,7 @@ def manager_users() -> list[str]:
 
 
 @frappe.whitelist()
+@licensing.licensed("Driver Daily Log")
 def driver_defaults():
 	"""Pre-fill the form for the driver who is logged in."""
 	staff = staff_for_user()

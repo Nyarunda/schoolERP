@@ -9,10 +9,12 @@ from frappe.utils import flt
 from school_erp.api.report_utils import col, date_range
 from school_erp.api.tax import TEMPLATES
 from school_erp.logic.tax import EXEMPT, STANDARD, ZERO_RATED
+from school_erp import licensing
 
 KEYS = {STANDARD: "standard", ZERO_RATED: "zero", EXEMPT: "exempt"}
 
 
+@licensing.licensed("School Expense")
 def execute(filters=None):
 	f = frappe._dict(filters or {})
 	fd, td = date_range(f)

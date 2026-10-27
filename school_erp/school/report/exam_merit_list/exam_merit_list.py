@@ -6,8 +6,10 @@ from frappe import _
 from frappe.utils import flt
 
 from school_erp.api.report_utils import col
+from school_erp import licensing
 
 
+@licensing.licensed("Report Card")
 def execute(filters=None):
 	f = frappe._dict(filters or {})
 	if not f.exam:

@@ -25,9 +25,9 @@ def _site_dir(site):
 
 def _config(site):
     """The site's site_config.json over the bench's common one, as Frappe merges them."""
-    sites = os.path.dirname(_site_dir(site))
+    folder = _site_dir(site)
     conf = {}
-    for path in (os.path.join(sites, "common_site_config.json"), os.path.join(sites, site, "site_config.json")):
+    for path in (os.path.join(os.path.dirname(folder), "common_site_config.json"), os.path.join(folder, "site_config.json")):
         try:
             with open(path) as f:
                 conf.update(json.load(f))
@@ -133,6 +133,112 @@ def _last_backup(site):
     return {"file": os.path.basename(newest), "size_mb": round(os.path.getsize(newest) / 1048576, 1),
             "on": frappe.utils.convert_utc_to_system_timezone(datetime.datetime.fromtimestamp(
                 os.path.getmtime(newest), datetime.timezone.utc).replace(tzinfo=None)).strftime("%Y-%m-%d %H:%M")}
+
+
+# ----------------------------------------------------------------------------- operations run from the dialog
+# The only commands that can be run from the browser, each with its time limit. Nothing else, and no arguments.
+ACTIONS = {
+    "Backup": (("backup", "--with-files"), 30 * 60),
+    "Migrate": (("migrate",), 60 * 60),
+    "Clear Cache": (("clear-cache",), 5 * 60),
+}
+
+
+def _operable_site(doc):
+    """The school's site, if this control plane may run commands on it here; otherwise refuse."""
+    from stemic_control.onboarding import environment_problem
+
+    site = doc.canonical_site
+    if not site or not SITE_NAME.fullmatch(site):
+        frappe.throw("This school has no site yet", frappe.ValidationError)
+    if not os.path.isdir(_site_dir(site)):
+        frappe.throw(f"{site} is not on this bench, so it cannot be run from here", frappe.ValidationError)
+    problem = environment_problem()
+    if problem:
+        frappe.throw(f"This bench is not authorised to run commands on school sites: {problem}", frappe.ValidationError)
+    return site
+
+
+def _active_operation(site):
+    """An operation still queued or running on this site (a locking read); one left Running by a worker that died
+    stops counting once it is well past the longest time limit."""
+    stale = frappe.utils.add_to_date(frappe.utils.now_datetime(), seconds=-(max(t for _a, t in ACTIONS.values()) + 600))
+    rows = frappe.db.sql("SELECT name, action FROM `tabSaaS Site Operation` WHERE site = %s AND status IN ('Queued', 'Running') "
+                         "AND creation > %s LIMIT 1 FOR UPDATE", (site, stale), as_dict=True)
+    return rows[0] if rows else None
+
+
+@frappe.whitelist(methods=["POST"])
+def run_operation(tenant, action):
+    """Back up, migrate or clear the cache of a school's site, in a background worker (platform admins only)."""
+    from stemic_control.api import _admin
+
+    _admin()
+    if action not in ACTIONS:
+        frappe.throw("Choose Backup, Migrate or Clear Cache", frappe.ValidationError)
+    frappe.db.sql("SELECT name FROM `tabSaaS Tenant` WHERE name = %s FOR UPDATE", (tenant,))  # one request at a time
+    doc = frappe.get_doc("SaaS Tenant", tenant)
+    doc.check_permission("write")
+    site = _operable_site(doc)
+    busy = _active_operation(site)
+    if busy:
+        frappe.throw(f"{busy.action} ({busy.name}) is still running on {site}; wait for it to finish", frappe.ValidationError)
+    op = frappe.get_doc({"doctype": "SaaS Site Operation", "tenant": tenant, "site": site, "action": action,
+                         "status": "Queued", "requested_by": frappe.session.user})
+    op.flags.site_operation_service = True
+    op.insert(ignore_permissions=True)
+    frappe.enqueue("stemic_control.site_runtime.perform_operation", queue="long", timeout=ACTIONS[action][1] + 120,
+                   operation=op.name, enqueue_after_commit=True, job_id=f"stemic-site-op-{op.name}", deduplicate=True)
+    return {"operation": op.name, "status": "Queued"}
+
+
+def _summary(action, output):
+    if action == "Backup":
+        found = [line.strip() for line in output.splitlines() if line.strip().startswith(("Database", "Config", "Public", "Private"))]
+        return "; ".join(found)[:500] or "Backup taken"
+    return {"Migrate": "Migrated", "Clear Cache": "Cache cleared"}[action]
+
+
+def _set(op, values):
+    frappe.db.set_value("SaaS Site Operation", op, values, update_modified=True)
+    frappe.db.commit()
+
+
+def perform_operation(operation):
+    """Background worker: run the one allowed command and record what happened."""
+    from stemic_control import provisioner
+
+    rows = frappe.db.sql("SELECT action, site, status FROM `tabSaaS Site Operation` WHERE name = %s FOR UPDATE",
+                         (operation,), as_dict=True)
+    if not rows or rows[0].status != "Queued":
+        return rows[0].status if rows else "missing"
+    action, site = rows[0].action, rows[0].site
+    _set(operation, {"status": "Running", "started_on": frappe.utils.now_datetime()})
+    args, timeout = ACTIONS[action]
+    secrets = tuple(filter(None, (_config(site).get("db_password"), frappe.conf.get("stemic_db_root_password"))))
+    try:
+        output = provisioner._frappe_cli("--site", site, *args, timeout=timeout, secrets_=secrets)
+    except Exception as e:
+        message = str(e) if isinstance(e, provisioner.ProvisioningError) else frappe.get_traceback()
+        for secret in secrets:
+            message = message.replace(secret, "********")
+        _set(operation, {"status": "Failed", "finished_on": frappe.utils.now_datetime(), "summary": message.splitlines()[0][:500]
+                         if message else "Failed", "output": message[-20000:]})
+        return "Failed"
+    _set(operation, {"status": "Succeeded", "finished_on": frappe.utils.now_datetime(), "summary": _summary(action, output),
+                     "output": output[-20000:]})
+    return "Succeeded"
+
+
+@frappe.whitelist(methods=["GET"])
+def recent_operations(tenant):
+    from stemic_control.api import _admin
+
+    _admin()
+    frappe.get_doc("SaaS Tenant", tenant).check_permission("read")
+    return frappe.get_all("SaaS Site Operation", filters={"tenant": tenant},
+                          fields=["name", "action", "status", "requested_by", "creation", "finished_on", "summary"],
+                          order_by="creation desc", limit=5)
 
 
 @frappe.whitelist(methods=["GET"])

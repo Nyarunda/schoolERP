@@ -1,0 +1,126 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Site Operation",
+  "module": "Stemic Control",
+  "custom": 0,
+  "engine": "InnoDB",
+  "track_changes": 0,
+  "autoname": "format:SITEOP-{#####}",
+  "naming_rule": "Expression",
+  "title_field": "site",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "in_create": 1,
+  "description": "Backups, migrations and cache clears run on a school's site from the Open Site dialog.",
+  "field_order": [
+    "tenant",
+    "site",
+    "action",
+    "status",
+    "column_break_run",
+    "requested_by",
+    "started_on",
+    "finished_on",
+    "result_section",
+    "summary",
+    "output"
+  ],
+  "fields": [
+    {
+      "fieldname": "tenant",
+      "fieldtype": "Link",
+      "label": "School",
+      "read_only": 1,
+      "options": "SaaS Tenant",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "site",
+      "fieldtype": "Data",
+      "label": "Site",
+      "read_only": 1,
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "action",
+      "fieldtype": "Select",
+      "label": "Action",
+      "read_only": 1,
+      "options": "Backup\nMigrate\nClear Cache",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "read_only": 1,
+      "options": "Queued\nRunning\nSucceeded\nFailed",
+      "default": "Queued",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_run",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "requested_by",
+      "fieldtype": "Link",
+      "label": "Requested By",
+      "read_only": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "started_on",
+      "fieldtype": "Datetime",
+      "label": "Started On",
+      "read_only": 1
+    },
+    {
+      "fieldname": "finished_on",
+      "fieldtype": "Datetime",
+      "label": "Finished On",
+      "read_only": 1
+    },
+    {
+      "fieldname": "result_section",
+      "fieldtype": "Section Break",
+      "label": "Result"
+    },
+    {
+      "fieldname": "summary",
+      "fieldtype": "Small Text",
+      "label": "Summary",
+      "read_only": 1
+    },
+    {
+      "fieldname": "output",
+      "fieldtype": "Code",
+      "label": "Output",
+      "read_only": 1,
+      "description": "The command's output; passwords are removed."
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    }
+  ],
+  "creation": "2026-10-27 15:00:00.000000",
+  "modified": "2026-10-27 15:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator"
+}

@@ -23,6 +23,12 @@
   "transaction_type",
   "org_account_balance",
   "source",
+  "sb_verification",
+  "verified_reference",
+  "verified_by",
+  "cb_verification",
+  "verified_on",
+  "verification_note",
   "sb_debug",
   "attempts",
   "error",
@@ -158,30 +164,72 @@
    "read_only": 1
   },
   {
+   "fieldname": "sb_verification",
+   "fieldtype": "Section Break",
+   "label": "Safaricom Reconciliation",
+   "collapsible": 1,
+   "depends_on": "eval:doc.verified_by",
+   "idx": 18
+  },
+  {
+   "fieldname": "verified_reference",
+   "fieldtype": "Data",
+   "label": "Checked Against (statement / transaction ref)",
+   "read_only": 1,
+   "idx": 19
+  },
+  {
+   "fieldname": "verified_by",
+   "fieldtype": "Link",
+   "label": "Released By",
+   "options": "User",
+   "read_only": 1,
+   "idx": 20
+  },
+  {
+   "fieldname": "cb_verification",
+   "fieldtype": "Column Break",
+   "idx": 21
+  },
+  {
+   "fieldname": "verified_on",
+   "fieldtype": "Datetime",
+   "label": "Released On",
+   "read_only": 1,
+   "idx": 22
+  },
+  {
+   "fieldname": "verification_note",
+   "fieldtype": "Small Text",
+   "label": "Why it was released",
+   "read_only": 1,
+   "idx": 23
+  },
+  {
    "collapsible": 1,
    "fieldname": "sb_debug",
    "fieldtype": "Section Break",
-   "idx": 18,
+   "idx": 24,
    "label": "Processing"
   },
   {
    "fieldname": "attempts",
    "fieldtype": "Int",
-   "idx": 19,
+   "idx": 25,
    "label": "Attempts",
    "read_only": 1
   },
   {
    "fieldname": "error",
    "fieldtype": "Small Text",
-   "idx": 20,
+   "idx": 26,
    "label": "Error",
    "read_only": 1
   },
   {
    "fieldname": "raw_payload",
    "fieldtype": "Code",
-   "idx": 21,
+   "idx": 27,
    "label": "Payload from Safaricom",
    "options": "JSON",
    "read_only": 1
@@ -189,7 +237,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-26 13:00:00.000000",
+ "modified": "2026-10-26 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "M-Pesa Transaction",

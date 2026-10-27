@@ -30,3 +30,23 @@ $(document).on("app_ready", () => {
 		if (cur_frm && d.doctype === cur_frm.doctype && d.name === cur_frm.docname && !cur_frm.is_dirty()) cur_frm.reload_doc();
 	});
 });
+
+// Students are customers too (Customer.student). Where a picker is for normal customers, keep ERPNext's own search
+// and add "not a student" while `when(doc)` holds. Safe to call repeatedly: it never wraps itself.
+frappe.provide("school_erp");
+school_erp.exclude_students = function (frm, fieldname, when) {
+	const field = frm.fields_dict[fieldname];
+	if (!field || (field.get_query && field.get_query.__school_erp)) return;
+	const base = field.get_query;
+	const query = (doc, cdt, cdn) => {
+		const q = Object.assign({}, typeof base === "function" ? base(doc, cdt, cdn) : base || {});
+		if (when(doc)) {
+			q.filters = Array.isArray(q.filters)
+				? [...q.filters, ["Customer", "student", "is", "not set"]]
+				: Object.assign({}, q.filters || {}, { student: ["is", "not set"] });
+		}
+		return q;
+	};
+	query.__school_erp = true;
+	frm.set_query(fieldname, query);
+};

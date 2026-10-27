@@ -16,6 +16,18 @@ class SchoolSettings(Document):
 			self.license_key = "".join(self.license_key.split())
 		self.refresh_license_fields()
 		self.validate_mpesa()
+		self.validate_tax()
+
+	def validate_tax(self):
+		from school_erp.api import tax
+		from school_erp.logic.tax import valid_pin
+
+		self.kra_pin = (self.kra_pin or "").strip().upper()
+		if self.kra_pin and not valid_pin(self.kra_pin):
+			frappe.throw(_("{0} is not a KRA PIN (it looks like P051234567X)").format(self.kra_pin))
+		if self.vat_registered and not self.kra_pin:
+			frappe.throw(_("Enter the school's KRA PIN: a VAT-registered school prints it on tax invoices"))
+		tax.ensure_accounts(self)
 
 	def validate_mpesa(self):
 		if not self.mpesa_enabled:

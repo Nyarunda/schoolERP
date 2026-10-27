@@ -26,6 +26,11 @@ class SchoolExpense(Document):
 		if not frappe.db.get_value("Expense Category", self.expense_category, "is_active"):
 			frappe.throw(_("Expense category {0} is not active").format(self.expense_category))
 		self.levels_required = expenses.required_levels(self.amount)
+		if self.supplier and not self.payee:
+			self.payee = frappe.db.get_value("Supplier", self.supplier, "supplier_name")
+		from school_erp.api import tax
+
+		tax.expense_breakdown(self, frappe.get_cached_doc("School Settings"))
 		self.track_transition()
 
 	def track_transition(self):

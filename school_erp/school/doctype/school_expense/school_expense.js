@@ -3,6 +3,15 @@
 frappe.ui.form.on("School Expense", {
 	setup(frm) {
 		frm.set_query("expense_category", () => ({ filters: { is_active: 1 } }));
+		frm.set_query("withholding_tax_type", () => ({ filters: { is_active: 1 } }));
+	},
+
+	onload(frm) {
+		// Tax fields only matter if the school uses them (School Settings > Tax)
+		frappe.db.get_value("School Settings", "School Settings", ["vat_registered", "withhold_tax", "vat_withholding_agent"]).then(({ message: t }) => {
+			frm.toggle_display("supplier_charged_vat", !!(t.vat_registered || t.vat_withholding_agent));
+			frm.toggle_display("withholding_tax_type", !!t.withhold_tax);
+		});
 	},
 
 	refresh(frm) {

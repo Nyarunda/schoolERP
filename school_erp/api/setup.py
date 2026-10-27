@@ -134,6 +134,9 @@ def run_setup():
 			acc = _find_expense_account(settings.company, account_names)
 			if acc and _ensure("Expense Category", cat, {"category_name": cat, "expense_account": acc, "is_active": 1}):
 				created.append(cat)
+		from school_erp.api.tax import ensure_withholding_types
+
+		created += ensure_withholding_types()
 
 	# exams: grading scales (CBC, KCSE) and a default matching the education system
 	if licensing.is_enabled("exams"):

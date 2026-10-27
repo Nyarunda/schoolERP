@@ -12,7 +12,7 @@ from school_erp.logic.billing import compute_fee_lines, describe_lines, net_amou
 
 def _fee_types():
 	rows = frappe.get_all(
-		"Fee Type", fields=["name", "category", "charge_basis", "priority", "discountable", "item", "income_account"]
+		"Fee Type", fields=["name", "category", "charge_basis", "priority", "discountable", "item", "income_account", "vat_treatment"]
 	)
 	return {r.name: r for r in rows}
 
@@ -127,6 +127,9 @@ def make_invoice(student_doc, term, lines, fee_types, posting_date, due_date, ru
 		if settings.cost_center:
 			row["cost_center"] = settings.cost_center
 		si.append("items", row)
+	from school_erp.api import tax
+
+	tax.apply_vat(si, settings, fee_types)  # only for a VAT-registered school
 	si.flags.ignore_permissions = True
 	si.insert()
 	if submit:

@@ -91,8 +91,12 @@ def make_journal_entry(doc):
 	je.user_remark = f"{doc.name}: {doc.expense_category} - {doc.payee} - {doc.description}"[:500]
 	je.cheque_no = doc.reference_no or doc.name
 	je.cheque_date = doc.posting_date
-	je.append("accounts", {"account": doc.expense_account, "debit_in_account_currency": flt(doc.amount), "cost_center": cost_center})
-	je.append("accounts", {"account": paid_from, "credit_in_account_currency": flt(doc.amount), "cost_center": cost_center})
+	from school_erp.api import tax
+
+	# cost and any claimable VAT, against what the supplier is paid and any tax withheld for KRA
+	for account, debit, credit in tax.journal_lines(doc, s, doc.expense_account, paid_from):
+		je.append("accounts", {"account": account, "debit_in_account_currency": debit, "credit_in_account_currency": credit,
+							   "cost_center": cost_center})
 	je.flags.ignore_permissions = True
 	je.insert()
 	je.submit()

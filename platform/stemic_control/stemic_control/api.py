@@ -489,4 +489,12 @@ def operations_queue(per_group=3):
                           "modified": str(row.modified)})
         groups.append({"key": key, "label": label, "severity": severity, "doctype": doctype, "filters": filters,
                        "count": frappe.db.count(doctype, filters), "items": items})
+    # first: the machinery itself (stemic_control.health); when it is down, everything below stops moving
+    from stemic_control import health
+
+    problems = health.check()
+    groups.insert(0, {"key": "background", "label": "Background jobs not running", "severity": "critical",
+                      "doctype": "Stemic Settings", "filters": {}, "count": len(problems),
+                      "items": [{"doctype": "Stemic Settings", "name": "Stemic Settings", "school": p["message"],
+                                 "detail": p["fix"], "modified": str(now_datetime())} for p in problems[:per_group]]})
     return {"groups": groups, "total": sum(g["count"] for g in groups)}

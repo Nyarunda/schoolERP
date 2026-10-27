@@ -109,6 +109,16 @@ def _background():
         workers = 0
     out.append(_item("Background jobs", "Workers", workers > 0, f"{workers} running" if workers else "None running: sites are not created.",
                      "" if workers else "Start them with bench start (development) or supervisor (production)."))
+    from stemic_control import health
+
+    problems = {p["key"]: p for p in health.check()}
+    for key, label in (("scheduler_stopped", "Scheduler running"), ("backlog", "Jobs waiting"), ("redis", "Job queue"),
+                       ("provisioning", "Site jobs waiting")):
+        p = problems.get(key)
+        out.append(_item("Background jobs", label, not p, p["message"] if p else "Fine.", p["fix"] if p else ""))
+    out.append(_item("Background jobs", "Watchdog", None,
+                     "Runs outside the workers, from the system's cron: alerts the platform admins if these stop.",
+                     "*/5 * * * * cd <bench>/sites && ../env/bin/python ../apps/stemic_control/scripts/watchdog.py <admin site>"))
     return out
 
 

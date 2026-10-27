@@ -6,8 +6,8 @@
   "istable": 0,
   "is_submittable": 0,
   "track_changes": 1,
-  "autoname": "format:SUB-{#####}",
-  "naming_rule": "Expression",
+  "autoname": "SUB-.#####",
+  "naming_rule": "Expression (old style)",
   "engine": "InnoDB",
   "field_order": [
     "summary_html",

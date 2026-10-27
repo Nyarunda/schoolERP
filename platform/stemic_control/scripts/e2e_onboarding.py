@@ -25,6 +25,7 @@ SITE = sys.argv[1] if len(sys.argv) > 1 else "admin.localhost"
 LICENSED = ["fees", "exams"]  # the plan's modules: these must be visible on the new site, the rest hidden
 HIDDEN_PROBE = "Transport Route"  # a DocType of a module the plan leaves out
 VISIBLE_PROBE = "Fee Type"  # ... and one of a module it includes
+LICENSED_REPORT, HIDDEN_REPORT = "Fee Collection", "Transport List"  # reports of the same two modules
 RUN = None
 steps = []
 
@@ -193,7 +194,13 @@ def school_login(frappe, url):
     from stemic_control import api
 
     access = api.site_access(slug())
+    from urllib.parse import urlsplit
+
     session = requests.Session()
+    parts = urlsplit(url)
+    if parts.scheme == "http":  # a local server: name the site in Host and connect locally (*.localhost may not resolve)
+        session.headers["Host"] = parts.netloc
+        url = f"http://127.0.0.1:{parts.port or 80}"
     login = session.post(f"{url}/api/method/login", data={"usr": access["user"], "pwd": access["password"]}, timeout=30)
     check(login.status_code == 200, f"login refused ({login.status_code})")
     key = frappe.db.get_value("SaaS License", {"tenant": slug(), "status": "Issued"}, "signed_key")
@@ -203,7 +210,7 @@ def school_login(frappe, url):
     overview = session.get(f"{url}/api/method/school_erp.licensing.license_overview", timeout=30).json()["message"]
     check(overview["status"] == "valid", f"the school sees the key as {overview['status']}: {overview.get('message')}")
     check(set(LICENSED) <= set(overview["modules"]), f"modules on the site: {overview['modules']}")
-    return session, f"license {overview['status']}, modules {', '.join(m for m in overview['modules'] if m != 'core')}"
+    return session, url, f"license {overview['status']}, modules {', '.join(m for m in overview['modules'] if m != 'core')}"
 
 
 @step("Licensed modules are visible; the others are hidden")
@@ -211,16 +218,22 @@ def visibility(frappe, url, session):
     import json
     import re
 
-    # what the desk offers this user: the boot embedded in /app (search, list routes and link fields use it)
+    def report(name):
+        return session.get(f"{url}/api/method/frappe.desk.query_report.run", params={"report_name": name}, timeout=60).status_code
+
+    # reports: a licensed module's runs, an unlicensed one's is refused (works without built assets)
+    check(report(LICENSED_REPORT) == 200, f"the {LICENSED_REPORT} report (a licensed module) did not run")
+    check(report(HIDDEN_REPORT) != 200, f"the {HIDDEN_REPORT} report ran without its module")
+    # what the desk offers this user: the boot embedded in /app (search, list routes and link fields use it).
+    # The desk needs built assets: a bench installed with --skip-assets (CI) cannot render it, so it is checked when it can be.
     desk = session.get(f"{url}/app", timeout=60)
-    found = re.search(r'"can_read":\s*(\[[^\]]*\])', desk.text)
-    check(desk.status_code == 200 and found, f"could not read the desk's boot ({desk.status_code})")
+    found = re.search(r'"can_read":\s*(\[[^\]]*\])', desk.text) if desk.status_code == 200 else None
+    if not found:
+        return f"{LICENSED_REPORT} runs, {HIDDEN_REPORT} refused (desk not rendered here: {desk.status_code}, assets not built)"
     can_read = json.loads(found.group(1))
     check(VISIBLE_PROBE in can_read, f"{VISIBLE_PROBE} (a licensed module) is not offered to the school")
     check(HIDDEN_PROBE not in can_read, f"{HIDDEN_PROBE} (not licensed) is still offered to the school")
-    report = session.get(f"{url}/api/method/frappe.desk.query_report.run", params={"report_name": "Transport List"}, timeout=30)
-    check(report.status_code != 200, "the Transport List report ran without the Transport module")
-    return f"{VISIBLE_PROBE} visible, {HIDDEN_PROBE} and its report hidden"
+    return f"{LICENSED_REPORT} runs, {HIDDEN_REPORT} refused; desk offers {VISIBLE_PROBE}, hides {HIDDEN_PROBE}"
 
 
 # ----------------------------------------------------------------------------- cleanup
@@ -277,7 +290,7 @@ def main():
         provision(frappe)
         url, _ = running(frappe)
         license_key(frappe)
-        session, _ = school_login(frappe, url)
+        session, url, _ = school_login(frappe, url)
         visibility(frappe, url, session)
     except Exception:
         failed = True

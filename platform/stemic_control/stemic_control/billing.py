@@ -326,6 +326,45 @@ def daily():
     frappe.db.commit()
 
 
+def ledger_mismatches(limit=50):
+    """Invoices whose stored figures disagree with their payment ledger (submitted payments). Detection only: the
+    ledger is authoritative and an operator decides what to do, so nothing is changed here."""
+    rows = frappe.db.sql("""
+        SELECT i.name, i.tenant, i.school_name, i.docstatus, i.total, i.paid_amount, i.outstanding,
+               COALESCE(SUM(CASE WHEN p.docstatus = 1 THEN p.amount END), 0) AS ledger
+        FROM `tabSaaS Invoice` i LEFT JOIN `tabSaaS Payment` p ON p.invoice = i.name
+        WHERE i.docstatus IN (1, 2)
+        GROUP BY i.name
+        HAVING (i.docstatus = 1 AND (ABS(i.paid_amount - ledger) >= 0.005
+                                     OR ABS(i.outstanding - GREATEST(i.total - ledger, 0)) >= 0.005
+                                     OR ledger > i.total + 0.005))
+            OR (i.docstatus = 2 AND ledger > 0)
+        ORDER BY i.name LIMIT %s""", (int(limit),), as_dict=True)
+    out = []
+    for r in rows:
+        if r.docstatus == 2:
+            problem = f"cancelled, but {flt(r.ledger):,.2f} of payments are still submitted"
+        elif flt(r.ledger) > flt(r.total) + 0.005:
+            problem = f"payments of {flt(r.ledger):,.2f} exceed the total of {flt(r.total):,.2f}"
+        else:
+            problem = (f"stores paid {flt(r.paid_amount):,.2f} / outstanding {flt(r.outstanding):,.2f}; "
+                       f"its payments come to {flt(r.ledger):,.2f}")
+        out.append({"invoice": r.name, "tenant": r.tenant, "school": r.school_name, "problem": problem})
+    return out
+
+
+def check_ledger():
+    """Scheduler (daily): find invoices that disagree with their payments without anyone opening them, and record
+    them in the Error Log for the operator."""
+    found = ledger_mismatches(limit=200)
+    if found:
+        frappe.log_error(title=f"Billing ledger: {len(found)} invoice(s) disagree with their payments",
+                         message="\n".join(f"{m['invoice']} ({m['school'] or m['tenant']}): {m['problem']}" for m in found)
+                         + "\n\nThe submitted payments are authoritative. Check each invoice before correcting it.")
+        frappe.db.commit()
+    return len(found)
+
+
 @frappe.whitelist(methods=["GET"])
 def subscription_billing(subscription):
     """The billing tile on a subscription: open invoice, last payment, totals."""

@@ -118,6 +118,13 @@ def _business():
     email = frappe.db.get_value("Email Account", {"default_outgoing": 1, "enable_outgoing": 1})
     out.append(_item("Billing", "Outgoing email", bool(email), email or "No default outgoing email account.",
                      "" if email else "Add one under Email Account to send invoices and keys."))
+    from stemic_control.billing import ledger_mismatches
+
+    wrong = ledger_mismatches(limit=6)
+    out.append(_item("Billing", "Invoices match their payments", not wrong,
+                     "Every submitted invoice agrees with its payments." if not wrong
+                     else "; ".join(f"{m['invoice']}: {m['problem']}" for m in wrong[:5]) + (" …" if len(wrong) > 5 else ""),
+                     "" if not wrong else "Open each invoice and its payments; the submitted payments are authoritative."))
     unpaid = frappe.get_all("SaaS Agent", filters={"status": "Active", "commission_rate": ("in", [0, None])}, pluck="agent_name")
     out.append(_item("Commissions", "Agent rates", not unpaid, "Every active agent has a rate." if not unpaid else f"No rate: {', '.join(unpaid)}",
                      "" if not unpaid else "Set a commission rate on each agent."))

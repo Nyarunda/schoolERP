@@ -44,7 +44,7 @@ app_include_css = ["stemic_overview.bundle.css"]  # bundled: hashed file name, s
 scheduler_events = {
     "cron": {"*/5 * * * *": ["stemic_control.provisioner.process_queue"]},
     # Billing: overdue invoices and Past Due subscriptions; renewal invoices ahead of the end date
-    "daily": ["stemic_control.billing.daily"],
+    "daily": ["stemic_control.billing.daily", "stemic_control.billing.check_ledger"],
 }
 
 # Finance operators review tax records through controlled service actions.

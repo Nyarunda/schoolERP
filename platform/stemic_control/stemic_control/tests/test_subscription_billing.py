@@ -81,6 +81,29 @@ class TestSubscriptionBilling(TestCase):
         billing.pay_commissions(self.agent, "PAYOUT-2")
         self.assertRaises(frappe.ValidationError, frappe.get_doc("SaaS Payment", paid_out).cancel)  # agent already paid
 
+    def test_ledger_check_finds_invoices_that_disagree_with_their_payments(self):
+        """Found by the daily job and the Setup Check, without anyone opening the invoice."""
+        inv = billing.create_invoice(self.sub, months=6)  # 30,000
+        self.pay(inv, 10000)
+        found = lambda: {m["invoice"]: m["problem"] for m in billing.ledger_mismatches(limit=500)}
+        self.assertNotIn(inv, found())  # paid and outstanding agree with the ledger
+
+        frappe.db.set_value("SaaS Invoice", inv, "paid_amount", 15000)  # e.g. an edit outside the billing code
+        self.assertIn("its payments come to 10,000.00", found()[inv])
+        frappe.db.set_value("SaaS Invoice", inv, {"paid_amount": 10000, "outstanding": 30000})
+        self.assertIn(inv, found())
+        frappe.db.set_value("SaaS Invoice", inv, {"outstanding": 20000, "docstatus": 2})  # cancelled under a live payment
+        self.assertIn("still submitted", found()[inv])
+        frappe.db.set_value("SaaS Invoice", inv, {"docstatus": 1, "total": 5000})
+        self.assertIn("exceed the total", found()[inv])
+
+        with patch.object(frappe.db, "commit"):
+            self.assertGreaterEqual(billing.check_ledger(), 1)
+        log = frappe.get_all("Error Log", filters={"method": ("like", "Billing ledger:%")}, fields=["error"], order_by="creation desc", limit=1)
+        self.assertIn(inv, log[0].error)
+        item = next(i for i in setup_check._business() if i["label"] == "Invoices match their payments")
+        self.assertFalse(item["ok"])
+
     def test_first_payment_only_commission(self):
         with patch.object(billing, "settings", lambda: frappe._dict(currency="KES", billing_months=12, payment_terms_days=14,
                                                                    renewal_notice_days=30, commission_basis="First payment only")):

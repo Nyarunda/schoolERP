@@ -105,7 +105,8 @@ def prepare_from_saas_invoice(invoice):
         frappe.throw(_("Unknown SaaS Invoice"))
     if row[0][0] != 1 or row[0][1] == "Cancelled":
         frappe.throw(_("Only a submitted SaaS Invoice can be prepared for eTIMS"))
-    existing = frappe.db.get_value("SaaS eTIMS Invoice", {"saas_invoice": invoice}, ["name", "status"], as_dict=True)
+    # a locking read: after waiting for another preparation of this invoice, a plain read would miss what it committed
+    existing = _tax_row(invoice)
     if existing:
         return {"name": existing.name, "status": existing.status}
     inv = frappe.get_doc("SaaS Invoice", invoice)
@@ -117,10 +118,17 @@ def prepare_from_saas_invoice(invoice):
                     seller_scope="Stemic Platform", saas_invoice=inv.name)
 
 
+def _tax_row(saas_invoice):
+    """The tax invoice of a SaaS Invoice, read and locked (REPEATABLE READ serves plain reads from a stale snapshot)."""
+    rows = frappe.db.sql("SELECT name, status FROM `tabSaaS eTIMS Invoice` WHERE saas_invoice = %s FOR UPDATE",
+                         (saas_invoice,), as_dict=True)
+    return rows[0] if rows else None
+
+
 def guard_saas_invoice_cancel(invoice):
     """A SaaS Invoice whose tax invoice is with KRA (or on its way) cannot be cancelled: it needs a credit note.
     A tax invoice not yet sent is withdrawn with it."""
-    row = frappe.db.get_value("SaaS eTIMS Invoice", {"saas_invoice": invoice}, ["name", "status"], as_dict=True)
+    row = _tax_row(invoice)  # locked, so a preparation or queueing that committed while we waited is seen, and none follows
     if not row or row.status in ("Withdrawn", "Rejected"):
         return
     if row.status in ("Pending Submission", "Submitted"):

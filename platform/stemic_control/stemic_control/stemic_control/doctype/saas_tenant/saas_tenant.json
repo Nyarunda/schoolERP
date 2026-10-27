@@ -10,24 +10,39 @@
   "naming_rule": "By fieldname",
   "engine": "InnoDB",
   "field_order": [
+    "overview_html",
+    "school_section",
     "school_name",
     "slug",
     "admin_email",
-    "canonical_site",
-    "status",
-    "primary_domain",
+    "school_column",
     "agent",
     "subscription",
-    "notes",
+    "status",
     "sb_site",
+    "canonical_site",
+    "primary_domain",
+    "site_column",
     "site_admin_password",
     "approval_section",
     "approved_by",
     "approved_on",
     "approval_column",
-    "approval_note"
+    "approval_note",
+    "notes_section",
+    "notes"
   ],
   "fields": [
+    {
+      "fieldname": "overview_html",
+      "fieldtype": "HTML",
+      "label": "Overview"
+    },
+    {
+      "fieldname": "school_section",
+      "fieldtype": "Section Break",
+      "label": "School"
+    },
     {
       "fieldtype": "Data",
       "fieldname": "school_name",
@@ -41,7 +56,9 @@
       "fieldname": "slug",
       "label": "Tenant Slug",
       "reqd": 1,
-      "unique": 1
+      "unique": 1,
+      "description": "Names the school's site and subdomain; cannot be changed once created.",
+      "set_only_once": 1
     },
     {
       "fieldtype": "Data",
@@ -51,30 +68,13 @@
       "reqd": 1
     },
     {
-      "fieldtype": "Data",
-      "fieldname": "canonical_site",
-      "label": "Frappe Site",
-      "read_only": 1,
-      "unique": 1
-    },
-    {
-      "fieldtype": "Select",
-      "fieldname": "status",
-      "label": "Status",
-      "options": "Draft\nPending Approval\nApproved\nRejected\nPending\nProvisioning\nActive\nSuspended\nFailed",
-      "default": "Draft",
-      "read_only": 1
-    },
-    {
-      "fieldtype": "Data",
-      "fieldname": "primary_domain",
-      "label": "Primary Domain",
-      "read_only": 1
+      "fieldname": "school_column",
+      "fieldtype": "Column Break"
     },
     {
       "fieldtype": "Link",
       "fieldname": "agent",
-      "label": "Agent",
+      "label": "Sales Agent",
       "options": "SaaS Agent",
       "in_list_view": 1,
       "in_standard_filter": 1
@@ -87,16 +87,37 @@
       "read_only": 1
     },
     {
-      "fieldtype": "Small Text",
-      "fieldname": "notes",
-      "label": "Notes"
+      "fieldtype": "Select",
+      "fieldname": "status",
+      "label": "Status",
+      "options": "Draft\nPending Approval\nApproved\nRejected\nPending\nProvisioning\nActive\nSuspended\nFailed",
+      "default": "Draft",
+      "read_only": 1,
+      "hidden": 1
     },
     {
       "fieldname": "sb_site",
       "fieldtype": "Section Break",
-      "label": "Site Access",
+      "label": "Site",
       "collapsible": 1,
       "depends_on": "eval:doc.canonical_site"
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "canonical_site",
+      "label": "Site",
+      "read_only": 1,
+      "unique": 1
+    },
+    {
+      "fieldtype": "Data",
+      "fieldname": "primary_domain",
+      "label": "Primary Domain",
+      "read_only": 1
+    },
+    {
+      "fieldname": "site_column",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "site_admin_password",
@@ -135,6 +156,18 @@
       "fieldtype": "Small Text",
       "label": "Approval / Rejection Note",
       "read_only": 1
+    },
+    {
+      "fieldname": "notes_section",
+      "fieldtype": "Section Break",
+      "label": "Notes",
+      "collapsible": 1,
+      "collapsible_depends_on": "eval:doc.notes && doc.notes != 'Demo data (stemic_control.demo)'"
+    },
+    {
+      "fieldtype": "Small Text",
+      "fieldname": "notes",
+      "label": "Notes"
     }
   ],
   "permissions": [

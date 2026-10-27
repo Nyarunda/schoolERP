@@ -6,8 +6,10 @@ from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
 from school_erp.api.report_utils import col, date_range
+from school_erp import licensing
 
 
+@licensing.licensed("Transport Route")
 def execute(filters=None):
 	"""Students per route with pick-up point and parent phone, for drivers; or the lunch list."""
 	f = frappe._dict(filters or {})

@@ -63,6 +63,23 @@ DOCTYPE_MODULE = {
 	"STK Push Request": "portal",
 }
 
+# DocTypes another module's forms link to: still readable when that module is licensed, so its forms keep working
+READABLE_WITH = {
+	"Subject": {"exams"},  # exam mark sheets and report cards list subjects
+	"Fee Type": {"transport", "activities", "lunch"},
+	"Staff Member": {"welfare", "transport_ops", "transport"},
+	"School Vehicle": {"transport", "staff"},
+	"Transport Route": {"transport_ops"},
+}
+
+
+def hidden_doctypes(modules) -> set[str]:
+	"""DocTypes a school with these modules must not see at all: not in menus, search, lists, reports or reads."""
+	modules = set(modules)
+	return {dt for dt, module in DOCTYPE_MODULE.items()
+			if module not in modules and not (READABLE_WITH.get(dt, set()) & modules)}
+
+
 # Fee categories that need an extra module on top of "fees"
 CATEGORY_MODULE = {"Transport": "transport", "Lunch": "lunch", "Activity": "activities"}
 

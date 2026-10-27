@@ -68,6 +68,14 @@ has_permission = {
 	"Driver Daily Log": "school_erp.permissions.driver_log_has_permission",
 	"School Expense": "school_erp.permissions.expense_has_permission",
 }
+# What the school has not licensed is not visible at all: no reading a record, and lists, reports and search come
+# back empty (school_erp.licensing.licensed_read / licensed_query). Records stay in the database for a later license.
+for _dt in _DOCTYPE_MODULE:
+	has_permission[_dt] = [*([has_permission[_dt]] if _dt in has_permission else []), "school_erp.licensing.licensed_read"]
+	permission_query_conditions[_dt] = [
+		*([permission_query_conditions[_dt]] if _dt in permission_query_conditions else []),
+		"school_erp.licensing.licensed_query",
+	]
 
 doctype_js = {
 	"Sales Invoice": "public/js/sales_invoice.js",

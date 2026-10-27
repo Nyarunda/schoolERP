@@ -240,6 +240,7 @@ def statement(student):
 
 
 @frappe.whitelist()
+@licensing.licensed("Fee Payment")
 def receipt(payment):
 	_require_portal()
 	student = frappe.db.get_value("Fee Payment", {"name": payment, "docstatus": 1}, "student")
@@ -258,6 +259,7 @@ def receipt(payment):
 
 
 @frappe.whitelist()
+@licensing.licensed("Report Card")
 def report_card(name):
 	_require_portal()
 	row = frappe.db.get_value("Report Card", name, ["student", "status"], as_dict=True)

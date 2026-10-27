@@ -51,6 +51,7 @@ def days_taken(staff_member, leave_type, year, exclude=None) -> float:
 
 
 @frappe.whitelist()
+@licensing.licensed("Leave Application")
 def leave_balances(staff_member, year=None):
 	"""Entitled / taken / pending / remaining per leave type, for the form and reports."""
 	year = int(year or getdate(nowdate()).year)

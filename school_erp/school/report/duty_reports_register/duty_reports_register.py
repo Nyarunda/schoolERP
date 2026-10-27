@@ -6,8 +6,10 @@ from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
 from school_erp.api.report_utils import col, date_range
+from school_erp import licensing
 
 
+@licensing.licensed("Duty Report")
 def execute(filters=None):
 	"""Each school day in the range with who was on duty and whether they reported."""
 	f = frappe._dict(filters or {})

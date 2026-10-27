@@ -192,10 +192,11 @@ function license_panel(frm, s) {
 		[__("Expires"), s.expires ? fmt(s.expires) : s.licensed_to ? __("Never") : ""],
 	].filter(([, v]) => v).map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join("");
 
-	const included = s.catalogue.filter((m) => m.included).length;
-	const modules = [...s.catalogue].sort((a, b) => b.included - a.included).map((m) => `
-		<div class="sl-mod ${m.included ? "on" : "off"}">
-			<span class="sl-mod-icon">${frappe.utils.icon(m.included ? "check" : "lock", "sm")}</span>
+	// Only what the license includes is listed: the rest of the app is hidden from this school, so it is not shown here either
+	const included = s.catalogue.filter((m) => m.included).length, more = s.catalogue.length - included;
+	const modules = s.catalogue.filter((m) => m.included).map((m) => `
+		<div class="sl-mod on">
+			<span class="sl-mod-icon">${frappe.utils.icon("check", "sm")}</span>
 			<div><b>${esc(__(m.label))}</b><small>${esc(MODULE_HELP[m.code] || "")}</small></div>
 		</div>`).join("");
 
@@ -238,12 +239,13 @@ function license_panel(frm, s) {
 			<div><h4>${title}</h4><p>${next}</p>${facts ? `<div class="sl-facts">${facts}</div>` : ""}</div>
 		</div>
 		<div class="sl-row">${term}${students}</div>
-		<div class="sl-h"><b>${__("What's included")}</b><span>${__("{0} of {1} modules", [included, s.catalogue.length])}${included < s.catalogue.length ? " · " + __("ask your vendor to add more") : ""}</span></div>
+		<div class="sl-h"><b>${__("What's included")}</b><span>${included ? __("Core and {0} module(s)", [included]) : __("Core only")}</span></div>
 		<div class="sl-mods">
 			<div class="sl-mod on"><span class="sl-mod-icon">${frappe.utils.icon("check", "sm")}</span>
 				<div><b>${__("Core")}</b><small>${__("Students, classes, streams, teachers, years and terms. Always included.")}</small></div></div>
 			${modules}
 		</div>
+		${more ? `<div class="text-muted small">${__("{0} more module(s) can be added to this license by your vendor; they stay hidden until then.", [more])}</div>` : ""}
 		<div class="sl-site">${__("This site")}: <code>${esc(s.this_site)}</code>
 			<button class="btn btn-xs btn-default sl-copy" data-copy="${esc(s.this_site)}">${__("Copy")}</button>
 			<span class="text-muted">${__("Your vendor needs this name to make a key for this school.")}</span></div>

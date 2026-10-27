@@ -14,6 +14,7 @@ def after_install():
 	make_customer_group()
 	fill_new_settings_defaults()
 	make_workflows()
+	setup_finance()
 
 
 def after_migrate():
@@ -21,6 +22,13 @@ def after_migrate():
 	make_custom_fields()
 	fill_new_settings_defaults()
 	make_workflows()
+	setup_finance()
+
+
+def setup_finance():
+	from school_erp.setup.finance import setup_finance as _setup
+
+	_setup()
 
 
 def make_workflows():

@@ -358,3 +358,46 @@ def test_paybill_and_till_wording_and_stk_parties():
 	assert pb.stk_parties("Paybill", "522522", "522522") == ("CustomerPayBillOnline", "522522")
 	# a Till is authenticated with its store number but the money goes to the till
 	assert pb.stk_parties("Till (Buy Goods)", "7712345", "8812345") == ("CustomerBuyGoodsOnline", "8812345")
+
+
+def test_vat_inside_an_inclusive_amount():
+	from decimal import Decimal
+
+	from school_erp.logic.tax import vat_in
+
+	assert vat_in(1160, 16) == Decimal("160.00")
+	assert vat_in(100, 16) == Decimal("13.79")
+	assert vat_in(5000, 0) == Decimal("0.00")
+
+
+def test_supplier_payment_splits_add_up():
+	from decimal import Decimal
+
+	from school_erp.logic.tax import expense_split
+
+	# not VAT-registered, plain supplier: the whole amount is cost, paid in full
+	plain = expense_split(10000)
+	assert (plain["expense"], plain["input_vat"], plain["paid"]) == (Decimal("10000.00"), 0, Decimal("10000.00"))
+
+	# registered school, supplier charged VAT, 5% withholding on a professional fee, 2% VAT withholding agent
+	s = expense_split(11600, supplier_charged_vat=True, school_vat_registered=True, wht_rate=5, vat_wht_rate=2)
+	assert s["vat"] == s["input_vat"] == Decimal("1600.00")
+	assert s["taxable_value"] == s["expense"] == Decimal("10000.00")
+	assert (s["wht"], s["vat_wht"], s["paid"]) == (Decimal("500.00"), Decimal("200.00"), Decimal("10900.00"))
+
+	# not registered: VAT is part of the cost, nothing to claim
+	u = expense_split(11600, supplier_charged_vat=True, school_vat_registered=False, wht_rate=5)
+	assert (u["expense"], u["input_vat"], u["wht"]) == (Decimal("11600.00"), 0, Decimal("500.00"))
+
+	# no VAT charged: no VAT withholding even for an agent
+	assert expense_split(5000, vat_wht_rate=2)["vat_wht"] == 0
+
+	for case in (s, u, expense_split(333.33, supplier_charged_vat=True, school_vat_registered=True, wht_rate=3, vat_wht_rate=2)):
+		assert case["expense"] + case["input_vat"] == case["paid"] + case["wht"] + case["vat_wht"]
+
+
+def test_kra_pin_format():
+	from school_erp.logic.tax import valid_pin
+
+	assert valid_pin("P051234567X") and valid_pin("a123456789z")
+	assert not valid_pin("P05123456X") and not valid_pin("") and not valid_pin("X051234567P")

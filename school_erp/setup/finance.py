@@ -1,0 +1,98 @@
+"""Finance runs on ERPNext's own accounting (suppliers, customers, invoices, payments, banking, reports).
+
+School roles carry the ERPNext roles that open it, so a bursar never needs a separate accounts login:
+	Bursar        -> Accounts User, Purchase Master Manager, Sales Master Manager
+	School Admin  -> the same, plus Accounts Manager
+The bank tools (reconciliation, statement import) are System Manager-only in ERPNext; finance staff get them too.
+"""
+
+import frappe
+
+FINANCE_ROLES = {
+	"Bursar": {"Accounts User", "Purchase Master Manager", "Sales Master Manager"},
+	"School Admin": {"Accounts User", "Accounts Manager", "Purchase Master Manager", "Sales Master Manager"},
+}
+GRANTED = set().union(*FINANCE_ROLES.values())
+
+# DocType -> {role: (read, write, create)}
+BANK_TOOLS = {
+	"Bank Reconciliation Tool": {"Accounts User": (1, 1, 1), "Accounts Manager": (1, 1, 1)},
+	"Bank Statement Import": {"Accounts User": (1, 1, 1), "Accounts Manager": (1, 1, 1)},
+	"Bank": {"Accounts User": (1, 0, 0), "Accounts Manager": (1, 1, 1)},
+}
+
+
+def needed(roles) -> set:
+	return set().union(*(FINANCE_ROLES.get(r, set()) for r in roles))
+
+
+def sync_user_roles(doc, method=None):
+	"""User validate hook: add the ERPNext roles a school finance role needs; when a school finance role is taken away
+	in this save, take away what only it had granted. Roles given some other way are never removed."""
+	if doc.name in ("Administrator", "Guest") or not frappe.db.exists("DocType", "Account"):
+		return
+	roles = {r.role for r in doc.roles}
+	want = needed(roles)
+	for role in sorted(want - roles):
+		if frappe.db.exists("Role", role):
+			doc.append("roles", {"role": role})
+	before = doc.get_doc_before_save()
+	if before:
+		dropped = needed({r.role for r in before.roles}) - want
+		doc.set("roles", [r for r in doc.roles if r.role not in dropped])
+
+
+def sync_all_users():
+	for user in frappe.get_all("Has Role", filters={"role": ("in", list(FINANCE_ROLES)), "parenttype": "User"}, pluck="parent", distinct=True):
+		doc = frappe.get_doc("User", user)
+		missing = needed({r.role for r in doc.roles}) - {r.role for r in doc.roles}
+		if missing and user not in ("Administrator", "Guest"):
+			doc.add_roles(*[r for r in missing if frappe.db.exists("Role", r)])
+
+
+def grant_bank_tools():
+	from frappe.permissions import add_permission, update_permission_property
+
+	for doctype, roles in BANK_TOOLS.items():
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		for role, (read, write, create) in roles.items():
+			if not frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0, "if_owner": 0}):
+				add_permission(doctype, role, 0)  # copies the standard permissions into Custom DocPerm first
+			for ptype, value in (("read", read), ("write", write), ("create", create)):
+				update_permission_property(doctype, role, 0, ptype, value, validate=False)
+
+
+# Students are customers too (one per student, Customer.student set). Everyone else is a normal customer and lives
+# in this group, so Finance can keep the two apart: fees for students, invoices for customers.
+CUSTOMER_GROUP = "School Customers"
+
+
+def student_group():
+	return frappe.db.get_single_value("School Settings", "customer_group") or "Students"
+
+
+def ensure_customer_group():
+	if not frappe.db.exists("Customer Group", "All Customer Groups"):
+		return
+	if not frappe.db.exists("Customer Group", CUSTOMER_GROUP):
+		frappe.get_doc({"doctype": "Customer Group", "customer_group_name": CUSTOMER_GROUP,
+						"parent_customer_group": "All Customer Groups"}).insert(ignore_permissions=True)
+	default = frappe.db.get_single_value("Selling Settings", "customer_group")
+	if not default or default == student_group():
+		frappe.db.set_single_value("Selling Settings", "customer_group", CUSTOMER_GROUP)  # new customers are not students
+
+
+def keep_students_apart(doc, method=None):
+	"""Customer validate hook: a student's account is in the students group, and only students are."""
+	group = student_group()
+	if doc.get("student"):
+		doc.customer_group = group
+	elif doc.customer_group == group:
+		doc.customer_group = CUSTOMER_GROUP if frappe.db.exists("Customer Group", CUSTOMER_GROUP) else "All Customer Groups"
+
+
+def setup_finance():
+	grant_bank_tools()
+	sync_all_users()
+	ensure_customer_group()

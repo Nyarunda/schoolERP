@@ -173,8 +173,10 @@ function open_site(frm) {
             <div class="text-muted" style="flex:0 0 130px">${label}</div><div style="min-width:0;overflow-wrap:anywhere">${value}</div></div>`;
         const section = (title, rows) => `<div style="margin-top:16px"><div style="font-weight:600;margin-bottom:4px">${title}</div>${rows}</div>`;
         const muted = (text) => `<span class="text-muted">${text}</span>`;
-        const cmd = (label, command) => `<div style="margin-top:6px"><div class="text-muted small">${label}</div>
+        // action: run it here (a SaaS Site Operation in a background worker) as well as copy it
+        const cmd = (label, command, action) => `<div style="margin-top:6px"><div class="text-muted small">${label}</div>
             <div style="display:flex;gap:6px;align-items:center"><code style="flex:1;min-width:0;overflow-x:auto;white-space:nowrap;padding:4px 6px">${esc(command)}</code>
+            ${action ? `<button class="btn btn-xs btn-primary sc-run" data-action="${esc(action)}">${__("Run")}</button>` : ""}
             <button class="btn btn-xs btn-default sc-copy" data-copy="${esc(command)}">${__("Copy")}</button></div></div>`;
         const bench = s.bench || "~/frappe-bench", on = `cd ${bench} && bench --site ${site}`;
         const free_port = Math.max(8002, ...(s.servers || []).map((x) => x.port + 1));
@@ -199,10 +201,40 @@ function open_site(frm) {
                 + row(__("Last backup"), s.last_backup ? `${esc(s.last_backup.on)} · ${s.last_backup.size_mb} MB` : `<span style="color:var(--orange-600)">${__("None yet")}</span>`)
                 + row(__("Folder"), `<code>${esc(s.folder)}</code>`));
             html += section(__("Commands"), (live.length ? "" : cmd(__("Serve it on its own port"), `${on} serve --port ${free_port}`))
-                + cmd(__("Console"), `${on} console`) + cmd(__("Back up (with files)"), `${on} backup --with-files`)
-                + cmd(__("Update after a code change"), `${on} migrate`));
+                + cmd(__("Console (in a terminal: it is interactive)"), `${on} console`)
+                + cmd(__("Back up (with files)"), `${on} backup --with-files`, "Backup")
+                + cmd(__("Update after a code change"), `${on} migrate`, "Migrate")
+                + cmd(__("Clear cache"), `${on} clear-cache`, "Clear Cache"))
+                + `<div class="sc-ops"></div>`;
         }
         $info.html(`<div style="font-size:var(--text-md)"><div style="font-weight:600;font-size:var(--text-lg)">${esc(site)}</div>${html}</div>`);
         $info.find(".sc-copy").on("click", (e) => frappe.utils.copy_to_clipboard($(e.currentTarget).attr("data-copy")));
+        $info.find(".sc-run").on("click", (e) => {
+            const action = $(e.currentTarget).attr("data-action");
+            frappe.confirm(__("Run {0} on {1} now? It runs in the background; you can close this dialog.", [__(action), esc(site)]), () =>
+                frappe.xcall("stemic_control.site_runtime.run_operation", { tenant: frm.doc.name, action })
+                    .then(() => { frappe.show_alert({ message: __("{0} queued", [__(action)]), indicator: "blue" }); load_operations(frm, d, $info); }));
+        });
+        if (s.on_this_bench) load_operations(frm, d, $info);
     }).catch(() => $info.html(`<div style="color:var(--red-600)">${__("Could not read the site's status.")}</div>`));
+}
+
+// What was run on the site from here, newest first; refreshes while something is queued or running
+function load_operations(frm, d, $info) {
+    const esc = frappe.utils.escape_html;
+    clearTimeout(d._sc_ops);
+    frappe.xcall("stemic_control.site_runtime.recent_operations", { tenant: frm.doc.name }, "GET").then((ops) => {
+        if (!d.$wrapper.is(":visible")) return;
+        const color = { Queued: "gray", Running: "blue", Succeeded: "green", Failed: "red" };
+        const busy = ops.some((o) => ["Queued", "Running"].includes(o.status));
+        $info.find(".sc-run").prop("disabled", busy);
+        $info.find(".sc-ops").html(!ops.length ? "" : `<div style="margin-top:16px"><div style="font-weight:600;margin-bottom:4px">${__("Recent operations")}</div>
+            ${ops.map((o) => `<div style="display:flex;gap:12px;padding:5px 0;border-top:1px solid var(--border-color)">
+                <div style="flex:0 0 130px"><span class="indicator-pill ${color[o.status] || "gray"}">${__(o.status)}</span></div>
+                <div style="min-width:0;overflow-wrap:anywhere"><a href="/app/saas-site-operation/${encodeURIComponent(o.name)}">${esc(__(o.action))}</a>
+                    <span class="text-muted small"> · ${esc(frappe.datetime.str_to_user(o.creation))} · ${esc(o.requested_by || "")}</span>
+                    ${o.summary ? `<div class="small" style="color:${o.status === "Failed" ? "var(--red-600)" : "var(--text-muted)"}">${esc(o.summary)}</div>` : ""}</div>
+            </div>`).join("")}</div>`);
+        if (busy) d._sc_ops = setTimeout(() => load_operations(frm, d, $info), 4000);
+    });
 }

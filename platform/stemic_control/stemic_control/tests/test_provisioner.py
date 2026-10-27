@@ -195,3 +195,72 @@ class TestSiteStatus(TestCase):
         self.assertRaises(frappe.ValidationError, site_runtime.site_status, self.slug)  # not a host name
         frappe.set_user("Guest")
         self.assertRaises(frappe.PermissionError, site_runtime.site_status, self.slug)
+
+
+class TestSiteOperations(TestCase):
+    """Backup / Migrate / Clear Cache run from the Open Site dialog: only those, only here, one at a time, on record."""
+
+    def setUp(self):
+        frappe.set_user("Administrator")
+        self._conf = patch.dict(frappe.local.conf, {"stemic_provision_environment": "development",
+                                                    "stemic_provision_allowed_benches": [get_bench_path()]})
+        self._conf.start()
+        from stemic_control import site_runtime
+
+        self.slug = "ops-" + frappe.generate_hash(length=6).lower()
+        self.site = f"{self.slug}.localhost"
+        api.register_tenant("Operations School", self.slug, "head@ops.test")
+        frappe.db.set_value("SaaS Tenant", self.slug, "canonical_site", self.site)
+        # its folder is the site the tests run on: a real folder and site_config on this bench
+        real = site_runtime._site_dir(frappe.local.site)
+        self._dir = patch.object(site_runtime, "_site_dir", side_effect=lambda site: real if site == self.site else f"/nonexistent/{site}")
+        self._dir.start()
+
+    def tearDown(self):
+        self._dir.stop()
+        self._conf.stop()
+        frappe.set_user("Administrator")
+
+    def test_run_is_queued_recorded_and_one_at_a_time(self):
+        from stemic_control import site_runtime
+
+        with patch.object(frappe, "enqueue") as enqueue:
+            op = site_runtime.run_operation(self.slug, "Backup")["operation"]
+            self.assertEqual(enqueue.call_args.kwargs["operation"], op)
+            self.assertRaises(frappe.ValidationError, site_runtime.run_operation, self.slug, "Migrate")  # Backup is queued
+        row = frappe.db.get_value("SaaS Site Operation", op, ["site", "action", "status", "requested_by"], as_dict=True)
+        self.assertEqual((row.site, row.action, row.status, row.requested_by), (self.site, "Backup", "Queued", "Administrator"))
+        self.assertRaises(frappe.ValidationError, site_runtime.run_operation, self.slug, "Drop Site")  # only the listed actions
+
+        with patch.object(site_runtime, "_set", side_effect=lambda op_, v: frappe.db.set_value("SaaS Site Operation", op_, v)), \
+                patch.object(provisioner, "_frappe_cli", return_value="Database: /x/db.sql.gz 1.0MiB\nConfig  : /x/c.json") as cli:
+            self.assertEqual(site_runtime.perform_operation(op), "Succeeded")
+        self.assertEqual(cli.call_args.args, ("--site", self.site, "backup", "--with-files"))
+        self.assertIn("Database: /x/db.sql.gz", frappe.db.get_value("SaaS Site Operation", op, "summary"))
+        self.assertEqual(site_runtime.perform_operation(op), "Succeeded")  # already done: not run again
+
+    def test_failure_is_recorded_without_passwords(self):
+        from stemic_control import site_runtime
+
+        with patch.object(frappe, "enqueue"):
+            op = site_runtime.run_operation(self.slug, "Migrate")["operation"]
+        secret = frappe.conf.db_password
+        with patch.object(site_runtime, "_set", side_effect=lambda op_, v: frappe.db.set_value("SaaS Site Operation", op_, v)), \
+                patch.object(provisioner, "_frappe_cli", side_effect=provisioner.ProvisioningError(f"failed using {secret}")):
+            self.assertEqual(site_runtime.perform_operation(op), "Failed")
+        row = frappe.db.get_value("SaaS Site Operation", op, ["status", "output"], as_dict=True)
+        self.assertEqual(row.status, "Failed")
+        self.assertNotIn(secret, row.output)
+
+    def test_who_and_where_may_run(self):
+        from stemic_control import site_runtime
+
+        with patch.dict(frappe.local.conf, {"stemic_provision_allowed_benches": ["/srv/other-bench"]}):
+            self.assertRaises(frappe.ValidationError, site_runtime.run_operation, self.slug, "Backup")
+        frappe.db.set_value("SaaS Tenant", self.slug, "canonical_site", "elsewhere.localhost")
+        self.assertRaises(frappe.ValidationError, site_runtime.run_operation, self.slug, "Backup")  # not on this bench
+        frappe.set_user("Guest")
+        self.assertRaises(frappe.PermissionError, site_runtime.run_operation, self.slug, "Backup")
+        frappe.set_user("Administrator")
+        forged = frappe.get_doc({"doctype": "SaaS Site Operation", "tenant": self.slug, "site": "x", "action": "Backup"})
+        self.assertRaises(frappe.PermissionError, forged.insert, ignore_permissions=True)  # only through run_operation

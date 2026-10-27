@@ -10,5 +10,7 @@ class SaaSTenant(Document):
 
         guard_fields(self, APPROVAL_FIELDS)
         before = self.get_doc_before_save()
-        if before and not can_move(TENANT_TRANSITIONS, before.status, self.status):
+        # site_runtime.link_existing_site: an approved school given a site that already exists goes straight to Active
+        linked = self.flags.link_existing_site and before and before.status in ("Approved", "Failed") and self.status == "Active"
+        if before and not linked and not can_move(TENANT_TRANSITIONS, before.status, self.status):
             frappe.throw(f"A {before.status} school cannot become {self.status}", frappe.ValidationError)

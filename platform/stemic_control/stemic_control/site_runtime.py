@@ -36,9 +36,32 @@ def _config(site):
     return conf
 
 
+def _default_site():
+    try:
+        with open(os.path.join(os.path.dirname(_site_dir("x")), "common_site_config.json")) as f:
+            return json.load(f).get("default_site") or None
+    except (OSError, ValueError):
+        return None
+
+
+def _environ(proc, name):
+    try:
+        with open(os.path.join(proc, "environ"), "rb") as f:
+            for item in f.read().decode(errors="replace").split("\0"):
+                if item.startswith(name + "="):
+                    return item.split("=", 1)[1] or None
+    except OSError:
+        pass
+    return None
+
+
 def servers():
-    """Frappe web servers running on this machine: [{"port", "site" (None = every site, chosen by Host)}]."""
+    """Frappe web servers running on this machine: [{"port", "site" (None = every site, chosen by Host)}].
+
+    Like Frappe's CLI, a server started without --site serves FRAPPE_SITE if set, else the bench's default_site;
+    only with neither does it pick the site from the Host name. (A ping cannot tell: every site answers pong.)"""
     found = {}
+    default = _default_site()
     for cmdline in glob.glob("/proc/[0-9]*/cmdline"):
         try:
             with open(cmdline, "rb") as f:
@@ -54,8 +77,9 @@ def servers():
 
         port = opt("--port")
         if port and port.isdigit():
+            site = opt("--site") or _environ(os.path.dirname(cmdline), "FRAPPE_SITE") or default
             # the reloader runs each server twice (parent and child): one entry per port and site
-            found[(int(port), opt("--site") or "")] = {"port": int(port), "site": opt("--site")}
+            found[(int(port), site or "")] = {"port": int(port), "site": site}
     return sorted(found.values(), key=lambda s: s["port"])
 
 
@@ -141,6 +165,8 @@ ACTIONS = {
     "Backup": (("backup", "--with-files"), 30 * 60),
     "Migrate": (("migrate",), 60 * 60),
     "Clear Cache": (("clear-cache",), 5 * 60),
+    # a new random password, made in the worker, set on the site and stored (encrypted) on the school
+    "Reset Admin Password": (("set-admin-password",), 5 * 60),
 }
 
 
@@ -175,7 +201,7 @@ def run_operation(tenant, action):
 
     _admin()
     if action not in ACTIONS:
-        frappe.throw("Choose Backup, Migrate or Clear Cache", frappe.ValidationError)
+        frappe.throw("Choose " + ", ".join(ACTIONS), frappe.ValidationError)
     frappe.db.sql("SELECT name FROM `tabSaaS Tenant` WHERE name = %s FOR UPDATE", (tenant,))  # one request at a time
     doc = frappe.get_doc("SaaS Tenant", tenant)
     doc.check_permission("write")
@@ -196,7 +222,8 @@ def _summary(action, output):
     if action == "Backup":
         found = [line.strip() for line in output.splitlines() if line.strip().startswith(("Database", "Config", "Public", "Private"))]
         return "; ".join(found)[:500] or "Backup taken"
-    return {"Migrate": "Migrated", "Clear Cache": "Cache cleared"}[action]
+    return {"Migrate": "Migrated", "Clear Cache": "Cache cleared",
+            "Reset Admin Password": "New Administrator password set; Show Password has it"}[action]
 
 
 def _set(op, values):
@@ -208,14 +235,19 @@ def perform_operation(operation):
     """Background worker: run the one allowed command and record what happened."""
     from stemic_control import provisioner
 
-    rows = frappe.db.sql("SELECT action, site, status FROM `tabSaaS Site Operation` WHERE name = %s FOR UPDATE",
+    import secrets as random
+
+    rows = frappe.db.sql("SELECT action, site, status, tenant FROM `tabSaaS Site Operation` WHERE name = %s FOR UPDATE",
                          (operation,), as_dict=True)
     if not rows or rows[0].status != "Queued":
         return rows[0].status if rows else "missing"
-    action, site = rows[0].action, rows[0].site
+    action, site, tenant = rows[0].action, rows[0].site, rows[0].tenant
     _set(operation, {"status": "Running", "started_on": frappe.utils.now_datetime()})
     args, timeout = ACTIONS[action]
-    secrets = tuple(filter(None, (_config(site).get("db_password"), frappe.conf.get("stemic_db_root_password"))))
+    password = random.token_urlsafe(14) if action == "Reset Admin Password" else None
+    if password:
+        args = (*args, password)
+    secrets = tuple(filter(None, (_config(site).get("db_password"), frappe.conf.get("stemic_db_root_password"), password)))
     try:
         output = provisioner._frappe_cli("--site", site, *args, timeout=timeout, secrets_=secrets)
     except Exception as e:
@@ -225,9 +257,65 @@ def perform_operation(operation):
         _set(operation, {"status": "Failed", "finished_on": frappe.utils.now_datetime(), "summary": message.splitlines()[0][:500]
                          if message else "Failed", "output": message[-20000:]})
         return "Failed"
+    if password:
+        from frappe.utils.password import set_encrypted_password
+
+        set_encrypted_password("SaaS Tenant", tenant, password, "site_admin_password")
+    for secret in secrets:
+        output = output.replace(secret, "********")
     _set(operation, {"status": "Succeeded", "finished_on": frappe.utils.now_datetime(), "summary": _summary(action, output),
                      "output": output[-20000:]})
     return "Succeeded"
+
+
+# ----------------------------------------------------------------------------- sites made by hand
+def _bench_sites():
+    sites = os.path.dirname(_site_dir("x"))
+    return sorted(name for name in os.listdir(sites) if SITE_NAME.fullmatch(name)
+                  and os.path.isfile(os.path.join(sites, name, "site_config.json")))
+
+
+@frappe.whitelist(methods=["GET"])
+def unlinked_sites():
+    """School ERP sites on this bench that no school uses yet (e.g. made with bench new-site by hand)."""
+    from stemic_control.api import _admin
+
+    _admin()
+    taken = set(frappe.get_all("SaaS Tenant", filters={"canonical_site": ("is", "set")}, pluck="canonical_site"))
+    return [s for s in _bench_sites() if s != frappe.local.site and s not in taken
+            and "school_erp" in (_config(s).get("installed_apps") or [])]
+
+
+@frappe.whitelist(methods=["POST"])
+def link_existing_site(tenant, site):
+    """Give an approved, eligible school a site that already exists on this bench instead of building one. It is held
+    to the provisioner's rules (approval, payment, environment) and the site must answer with School ERP installed."""
+    from stemic_control import onboarding, provisioner
+    from stemic_control.api import _admin
+
+    _admin()
+    doc = frappe.get_doc("SaaS Tenant", tenant, for_update=True)
+    doc.check_permission("write")
+    if doc.canonical_site:
+        frappe.throw(f"This school already has the site {doc.canonical_site}", frappe.ValidationError)
+    if doc.status not in ("Approved", "Failed"):
+        frappe.throw("Only an approved school without a site can be linked to one", frappe.ValidationError)
+    refused = onboarding.problems(doc, lock=True, environment=True)
+    if refused:
+        frappe.throw("Cannot link this school: " + "; ".join(refused), frappe.ValidationError)
+    if site not in unlinked_sites():
+        frappe.throw(f"{site} is not a School ERP site on this bench that is free to link", frappe.ValidationError)
+    try:
+        provisioner.check_ready(site)  # answers on its own database, with every required app
+    except provisioner.ProvisioningError as e:
+        frappe.throw(str(e), frappe.ValidationError)
+    doc.update({"status": "Active", "canonical_site": site, "database_name": _config(site).get("db_name")})
+    doc.flags.link_existing_site = True
+    doc.flags.ignore_permissions = True
+    doc.save()
+    doc.add_comment("Info", f"Linked to the existing site {site} by {frappe.session.user}. Its Administrator password is "
+                            "not known here: use Open Site > Reset Password.")
+    return {"tenant": doc.name, "site": site, "status": doc.status}
 
 
 @frappe.whitelist(methods=["GET"])

@@ -264,3 +264,36 @@ class TestSiteOperations(TestCase):
         frappe.set_user("Administrator")
         forged = frappe.get_doc({"doctype": "SaaS Site Operation", "tenant": self.slug, "site": "x", "action": "Backup"})
         self.assertRaises(frappe.PermissionError, forged.insert, ignore_permissions=True)  # only through run_operation
+
+    def test_reset_admin_password_sets_and_stores_it_but_never_shows_it(self):
+        from frappe.utils.password import get_decrypted_password
+
+        from stemic_control import site_runtime
+
+        with patch.object(frappe, "enqueue"):
+            op = site_runtime.run_operation(self.slug, "Reset Admin Password")["operation"]
+        with patch.object(site_runtime, "_set", side_effect=lambda op_, v: frappe.db.set_value("SaaS Site Operation", op_, v)), \
+                patch.object(provisioner, "_frappe_cli", side_effect=lambda *a, **k: f"Password updated to {a[-1]}") as cli:
+            self.assertEqual(site_runtime.perform_operation(op), "Succeeded")
+        args = cli.call_args.args
+        self.assertEqual(args[:3], ("--site", self.site, "set-admin-password"))
+        self.assertGreaterEqual(len(args[3]), 16)  # a fresh random password
+        self.assertEqual(get_decrypted_password("SaaS Tenant", self.slug, "site_admin_password"), args[3])
+        self.assertNotIn(args[3], frappe.db.get_value("SaaS Site Operation", op, "output"))
+
+    def test_link_an_existing_site(self):
+        from stemic_control import site_runtime
+        from stemic_control.tests.helpers import make_eligible
+
+        school = "lnk-" + frappe.generate_hash(length=6).lower()
+        api.register_tenant("Linked School", school, "head@linked.test")
+        free = patch.object(site_runtime, "unlinked_sites", return_value=[self.site + ".free"])
+        ready = patch.object(provisioner, "check_ready")
+        with free, ready:
+            self.assertRaises(frappe.ValidationError, site_runtime.link_existing_site, school, self.site + ".free")  # not approved
+            make_eligible(school)
+            self.assertRaises(frappe.ValidationError, site_runtime.link_existing_site, school, "not-free.localhost")
+            out = site_runtime.link_existing_site(school, self.site + ".free")
+            self.assertEqual(out["status"], "Active")
+            self.assertEqual(frappe.db.get_value("SaaS Tenant", school, "canonical_site"), self.site + ".free")
+            self.assertRaises(frappe.ValidationError, site_runtime.link_existing_site, school, self.site + ".free")  # has a site now

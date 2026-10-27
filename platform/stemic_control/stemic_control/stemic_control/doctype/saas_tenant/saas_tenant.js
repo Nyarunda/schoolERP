@@ -27,6 +27,9 @@ frappe.ui.form.on("SaaS Tenant", {
                     frm.reload_doc();
                 }), __("Actions"));
         }
+        if (["Approved", "Failed"].includes(frm.doc.status) && frm.doc.approved_on && !frm.doc.canonical_site) {
+            frm.add_custom_button(__("Link Existing Site"), () => link_existing_site(frm), __("Actions"));
+        }
         frm.add_custom_button(__("Claim a Domain"), () => stemic_control.claim_domain(frm.doc.name), __("Actions"));
         if (["Active", "Suspended"].includes(frm.doc.status)) {
             const next = frm.doc.status === "Active" ? "Suspended" : "Active";
@@ -188,7 +191,8 @@ function open_site(frm) {
                 ? __("No server on this machine answers for it. Start one with the command below.")
                 : __("It is not on this bench and did not answer at its public address."));
         let html = section(__("Running"), running) + section(__("Login"), row(__("User"), "Administrator")
-            + row(__("Password"), `<code class="sc-pass">••••••••</code> ${muted(__("(Show Password below)"))}`));
+            + row(__("Password"), `<code class="sc-pass">••••••••</code> ${muted(__("(Show Password below)"))}`
+                + (s.on_this_bench ? ` <button class="btn btn-xs btn-default sc-run" data-action="Reset Admin Password">${__("Reset")}</button>` : "")));
         if (s.on_this_bench) {
             html += section(__("Database"), row(__("Name"), `<code>${esc(db.name || "")}</code>`)
                 + (db.error ? row(__("Problem"), `<span style="color:var(--red-600)">${esc(db.error)}</span>`)
@@ -217,6 +221,18 @@ function open_site(frm) {
         });
         if (s.on_this_bench) load_operations(frm, d, $info);
     }).catch(() => $info.html(`<div style="color:var(--red-600)">${__("Could not read the site's status.")}</div>`));
+}
+
+// A school ERP site already on this bench (made by hand) given to an approved school instead of building one
+function link_existing_site(frm) {
+    frappe.xcall("stemic_control.site_runtime.unlinked_sites", {}, "GET").then((sites) => {
+        if (!sites.length) return frappe.msgprint(__("There is no School ERP site on this bench that another school is not already using."));
+        frappe.prompt([{ fieldname: "site", fieldtype: "Select", label: __("Site"), options: sites, reqd: 1,
+                         description: __("It must answer with School ERP installed. Its Administrator password is not known here: reset it afterwards from Open Site.") }],
+            ({ site }) => frappe.xcall("stemic_control.site_runtime.link_existing_site", { tenant: frm.doc.name, site })
+                .then(() => { frappe.show_alert({ message: __("{0} linked", [site]), indicator: "green" }); frm.reload_doc(); }),
+            __("Link an existing site"), __("Link"));
+    });
 }
 
 // What was run on the site from here, newest first; refreshes while something is queued or running

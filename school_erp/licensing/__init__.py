@@ -51,9 +51,11 @@ def enforce_on_doc(doc, method=None):
 def check_student_limit():
 	state = get_state()
 	limit = state.get("max_students") or 0
-	if limit and frappe.db.count("Student", {"status": "Active"}) >= limit:
+	active = frappe.db.count("Student", {"status": "Active"}) if limit else 0
+	if limit and active >= limit:
 		frappe.throw(
-			_("Your subscription allows {0} active students. Contact your vendor to raise the limit.").format(limit),
+			_("Your subscription allows {0} active students and the school has {1}. "
+			  "Contact your vendor to raise the limit, or mark students who have left as inactive.").format(limit, active),
 			title=_("Student limit reached"),
 		)
 

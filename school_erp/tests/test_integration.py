@@ -175,6 +175,20 @@ class TestSchoolFlow(TestCase):
 		finally:
 			set_license(ALL_MODULES)
 
+	def test_student_limit_says_how_many_the_school_has(self):
+		active = frappe.db.count("Student", {"status": "Active"})
+		try:
+			key = lic.issue({"school": "Test School", "modules": ALL_MODULES, "max_students": max(active, 1)}, PRIV)
+			frappe.db.set_single_value("School Settings", "license_key", key)
+			licensing.clear_cache()
+			if not active:
+				self.make_student()
+			with self.assertRaises(frappe.ValidationError) as caught:
+				self.make_student()
+			self.assertIn(f"allows {max(active, 1)} active students and the school has {max(active, 1)}", str(caught.exception))
+		finally:
+			set_license(ALL_MODULES)
+
 	def test_unlicensed_modules_cannot_be_seen(self):
 		"""Not only unsaveable: a module the license leaves out is hidden from reads, lists and search."""
 		from frappe.boot import get_bootinfo

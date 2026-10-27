@@ -110,6 +110,9 @@ def prepare_from_saas_invoice(invoice):
     if existing:
         return {"name": existing.name, "status": existing.status}
     inv = frappe.get_doc("SaaS Invoice", invoice)
+    if (inv.currency or "KES") != "KES":
+        # eTIMS invoices are in shillings; converting needs a KRA-accepted exchange rate, which this does not hold
+        frappe.throw(_("SaaS Invoice {0} is in {1}: only KES invoices can be prepared for eTIMS").format(inv.name, inv.currency))
     treatment, net, vat, total = platform_amounts(inv.total)
     school_pin = frappe.db.get_value("SaaS Tax Profile", {"tenant": inv.tenant}, "seller_pin")
     return _prepare(tenant=inv.tenant, external_invoice_no=inv.name, buyer_name=inv.school_name or inv.tenant,

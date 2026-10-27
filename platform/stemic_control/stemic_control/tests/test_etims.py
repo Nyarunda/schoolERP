@@ -163,6 +163,13 @@ class TestEtims(TestCase):
         self.assertRaises(frappe.ValidationError, etims.prepare_from_saas_invoice, inv)
         self.assertRaises(frappe.ValidationError, etims.prepare_from_saas_invoice, "SINV-NOPE")
 
+    def test_only_kes_saas_invoices_are_prepared(self):
+        self.stemic_seller()
+        inv = self.saas_invoice()
+        frappe.db.set_value("SaaS Invoice", inv, "currency", "USD")
+        self.assertRaises(frappe.ValidationError, etims.prepare_from_saas_invoice, inv)
+        self.assertFalse(frappe.db.exists("SaaS eTIMS Invoice", {"saas_invoice": inv}))
+
     def test_cancelling_a_saas_invoice_follows_its_tax_invoice(self):
         self.stemic_seller(treatment="Exempt")
         inv = self.saas_invoice()

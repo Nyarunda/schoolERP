@@ -46,7 +46,8 @@ class TestOnboarding(TestCase):
         def fake(*args, **kwargs):
             calls.append(args)
             return LISTED if "list-apps" in args else ""
-        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", return_value=False):
+        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", return_value=False), \
+                patch.object(provisioner, "_database_exists", return_value=False):
             return provisioner.run(job), calls
 
     def operator(self, role):

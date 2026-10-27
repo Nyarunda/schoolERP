@@ -153,26 +153,56 @@ async function render_overview(frm) {
         </div>`);
 }
 
+// The school's site as it is running now: where it answers, its database, apps, use, backups and the commands for it
 function open_site(frm) {
-    const site = frm.doc.canonical_site;
-    if (!/\.localhost$/.test(site)) return window.open(`https://${frm.doc.primary_domain || site}`);
-    // A local site is not served by `bench start` (it serves the default site), so say how to run it
-    const port = 8002;
-    const d = new frappe.ui.Dialog({
-        title: __("Open {0}", [frm.doc.school_name]),
-        fields: [{ fieldname: "info", fieldtype: "HTML" }],
-        primary_action_label: __("Open in Browser"),
-        primary_action: () => window.open(`http://${site}:${port}`),
-        secondary_action_label: __("Show Password"),
-        secondary_action: () => frappe.call({ method: "stemic_control.api.site_access", args: { tenant: frm.doc.name } })
-            .then(({ message }) => d.fields_dict.info.$wrapper.find(".sc-pass").text(message.password || __("(not stored)"))),
-    });
-    d.fields_dict.info.$wrapper.html(`<div class="sc-preview">
-        <div class="sc-preview-host">${frappe.utils.escape_html(site)}<span class="sc-badge ok">${__("Provisioned")}</span></div>
-        <ol>
-            <li>${__("Start it in a terminal:")}<br><code>cd ~/frappe-bench && bench --site ${frappe.utils.escape_html(site)} serve --port ${port}</code></li>
-            <li>${__("Open")} <code>http://${frappe.utils.escape_html(site)}:${port}</code> ${__("and log in as Administrator")}</li>
-            <li>${__("Password:")} <code class="sc-pass">••••••••</code></li>
-        </ol></div>`);
+    const esc = frappe.utils.escape_html, site = frm.doc.canonical_site;
+    const d = new frappe.ui.Dialog({ title: __("{0}: site", [frm.doc.school_name]), size: "large",
+                                     fields: [{ fieldname: "info", fieldtype: "HTML" }] });
+    const $info = d.fields_dict.info.$wrapper.html(`<div class="text-muted">${__("Checking {0}…", [esc(site)])}</div>`);
     d.show();
+    frappe.xcall("stemic_control.site_runtime.site_status", { tenant: frm.doc.name }, "GET").then((s) => {
+        const live = s.served_at || [], db = s.database || {};
+        const fallback = /\.localhost$/.test(site) ? null : `https://${frm.doc.primary_domain || site}`;
+        const url = live.length ? live[0].url : fallback;
+        if (url) d.set_primary_action(__("Open in Browser"), () => window.open(url));
+        d.set_secondary_action_label(__("Show Password"));
+        d.set_secondary_action(() => frappe.call({ method: "stemic_control.api.site_access", args: { tenant: frm.doc.name } })
+            .then(({ message }) => $info.find(".sc-pass").text(message.password || __("(not stored)"))));
+
+        const row = (label, value) => `<div style="display:flex;gap:12px;padding:5px 0;border-top:1px solid var(--border-color)">
+            <div class="text-muted" style="flex:0 0 130px">${label}</div><div style="min-width:0;overflow-wrap:anywhere">${value}</div></div>`;
+        const section = (title, rows) => `<div style="margin-top:16px"><div style="font-weight:600;margin-bottom:4px">${title}</div>${rows}</div>`;
+        const muted = (text) => `<span class="text-muted">${text}</span>`;
+        const cmd = (label, command) => `<div style="margin-top:6px"><div class="text-muted small">${label}</div>
+            <div style="display:flex;gap:6px;align-items:center"><code style="flex:1;min-width:0;overflow-x:auto;white-space:nowrap;padding:4px 6px">${esc(command)}</code>
+            <button class="btn btn-xs btn-default sc-copy" data-copy="${esc(command)}">${__("Copy")}</button></div></div>`;
+        const bench = s.bench || "~/frappe-bench", on = `cd ${bench} && bench --site ${site}`;
+        const free_port = Math.max(8002, ...(s.servers || []).map((x) => x.port + 1));
+
+        const running = live.length
+            ? live.map((x) => row(`<span class="indicator-pill green">${__("Running")}</span>`,
+                `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a><div class="text-muted small">${esc(__("via {0}", [x.via]))}</div>`)).join("")
+            : row(`<span class="indicator-pill red">${__("Not answering")}</span>`, s.on_this_bench
+                ? __("No server on this machine answers for it. Start one with the command below.")
+                : __("It is not on this bench and did not answer at its public address."));
+        let html = section(__("Running"), running) + section(__("Login"), row(__("User"), "Administrator")
+            + row(__("Password"), `<code class="sc-pass">••••••••</code> ${muted(__("(Show Password below)"))}`));
+        if (s.on_this_bench) {
+            html += section(__("Database"), row(__("Name"), `<code>${esc(db.name || "")}</code>`)
+                + (db.error ? row(__("Problem"), `<span style="color:var(--red-600)">${esc(db.error)}</span>`)
+                    : row(__("Size"), __("{0} MB in {1} tables", [db.size_mb, db.tables]))));
+            if (db.apps) html += section(__("Apps"), db.apps.map((a) => row(esc(a.app), `${esc(a.version || "")} ${muted(esc(a.branch || ""))}`)).join(""));
+            if (!db.error) html += section(__("Use"), row(__("Users"), db.users ?? "–") + row(__("Students"), db.students ?? "–")
+                + row(__("Last login"), db.last_login ? frappe.datetime.str_to_user(db.last_login) : muted(__("Nobody yet"))));
+            html += section(__("Health"), row(__("Scheduler"), s.scheduler === "on" ? __("On") : `<span style="color:var(--orange-600)">${__("Paused")}</span>`)
+                + row(__("Maintenance"), s.maintenance_mode ? `<span style="color:var(--orange-600)">${__("On: users are locked out")}</span>` : __("Off"))
+                + row(__("Last backup"), s.last_backup ? `${esc(s.last_backup.on)} · ${s.last_backup.size_mb} MB` : `<span style="color:var(--orange-600)">${__("None yet")}</span>`)
+                + row(__("Folder"), `<code>${esc(s.folder)}</code>`));
+            html += section(__("Commands"), (live.length ? "" : cmd(__("Serve it on its own port"), `${on} serve --port ${free_port}`))
+                + cmd(__("Console"), `${on} console`) + cmd(__("Back up (with files)"), `${on} backup --with-files`)
+                + cmd(__("Update after a code change"), `${on} migrate`));
+        }
+        $info.html(`<div style="font-size:var(--text-md)"><div style="font-weight:600;font-size:var(--text-lg)">${esc(site)}</div>${html}</div>`);
+        $info.find(".sc-copy").on("click", (e) => frappe.utils.copy_to_clipboard($(e.currentTarget).attr("data-copy")));
+    }).catch(() => $info.html(`<div style="color:var(--red-600)">${__("Could not read the site's status.")}</div>`));
 }

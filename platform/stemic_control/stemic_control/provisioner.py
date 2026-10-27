@@ -44,6 +44,29 @@ def site_name(slug: str) -> str:
     return f"{slug}.{(config.get('stemic_site_domain') or 'localhost').strip('.')}"
 
 
+def database_name(slug: str) -> str:
+    """The school's database (and its database login): sch_<slug>, e.g. sch_nyeri_high. Taken from the slug, which
+    never changes, rather than a domain, which can; at most 53 characters, inside MariaDB's 64."""
+    return "sch_" + slug.replace("-", "_")
+
+
+def _database_exists(name: str) -> bool:
+    """Whether MariaDB already has this database or login (never overwritten: new-site would drop and recreate them)."""
+    import MySQLdb
+
+    conn = MySQLdb.connect(host=frappe.conf.db_host or "127.0.0.1", port=int(frappe.conf.db_port or 3306), user="root",
+                           passwd=_root_password(), connect_timeout=10)
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = %s", (name,))
+        if cur.fetchone()[0]:
+            return True
+        cur.execute("SELECT COUNT(*) FROM mysql.user WHERE user = %s", (name,))
+        return bool(cur.fetchone()[0])
+    finally:
+        conn.close()
+
+
 def _apps() -> list[str]:
     return config.site_apps() or list(DEFAULT_APPS)
 
@@ -147,8 +170,11 @@ def run(job: str) -> str:
         root = _root_password()
         if _site_dir_exists(site):
             raise ProvisioningError(f"Site {site} already exists on this bench; refusing to overwrite it")
+        database = database_name(tenant.slug)
+        if _database_exists(database):
+            raise ProvisioningError(f"A database or database login named {database} already exists; refusing to overwrite it")
         password = secrets.token_urlsafe(14)
-        args = ["new-site", site, "--db-root-password", root, "--admin-password", password]
+        args = ["new-site", site, "--db-root-password", root, "--admin-password", password, "--db-name", database]
         for app in _apps():
             args += ["--install-app", app]
         created = True
@@ -176,7 +202,8 @@ def run(job: str) -> str:
     base = config.get("stemic_platform_domain")
     subdomain = f"{tenant.slug}.{base}"
     _set_job(job, "Succeeded")
-    _set_tenant(tenant.name, "Active", canonical_site=site, site_admin_password=password,  # Password field: saved encrypted
+    _set_tenant(tenant.name, "Active", canonical_site=site, database_name=database_name(tenant.slug),
+                site_admin_password=password,  # Password field: saved encrypted
                 primary_domain=tenant.primary_domain or (subdomain if frappe.db.exists("SaaS Domain", subdomain) else None))
     if frappe.db.get_value("SaaS Domain", subdomain, "status") == "Verified":
         frappe.db.set_value("SaaS Domain", subdomain, {"status": "Active", "is_primary": 1})

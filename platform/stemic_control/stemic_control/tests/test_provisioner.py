@@ -29,6 +29,8 @@ class TestProvisioner(TestCase):
         self._conf.start()
         self._enqueue = patch.object(provisioner, "enqueue")  # tests call run() directly
         self._enqueue.start()
+        self._db = patch.object(provisioner, "_database_exists", return_value=False)  # no real MariaDB root login
+        self._db.start()
         self.slug = "prov-" + frappe.generate_hash(length=6).lower()
         api.register_tenant("Provisioned School", self.slug, "head@prov.test")
         make_eligible(self.slug)
@@ -36,6 +38,7 @@ class TestProvisioner(TestCase):
         self.job = api.queue_provisioning(self.slug, "prov-" + frappe.generate_hash(length=12))
 
     def tearDown(self):
+        self._db.stop()
         self._enqueue.stop()
         self._conf.stop()
         # provisioner.run commits, so this school would outlive the test; left Queued, a real scheduler on the same
@@ -65,6 +68,9 @@ class TestProvisioner(TestCase):
         new_site = next(c for c in calls if c[0] == "new-site")
         self.assertEqual(new_site[1], site)
         self.assertIn("school_erp", new_site)
+        database = new_site[new_site.index("--db-name") + 1]
+        self.assertEqual(database, "sch_" + self.slug.replace("-", "_"))  # named after the school, not random
+        self.assertEqual(frappe.db.get_value("SaaS Tenant", self.slug, "database_name"), database)
         self.assertTrue(any("list-apps" in c for c in calls))  # readiness checked before success
         self.assertEqual(frappe.db.get_value("SaaS Provisioning Job", self.job, "status"), "Succeeded")
         tenant = frappe.get_doc("SaaS Tenant", self.slug)
@@ -84,6 +90,18 @@ class TestProvisioner(TestCase):
         self.assertIn("database error", job.last_error)
         self.assertEqual(frappe.db.get_value("SaaS Tenant", self.slug, "status"), "Failed")
         self.assertTrue(any(c[0] == "drop-site" for c in calls))  # the half-made site is cleaned up
+
+    def test_an_existing_database_is_never_overwritten(self):
+        calls, fake = self.cli()
+        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", return_value=False), \
+                patch.object(provisioner, "_database_exists", return_value=True):
+            self.assertEqual(provisioner.run(self.job), "Failed")
+        self.assertFalse([c for c in calls if c[0] in ("new-site", "drop-site")])  # nothing created, nothing dropped
+        self.assertIn("already exists", frappe.db.get_value("SaaS Provisioning Job", self.job, "last_error"))
+
+    def test_database_names_fit_mariadb(self):
+        self.assertEqual(provisioner.database_name("nyeri-high"), "sch_nyeri_high")
+        self.assertLessEqual(len(provisioner.database_name("a" + "b" * 48)), 64)
 
     def test_secrets_are_scrubbed_from_command_output(self):
         result = SimpleNamespace(stdout="Access denied using password root-secret-123", stderr="", returncode=1)
@@ -138,3 +156,42 @@ class TestProvisioner(TestCase):
         # nothing queued: say so instead of failing silently
         frappe.db.set_value("SaaS Provisioning Job", self.job, "status", "Failed")
         self.assertRaises(frappe.ValidationError, api.provision_tenant_now, self.slug)
+
+
+class TestSiteStatus(TestCase):
+    """The Open Site dialog's data: read-only, platform admins only, never a password."""
+
+    def setUp(self):
+        frappe.set_user("Administrator")
+        self.slug = "stat-" + frappe.generate_hash(length=6).lower()
+        api.register_tenant("Status School", self.slug, "head@status.test")
+
+    def tearDown(self):
+        frappe.set_user("Administrator")
+
+    def test_status_of_a_site_on_this_bench(self):
+        from stemic_control import site_runtime
+
+        site = frappe.local.site  # a site that really is on this bench: the one the tests run on
+        frappe.db.set_value("SaaS Tenant", self.slug, "canonical_site", site)
+        with patch.object(site_runtime, "servers", return_value=[{"port": 8000, "site": None}, {"port": 8009, "site": "other.localhost"}]), \
+                patch.object(site_runtime, "_ping", return_value=True) as ping:
+            status = site_runtime.site_status(self.slug)
+        self.assertTrue(status["on_this_bench"])
+        self.assertEqual(status["served_at"][0]["url"], f"http://{site}:8000")
+        self.assertEqual(ping.call_count, 1)  # the server pinned to another site is not asked
+        self.assertEqual(status["database"]["name"], frappe.conf.db_name)
+        self.assertGreater(status["database"]["tables"], 0)
+        self.assertNotIn("password", str(status).lower())
+
+    def test_site_elsewhere_and_who_may_ask(self):
+        from stemic_control import site_runtime
+
+        self.assertRaises(frappe.ValidationError, site_runtime.site_status, self.slug)  # no site yet
+        frappe.db.set_value("SaaS Tenant", self.slug, "canonical_site", "nowhere-" + self.slug + ".localhost")
+        with patch.object(site_runtime, "servers", return_value=[]):
+            self.assertEqual(site_runtime.site_status(self.slug)["on_this_bench"], False)
+        frappe.db.set_value("SaaS Tenant", self.slug, "canonical_site", "../../etc")
+        self.assertRaises(frappe.ValidationError, site_runtime.site_status, self.slug)  # not a host name
+        frappe.set_user("Guest")
+        self.assertRaises(frappe.PermissionError, site_runtime.site_status, self.slug)

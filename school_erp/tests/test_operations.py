@@ -377,6 +377,9 @@ class TestOperations(TestCase):
 
 			frappe.get_doc({"doctype": "School Fee Structure", "school_term": tname, "school_class": "Grade 4", "boarding_type": "All",
 							"items": [{"fee_type": "Tuition", "amount": 20000}]}).insert()
+			# a student of its own to bill: on a fresh database (CI) there may be no Grade 4 student left by other tests
+			frappe.get_doc({"doctype": "Student", "first_name": "auto", "last_name": "billing", "stream": "Grade 4 Test",
+							"guardians": [{"guardian_name": "Auto Parent", "relation": "Mother", "mobile_no": "0712345678"}]}).insert()
 			with patch(NOTIFY) as sent:
 				auto_bill_terms()
 			runs = frappe.get_all("Fee Billing Run", filters={"school_term": tname}, fields=["name", "docstatus", "auto_generated", "total_students", "due_date"])

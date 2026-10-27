@@ -196,6 +196,32 @@ class TestSchoolFlow(TestCase):
 			frappe.set_user("Administrator")
 			set_license(ALL_MODULES)
 
+	def test_a_new_school_can_install_its_key_before_setup(self):
+		"""The key arrives before School Settings is filled in; install_key takes it on its own."""
+		school, company = frappe.db.get_single_value("School Settings", "school_name"), frappe.db.get_single_value("School Settings", "company")
+		user = f"keys-{frappe.generate_hash(length=6)}@licence.test"
+		frappe.get_doc({"doctype": "User", "email": user, "first_name": "Keys", "send_welcome_email": 0,
+						"roles": [{"role": "Teacher"}]}).insert(ignore_permissions=True)
+		try:
+			frappe.db.set_single_value("School Settings", {"school_name": None, "company": None})  # not set up yet
+			frappe.clear_document_cache("School Settings", "School Settings")
+			self.assertRaises(frappe.ValidationError, frappe.get_doc("School Settings").save)  # the form cannot be saved yet
+			key = lic.issue({"school": "New School", "modules": ["fees", "exams"], "site": frappe.local.site}, PRIV)
+			out = licensing.install_key(key)
+			self.assertEqual(out["status"], "valid")
+			self.assertEqual(set(out["modules"]), {"core", "fees", "exams"})
+			self.assertEqual(frappe.db.get_single_value("School Settings", "licensed_modules"), "Fees, Payments & Statements, Exams & Report Cards")
+			self.assertRaises(frappe.ValidationError, licensing.install_key, "not-a-key")
+			other = lic.issue({"school": "Other", "modules": ["fees"], "site": "another.localhost"}, PRIV)
+			self.assertRaises(frappe.ValidationError, licensing.install_key, other)  # made for another site
+			frappe.set_user(user)
+			self.assertRaises(frappe.PermissionError, licensing.install_key, key)
+		finally:
+			frappe.set_user("Administrator")
+			frappe.db.set_single_value("School Settings", {"school_name": school, "company": company})
+			frappe.clear_document_cache("School Settings", "School Settings")
+			set_license(ALL_MODULES)
+
 	def test_student_limit_says_how_many_the_school_has(self):
 		active = frappe.db.count("Student", {"status": "Active"})
 		try:

@@ -6,8 +6,8 @@
   "istable": 0,
   "is_submittable": 0,
   "track_changes": 1,
-  "autoname": "format:JOB-{#####}",
-  "naming_rule": "Expression",
+  "autoname": "JOB-.#####",
+  "naming_rule": "Expression (old style)",
   "engine": "InnoDB",
   "field_order": [
     "tenant",

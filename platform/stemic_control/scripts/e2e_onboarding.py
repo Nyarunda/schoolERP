@@ -193,7 +193,13 @@ def school_login(frappe, url):
     from stemic_control import api
 
     access = api.site_access(slug())
+    from urllib.parse import urlsplit
+
     session = requests.Session()
+    parts = urlsplit(url)
+    if parts.scheme == "http":  # a local server: name the site in Host and connect locally (*.localhost may not resolve)
+        session.headers["Host"] = parts.netloc
+        url = f"http://127.0.0.1:{parts.port or 80}"
     login = session.post(f"{url}/api/method/login", data={"usr": access["user"], "pwd": access["password"]}, timeout=30)
     check(login.status_code == 200, f"login refused ({login.status_code})")
     key = frappe.db.get_value("SaaS License", {"tenant": slug(), "status": "Issued"}, "signed_key")
@@ -203,7 +209,7 @@ def school_login(frappe, url):
     overview = session.get(f"{url}/api/method/school_erp.licensing.license_overview", timeout=30).json()["message"]
     check(overview["status"] == "valid", f"the school sees the key as {overview['status']}: {overview.get('message')}")
     check(set(LICENSED) <= set(overview["modules"]), f"modules on the site: {overview['modules']}")
-    return session, f"license {overview['status']}, modules {', '.join(m for m in overview['modules'] if m != 'core')}"
+    return session, url, f"license {overview['status']}, modules {', '.join(m for m in overview['modules'] if m != 'core')}"
 
 
 @step("Licensed modules are visible; the others are hidden")
@@ -277,7 +283,7 @@ def main():
         provision(frappe)
         url, _ = running(frappe)
         license_key(frappe)
-        session, _ = school_login(frappe, url)
+        session, url, _ = school_login(frappe, url)
         visibility(frappe, url, session)
     except Exception:
         failed = True

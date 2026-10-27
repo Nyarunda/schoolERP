@@ -6,8 +6,8 @@
   "istable": 0,
   "is_submittable": 0,
   "track_changes": 1,
-  "autoname": "format:AGT-{#####}",
-  "naming_rule": "Expression",
+  "autoname": "AGT-.#####",
+  "naming_rule": "Expression (old style)",
   "engine": "InnoDB",
   "field_order": [
     "agent_name",

@@ -123,8 +123,13 @@ class TestProvisioner(TestCase):
     def test_demo_schools_are_never_provisioned(self):
         frappe.db.set_value("SaaS Tenant", self.slug, "notes", provisioner.DEMO_NOTE)
         with patch.object(provisioner, "_frappe_cli") as cli:
-            self.assertTrue(provisioner.run(self.job).startswith("skipped"))
+            self.assertEqual(provisioner.run(self.job), "refused")
         cli.assert_not_called()
+        job = frappe.db.get_value("SaaS Provisioning Job", self.job, ["status", "last_error"], as_dict=True)
+        self.assertEqual(job.status, "Failed")  # not left Queued with no reason (it used to be skipped silently)
+        self.assertIn("demo school", job.last_error)
+        self.assertIn("demo school", " ".join(api.provisioning_progress(self.slug)["job"]["reasons"]))
+        self.assertRaises(frappe.ValidationError, api.queue_provisioning, self.slug, "demo-" + frappe.generate_hash(length=10))
 
     def test_manual_success_still_blocked(self):
         api.record_job_result(self.job, "Running")

@@ -147,10 +147,10 @@ def run(job: str) -> str:
     if not row or row.status != "Queued" or row.action != "Create Site":
         return row.status if row else "missing"
     tenant = frappe.get_doc("SaaS Tenant", row.tenant, for_update=True)
-    if tenant.notes == DEMO_NOTE:
-        return "skipped (demo school)"
     from stemic_control import onboarding
 
+    # a demo school is refused here like any other (onboarding.problems), so the job says why rather than
+    # staying Queued with nothing to show for it
     refused = onboarding.problems(tenant, lock=True, environment=True)
     if refused:
         message = "Refused: " + "; ".join(refused) + "."

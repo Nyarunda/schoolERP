@@ -306,6 +306,17 @@ def provision_tenant_now(tenant):
     return provision_now(job)
 
 
+def _background_job_status(job_id):
+    """The background (RQ) job's own status: queued, started, finished, failed... or None if there is none."""
+    try:
+        from frappe.utils.background_jobs import get_job
+
+        job = get_job(job_id)
+        return job.get_status() if job else None
+    except Exception:
+        return None
+
+
 @frappe.whitelist(methods=["GET"])
 def provisioning_progress(tenant):
     """What the provisioning dialog shows: the school's latest site job, where it is, and why it stopped if it did."""
@@ -337,6 +348,7 @@ def provisioning_progress(tenant):
                            if line.strip() and not line.startswith(("Traceback", "  File", "    "))), "")[:300],
             # what became of a half-made site (provisioner._drop_partial_site's line), if anything was made
             "cleanup": next((line.strip() for line in error.splitlines() if "partly created site" in line), ""),
+            "worker_job": _background_job_status(f"stemic-provision-{job.name}"),
         }
     return out
 

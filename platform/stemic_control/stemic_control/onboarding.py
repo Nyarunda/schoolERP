@@ -108,7 +108,11 @@ def environment_problem():
 
 def problems(tenant, lock=False, environment=False) -> list[str]:
     """Everything standing between this school and a site; empty means it may be provisioned."""
+    from stemic_control.provisioner import DEMO_NOTE
+
     out = []
+    if tenant.notes == DEMO_NOTE:
+        out.append("This is a demo school (sample data): demo schools are never given a site")
     if tenant.status == "Rejected":
         out.append("The school was rejected")
     elif not approved(tenant):

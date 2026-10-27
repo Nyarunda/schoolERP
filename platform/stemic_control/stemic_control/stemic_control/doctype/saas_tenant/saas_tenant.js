@@ -92,12 +92,15 @@ function provisioning_dialog(frm) {
             finished = true;
         } else if (j.status === "Queued") {
             const waited = ago(j.queued_on, p.now);
-            const stuck = waited > 60 && (p.workers === 0 || !p.local_provisioner);
+            // the worker already ran it (its background job ended) yet the site job is still Queued: it never started building
+            const passed_over = ["finished", "failed", "stopped", "canceled"].includes(j.worker_job) && waited > 10;
+            const stuck = passed_over || (waited > 60 && (p.workers === 0 || !p.local_provisioner));
             html = box(stuck ? "orange" : "blue", stuck ? __("Still waiting for the provisioner") : __("Waiting for the provisioner to pick it up"), {
                 steps: steps(0), text: more(__("Job {0}, queued {1} ago.", [link, minutes(waited)]))
                     + (!p.local_provisioner ? more(__("The local provisioner is switched off (stemic_local_provisioner), so an external provisioner must take this job."))
-                        : p.workers === 0 ? more(__("No background worker is running, so nothing will pick it up. Start one: {0}", ["<code>bench start</code>"]))
-                            : waited > 60 ? more(__("A worker is running but has not taken it yet; it may be busy with another job.")) : ""),
+                        : passed_over ? more(__("The provisioner ran it ({0}) but did not start building. Check Error Log, then use Actions > Provision Now.", [esc(j.worker_job)]))
+                            : p.workers === 0 ? more(__("No background worker is running, so nothing will pick it up. Start one: {0}", ["<code>bench start</code>"]))
+                                : waited > 60 ? more(__("A worker is running but has not taken it yet; it may be busy with another job.")) : ""),
             });
         } else if (j.status === "Running") {
             html = box("blue", __("Creating the site: database, ERPNext and School ERP"), {

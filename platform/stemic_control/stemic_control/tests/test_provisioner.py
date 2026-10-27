@@ -33,6 +33,12 @@ class TestProvisioner(TestCase):
     def tearDown(self):
         self._enqueue.stop()
         self._conf.stop()
+        # provisioner.run commits, so this school would outlive the test; left Queued, a real scheduler on the same
+        # site (with the local provisioner on) would later build an actual prov-* site for it
+        frappe.db.rollback()
+        for dt, f in (("SaaS Provisioning Job", "tenant"), ("SaaS Domain", "tenant"), ("SaaS Tenant", "name")):
+            frappe.db.delete(dt, {f: self.slug})
+        frappe.db.commit()
 
     def cli(self, fail_new_site=False):
         calls = []

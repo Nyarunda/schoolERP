@@ -175,6 +175,36 @@ class TestSchoolFlow(TestCase):
 		finally:
 			set_license(ALL_MODULES)
 
+	def test_unlicensed_modules_cannot_be_seen(self):
+		"""Not only unsaveable: a module the license leaves out is hidden from reads, lists and search."""
+		from frappe.boot import get_bootinfo
+
+		route = frappe.get_doc({"doctype": "Transport Route", "route_name": "_Hidden " + frappe.generate_hash(length=5),
+								"fee_per_term": 1, "fee_type": "Transport"}).insert()
+		user = f"admin-{frappe.generate_hash(length=6)}@licence.test"
+		frappe.get_doc({"doctype": "User", "email": user, "first_name": "Licence", "send_welcome_email": 0,
+						"roles": [{"role": "School Admin"}]}).insert(ignore_permissions=True)
+		try:
+			set_license(["exams"])  # no fees, transport or timetable
+			frappe.set_user(user)
+			self.assertFalse(frappe.has_permission("Transport Route", "read", route.name))
+			self.assertRaises(frappe.PermissionError, frappe.get_doc("Transport Route", route.name).check_permission, "read")
+			self.assertEqual(frappe.get_list("Transport Route", pluck="name"), [])
+			self.assertEqual(frappe.get_list("Fee Payment", pluck="name"), [])
+			self.assertTrue(frappe.get_list("Subject", limit=1))  # timetable is off, but exams need subjects
+			can_read = get_bootinfo()["user"]["can_read"]
+			self.assertNotIn("Transport Route", can_read)  # so search and the desk do not offer it
+			self.assertIn("Subject", can_read)
+
+			frappe.set_user("Administrator")
+			set_license(ALL_MODULES)  # licensed again: everything comes back, nothing was lost
+			frappe.set_user(user)
+			self.assertTrue(frappe.has_permission("Transport Route", "read", route.name))
+			self.assertIn(route.name, frappe.get_list("Transport Route", pluck="name"))
+		finally:
+			frappe.set_user("Administrator")
+			set_license(ALL_MODULES)
+
 	def test_timetable_teacher_clash(self):
 		t = frappe.get_doc({"doctype": "Teacher", "teacher_name": "Mr Clash"}).insert()
 		if not frappe.db.exists("Stream", "Grade 5 Test"):

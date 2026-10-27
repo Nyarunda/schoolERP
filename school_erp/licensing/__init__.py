@@ -59,11 +59,32 @@ def check_student_limit():
 
 
 def hidden_entities(state=None) -> dict[str, set[str]]:
-	"""DocTypes and reports of modules the school has not licensed, kept out of the sidebar and workspaces."""
-	modules = set((state or get_state())["modules"])
-	doctypes = {dt for dt, module in lic.DOCTYPE_MODULE.items() if module not in modules}
+	"""DocTypes and reports of modules the school has not licensed: not shown anywhere, and not readable."""
+	doctypes = lic.hidden_doctypes((state or get_state())["modules"])
 	reports = set(frappe.get_all("Report", filters={"ref_doctype": ("in", list(doctypes))}, pluck="name")) if doctypes else set()
 	return {"DocType": doctypes, "Report": reports}
+
+
+def _hidden(doctype) -> bool:
+	if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_patch:
+		return False
+	return doctype in lic.hidden_doctypes(get_state()["modules"])
+
+
+def licensed_read(doc, ptype=None, user=None, debug=False):
+	"""has_permission hook: nobody opens, reads or prints a record of a module the school has not licensed.
+	A hook can only deny (True means "no objection"), so the DocType's other rules still decide otherwise."""
+	return not _hidden(doc.doctype)
+
+
+def licensed_query(user=None, doctype=None):
+	"""permission_query_conditions hook (Frappe passes the DocType): lists, reports and search of an unlicensed
+	module's DocType come back empty."""
+	return "1=0" if doctype and _hidden(doctype) else ""
+
+
+USER_LISTS = ("can_read", "can_write", "can_create", "can_delete", "can_submit", "can_cancel", "can_search",
+			  "can_get_report", "can_select", "can_export", "can_import", "can_print", "can_email", "can_set_user_permissions")
 
 
 def boot_session(bootinfo):
@@ -71,6 +92,11 @@ def boot_session(bootinfo):
 		return
 	state = get_state()
 	hidden = hidden_entities(state)
+	# The desk (search bar, list routes, link fields) learns what the user may open from these lists
+	user = bootinfo.get("user") or {}
+	for key in USER_LISTS:
+		if isinstance(user.get(key), list):
+			user[key] = [dt for dt in user[key] if dt not in hidden["DocType"]]
 	bootinfo.school_erp = {
 		"modules": state["modules"],
 		"status": state["status"],

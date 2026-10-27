@@ -17,7 +17,21 @@ Seven DocTypes: SaaS Tenant (named by slug), SaaS Domain (named by hostname), Sa
 
 ## Status model
 
-- **Tenant:** Draft -> Pending (job queued) -> Provisioning (job running) -> Active, or Failed; Active <-> Suspended. Any other change is refused when the tenant is saved.
+- **Tenant:** Draft -> Pending Approval -> Approved (or Rejected) -> Pending (job queued) -> Provisioning (job running) -> Active, or Failed; Active <-> Suspended. A rejected school only goes back to Draft. Any other change is refused when the tenant is saved.
+
+### Provisioning safeguards (`onboarding.py`)
+
+A site is built only when all three hold, and is otherwise refused by default:
+
+1. **Approved.** An operator (System Manager or Stemic Platform Admin) approves the school. The approval fields (who, when, note) are written only by the approval actions, never by a form save or REST.
+2. **Commercially eligible.** One of the school's subscriptions must be Active with a paid SaaS Invoice, an operator-approved Free Trial that has not ended, or an operator-approved Internal / Demo subscription. An ordinary unpaid subscription does not qualify, including one activated by hand.
+3. **Authorised environment.** Both settings come from the admin site's `site_config.json` only, never from Stemic Settings, a school record or an API argument:
+   - `stemic_provision_environment`: `production`, `staging` or `development`;
+   - `stemic_provision_allowed_benches`: the bench paths sites may be built in.
+
+   A production provisioner refuses `.localhost` sites.
+
+`queue_provisioning` checks the first two, so the operator hears about a problem at once. The provisioner checks all three again on locked rows before it runs anything. A refused job is marked Failed with the reason, and the school goes back to Approved (or Draft) to be fixed. Each job records the environment that built it. During automated tests, Frappe's CLI refuses to run unless a test opts in with `frappe.flags.stemic_cli_in_tests`.
 - **Provisioning job:** Queued -> Running -> Failed for Create Site until the provisioner is built. The transition to Succeeded is deliberately blocked for Create Site. A failed job is retried with a new idempotency key. A job's result moves its tenant (Create Site: Provisioning / Failed). Active activation is withheld until a verified provisioner is implemented.
 - **Domain:** the school's own `<slug>.<platform domain>` is Verified when claimed (the platform owns that DNS). A custom domain stays Pending Verification until `verify_domain` finds a TXT record `_stemic-verification.<hostname>` holding the token returned when it was claimed.
 

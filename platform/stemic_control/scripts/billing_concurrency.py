@@ -11,6 +11,7 @@ Run it on a disposable admin site. Its fixtures carry this run's own id (race-<r
     cd frappe-bench/sites
     ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost            # both modes
     ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost protected  # only with locks
+    STEMIC_RACE_ONLY=s11,s12 ../env/bin/python ...                                                # only some scenarios
 
 If a run is killed (its cleanup cannot run), remove what it left by its id, printed on the first line:
 
@@ -28,8 +29,9 @@ Exit status (so a CI job or script can gate on it):
 
 Every "protected" round must print CONSISTENT. The "control" rounds are expected to break for the races the locks
 exist for (double payment, two part-payments, two invoices, cancel vs pay, cancel invoice vs pay, and for eTIMS: two
-preparations, cancel vs prepare, cancel vs queue); if a control round stops breaking, the harness no longer exercises
-that race. The eTIMS scenarios switch on Stemic Tax Settings for the run and put the previous values back afterwards.
+preparations, cancel vs prepare, cancel vs queue; for provisioning: two workers on one job, two requests queueing one
+school); if a control round stops breaking, the harness no longer exercises that race. The provisioning scenarios mock
+Frappe's CLI: no site is ever created. The eTIMS scenarios switch on Stemic Tax Settings for the run and put the previous values back afterwards.
 
 Results on MariaDB 10.11 (REPEATABLE READ), 27 Oct 2026: protected 33/33 consistent; control broke 8 of 11 scenarios.
 With the tax invoice row read plainly (before the eTIMS fix) protected s9 broke 3/3 and s10 2/3.
@@ -45,9 +47,12 @@ SITE = sys.argv[1] if len(sys.argv) > 1 else "admin.localhost"
 RUN = None  # this run's id, set in main(); fixtures are named with it and only they are cleaned up
 # Races the locks exist for: with the locks removed ("control") these must break, or the harness lost its teeth
 EXPECT_CONTROL_BREAKS = {"s1_double_payment", "s1b_two_part_payments", "s3_double_invoice", "s4_cancel_vs_pay",
-                         "s7_cancel_invoice_vs_pay", "s8_double_prepare", "s9_cancel_vs_prepare", "s10_cancel_vs_queue"}
+                         "s7_cancel_invoice_vs_pay", "s8_double_prepare", "s9_cancel_vs_prepare", "s10_cancel_vs_queue",
+                         "s11_double_build", "s12_double_queue"}
 ETIMS_ACTIONS = {"prepare", "queue", "cancel_taxed"}  # clients that get the pause after reading the tax invoice row
-LOCKED = ("`tabSaaS Subscription`", "`tabSaaS Invoice`", "`tabSaaS Payment`", "`tabSaaS eTIMS Invoice`")
+SITE_ACTIONS = {"build", "queue_site", "reject"}  # ... and after reading a provisioning job row
+LOCKED = ("`tabSaaS Subscription`", "`tabSaaS Invoice`", "`tabSaaS Payment`", "`tabSaaS eTIMS Invoice`",
+          "`tabSaaS Tenant`", "`tabSaaS Provisioning Job`")
 PAUSE = 1.5
 ROUNDS = 3
 
@@ -87,6 +92,8 @@ def instrument(frappe, mode, action):
         out = real_sql(query, *a, **k)
         if action in ETIMS_ACTIONS and locked_read and "`tabSaaS eTIMS Invoice`" in query:
             time.sleep(PAUSE)  # prepare, cancel guard, queue: read the tax invoice row ... then write
+        if action in SITE_ACTIONS and locked_read and "`tabSaaS Provisioning Job`" in query:
+            time.sleep(PAUSE)  # build: claim the job; queue / reject: look for an active job ... then write
         return out
     frappe.db.sql = sql
     if mode == "control":
@@ -128,6 +135,8 @@ def client(action, args, mode, barrier, results, idx):
                 out = "invoice cancelled"
             elif action == "prepare":
                 out = etims.prepare_from_saas_invoice(args[0])["name"]
+            elif action in SITE_ACTIONS:
+                out = site_action(frappe, action, args)
             elif action == "queue":
                 # a provider is "configured" for this client only; nothing is enqueued or sent
                 frappe.local.conf.update({"stemic_etims_live_enabled": 1, "stemic_etims_adapter": "stemic_control_integrations.race.submit"})
@@ -146,6 +155,26 @@ def client(action, args, mode, barrier, results, idx):
             results[idx] = ("refused", f"{type(e).__name__}: {str(e)[:90]}")
     except Exception:
         results[idx] = ("crash", traceback.format_exc()[-300:])
+
+
+def site_action(frappe, action, args):
+    """Provisioning with Frappe's CLI mocked: returns how many new-site commands this client would have run."""
+    from frappe.utils import get_bench_path
+
+    from stemic_control import api, onboarding, provisioner
+
+    frappe.local.conf.update({"stemic_local_provisioner": 1, "stemic_provision_environment": "development",
+                              "stemic_provision_allowed_benches": [get_bench_path()], "stemic_site_domain": "localhost",
+                              "stemic_db_root_password": "not-used"})
+    built = []
+    provisioner._frappe_cli = lambda *a, **k: built.append(a[0]) or ("frappe\nerpnext\nschool_erp\n" if "list-apps" in a else "")
+    provisioner._site_dir_exists = lambda site: False
+    provisioner.enqueue = lambda job: None
+    if action == "build":
+        return f"{provisioner.run(args[0])}, new-site x{built.count('new-site')}"
+    if action == "queue_site":
+        return api.queue_provisioning(args[0], args[1])
+    return onboarding.reject_tenant(args[0], "Rejected during the race")["status"]
 
 
 def run(actions, mode):
@@ -213,12 +242,31 @@ def tax_state(frappe, inv):
     return frappe.db.get_value("SaaS Invoice", inv, "docstatus"), rows
 
 
+def eligible_school(frappe, tag):
+    """An approved school with an approved internal subscription: one the provisioner would build."""
+    from stemic_control import onboarding
+
+    tenant, sub = fixture(frappe, tag)
+    onboarding.submit_for_approval(tenant)
+    onboarding.approve_tenant(tenant, "Race fixture")
+    onboarding.grant_billing_exception(sub, onboarding.INTERNAL, "Race fixture school")
+    frappe.db.commit()
+    return tenant
+
+
+def site_state(frappe, tenant):
+    frappe.db.rollback()
+    jobs = frappe.get_all("SaaS Provisioning Job", filters={"tenant": tenant}, fields=["name", "status"])
+    return frappe.db.get_value("SaaS Tenant", tenant, "status"), jobs
+
+
 def cleanup(frappe):
     """Remove this run's fixtures, and nothing else."""
     tenants = frappe.get_all("SaaS Tenant", filters={"name": ("like", f"race-{RUN}-%")}, pluck="name") or [""]
     invoices = frappe.get_all("SaaS Invoice", filters={"tenant": ("in", tenants)}, pluck="name") or [""]
     taxed = frappe.get_all("SaaS eTIMS Invoice", filters={"tenant": ("in", tenants)}, pluck="name") or [""]
     for dt, f in (("SaaS eTIMS Event", {"invoice": ("in", taxed)}), ("SaaS eTIMS Invoice", {"name": ("in", taxed)}),
+                  ("SaaS Provisioning Job", {"tenant": ("in", tenants)}),
                   ("SaaS Commission", {"tenant": ("in", tenants)}), ("SaaS Payment", {"invoice": ("in", invoices)}),
                   ("SaaS Invoice", {"name": ("in", invoices)}), ("SaaS Subscription", {"tenant": ("in", tenants)}),
                   ("SaaS Domain", {"tenant": ("in", tenants)}), ("SaaS Tenant", {"name": ("in", tenants)}),
@@ -387,6 +435,40 @@ def s10_cancel_vs_queue(frappe, mode, tag):
     return ok, res, f"invoice docstatus {docstatus}; tax invoice {status}{' (after being queued)' if queued else ''}"
 
 
+def s11_double_build(frappe, mode, tag):
+    """Two workers pick up the same queued Create Site job: the site must be built once."""
+    from unittest.mock import patch
+
+    from stemic_control import api, provisioner
+
+    tenant = eligible_school(frappe, tag)
+    with patch.object(provisioner, "enqueue"):  # not to this site's real workers: the two clients below are the workers
+        job = api.queue_provisioning(tenant, f"race-{RUN}-{tag}-key")
+    frappe.db.commit()
+    res = run([("build", (job,)), ("build", (job,))], mode)
+    status, jobs = site_state(frappe, tenant)
+    builds = sum(int(r[1].rsplit("x", 1)[1]) for r in res if r[0] == "ok")
+    return builds == 1 and status == "Active", res, f"site built {builds} time(s); school {status}"
+
+
+def s12_double_queue(frappe, mode, tag):
+    """Two operators queue the same school with different request keys: one active job."""
+    tenant = eligible_school(frappe, tag)
+    res = run([("queue_site", (tenant, f"race-{RUN}-{tag}-a")), ("queue_site", (tenant, f"race-{RUN}-{tag}-b"))], mode)
+    status, jobs = site_state(frappe, tenant)
+    active = [j for j in jobs if j.status in ("Queued", "Running")]
+    return len(active) == 1, res, f"{len(active)} active job(s); school {status}"
+
+
+def s13_reject_vs_queue(frappe, mode, tag):
+    """An operator rejects a school while another queues it: a rejected school must have no active job."""
+    tenant = eligible_school(frappe, tag)
+    res = run([("reject", (tenant,)), ("queue_site", (tenant, f"race-{RUN}-{tag}-q"))], mode)
+    status, jobs = site_state(frappe, tenant)
+    active = [j for j in jobs if j.status in ("Queued", "Running")]
+    return not (status == "Rejected" and active), res, f"school {status}; {len(active)} active job(s)"
+
+
 def main():
     global RUN
     import frappe
@@ -406,7 +488,11 @@ def main():
     print(f"run {RUN} on {SITE} | {version} | innodb_snapshot_isolation {snapshot}", flush=True)
     stuck = []
     scenarios = [s1_double_payment, s1b_two_part_payments, s2_same_reference, s3_double_invoice, s4_cancel_vs_pay, s5_pay_vs_invoice,
-                 s6_daily_vs_payment, s7_cancel_invoice_vs_pay, s8_double_prepare, s9_cancel_vs_prepare, s10_cancel_vs_queue]
+                 s6_daily_vs_payment, s7_cancel_invoice_vs_pay, s8_double_prepare, s9_cancel_vs_prepare, s10_cancel_vs_queue,
+                 s11_double_build, s12_double_queue, s13_reject_vs_queue]
+    only = [x.strip() for x in (os.environ.get("STEMIC_RACE_ONLY") or "").split(",") if x.strip()]
+    if only:  # e.g. STEMIC_RACE_ONLY=s11,s12 to run some scenarios while working on them (CI runs them all)
+        scenarios = [sc for sc in scenarios if sc.__name__.split("_")[0] in only]
     summary = {}
     try:
         for mode in (sys.argv[2:] or ["protected", "control"]):

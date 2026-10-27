@@ -110,8 +110,8 @@ def queue_provisioning(tenant, request_key):
     _admin()
     school = frappe.get_doc("SaaS Tenant", tenant)
     school.check_permission("read")
-    if school.status not in ("Draft", "Pending", "Failed"):
-        frappe.throw("Tenant is not eligible for provisioning", frappe.ValidationError)
+    if school.status not in ("Approved", "Pending", "Failed"):
+        frappe.throw("Only an approved school can be queued for provisioning", frappe.ValidationError)
     if not request_key or len(request_key) > 100 or not re.fullmatch(r"[A-Za-z0-9_-]{8,100}", request_key):
         frappe.throw("Invalid idempotency key", frappe.ValidationError)
 
@@ -127,14 +127,19 @@ def queue_provisioning(tenant, request_key):
     name = existing_job()
     if name:
         return name
+    from stemic_control import onboarding
+
+    school = frappe.get_doc("SaaS Tenant", tenant)  # as it is now that we hold the lock
+    refused = onboarding.problems(school, lock=True)
+    if refused:
+        frappe.throw("Cannot queue this school: " + "; ".join(refused), frappe.ValidationError)
     # A job under this same key is not a competitor: it is the answer (its insert may not be visible to this
-    # transaction's snapshot yet, in which case the duplicate-key handling below returns it)
-    active = frappe.db.get_value(
-        "SaaS Provisioning Job",
-        {"tenant": tenant, "action": "Create Site", "status": ["in", ["Queued", "Running"]],
-         "idempotency_key": ["!=", request_key]},
-        "name",
-    )
+    # transaction's snapshot yet, in which case the duplicate-key handling below returns it). A locking read:
+    # after waiting for the tenant lock, a plain read would miss a job the other request just committed.
+    active = frappe.db.sql(
+        "SELECT name FROM `tabSaaS Provisioning Job` WHERE tenant = %s AND action = 'Create Site' "
+        "AND status IN ('Queued', 'Running') AND idempotency_key != %s LIMIT 1 FOR UPDATE", (tenant, request_key))
+    active = active[0][0] if active else None
     if active:
         frappe.throw(f"An active provisioning job already exists: {active}", frappe.ValidationError)
     try:
@@ -424,6 +429,8 @@ def operations_queue(per_group=3):
          lambda r: (school(r.tenant), f"{r.name} · {r.currency or ''} {r.outstanding:,.0f} owed".replace("  ", " "))),
         ("dns", "Domains waiting for DNS", "warning", "SaaS Domain", {"status": "Pending Verification"},
          ["name", "tenant", "modified"], lambda r: (school(r.tenant), r.name)),
+        ("approval", "Schools waiting for approval", "warning", "SaaS Tenant", {"status": "Pending Approval"},
+         ["name", "school_name", "modified"], lambda r: (r.school_name, r.name)),
         ("creating", "Sites being created", "info", "SaaS Tenant", {"status": ["in", ["Pending", "Provisioning"]]},
          ["name", "school_name", "status", "modified"], lambda r: (r.school_name, r.status)),
     ):

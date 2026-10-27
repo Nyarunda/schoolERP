@@ -169,6 +169,7 @@ def site_action(frappe, action, args):
     built = []
     provisioner._frappe_cli = lambda *a, **k: built.append(a[0]) or ("frappe\nerpnext\nschool_erp\n" if "list-apps" in a else "")
     provisioner._site_dir_exists = lambda site: False
+    provisioner._database_exists = lambda name: False
     provisioner.enqueue = lambda job: None
     if action == "build":
         return f"{provisioner.run(args[0])}, new-site x{built.count('new-site')}"

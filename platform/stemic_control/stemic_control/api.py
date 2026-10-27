@@ -6,7 +6,7 @@ import secrets
 import frappe
 from frappe.utils import now_datetime
 
-from stemic_control import policy
+from stemic_control import config, policy
 from stemic_control.policy import HOST, RESERVED, SLUG  # noqa: F401  (re-exported for callers and tests)
 
 DEFAULT_PLATFORM_DOMAIN = "stemischools.com"
@@ -15,7 +15,7 @@ DEFAULT_DOH_URL = "https://cloudflare-dns.com/dns-query"
 
 def platform_domain() -> str:
     """The domain school subdomains live under. Set `stemic_platform_domain` in site_config to change it."""
-    return (frappe.conf.get("stemic_platform_domain") or DEFAULT_PLATFORM_DOMAIN).strip().lower().rstrip(".")
+    return (config.get("stemic_platform_domain") or DEFAULT_PLATFORM_DOMAIN).strip().lower().rstrip(".")
 
 
 def _admin():
@@ -77,7 +77,7 @@ def _txt_records(name: str) -> list[str]:
     """TXT values for `name` via DNS-over-HTTPS (`stemic_dns_over_https` in site_config to change the resolver)."""
     import requests
 
-    r = requests.get(frappe.conf.get("stemic_dns_over_https") or DEFAULT_DOH_URL,
+    r = requests.get(config.get("stemic_dns_over_https") or DEFAULT_DOH_URL,
         params={"name": name, "type": "TXT"}, headers={"accept": "application/dns-json"}, timeout=10)
     r.raise_for_status()
     return policy.txt_values(r.json())
@@ -350,25 +350,29 @@ def set_subscription_status(subscription, status, payment_ref=None):
 
 
 @frappe.whitelist(methods=["POST"])
-def renew_subscription(subscription, months, payment_ref):
-    """Extend a paid subscription by whole months from its end (or today, if it has lapsed) and make it Active."""
+def renew_subscription(subscription, months, payment_ref, mode="M-Pesa"):
+    """A school paid for another period: invoice it (or use the renewal invoice already raised) and record the
+    payment. The payment extends the subscription, makes it Active and earns the agent's commission."""
     _admin()
     months = int(months)
     if months not in (1, 3, 6, 12, 24):
         frappe.throw("Renew for 1, 3, 6, 12 or 24 months", frappe.ValidationError)
     if not (payment_ref or "").strip():
         frappe.throw("Enter the payment reference for the renewal", frappe.ValidationError)
-    from frappe.utils import add_months, getdate, nowdate
+    from frappe.utils import nowdate
 
-    doc = frappe.get_doc("SaaS Subscription", subscription)
-    if doc.status == "Cancelled":
+    from stemic_control import billing
+
+    if frappe.db.get_value("SaaS Subscription", subscription, "status") == "Cancelled":
         frappe.throw("A cancelled subscription cannot be renewed; start a new one", frappe.ValidationError)
-    base = max(getdate(doc.ends_on or nowdate()), getdate(nowdate()))
-    doc.ends_on = add_months(base, months)
-    doc.status = "Active"
-    doc.external_payment_ref = payment_ref.strip()
-    doc.save()
-    return {"subscription": doc.name, "ends_on": str(doc.ends_on)}
+    invoice = billing.open_invoice(subscription) or billing._create_invoice(subscription, months)
+    outstanding = frappe.db.get_value("SaaS Invoice", invoice, "outstanding")
+    payment = frappe.get_doc({"doctype": "SaaS Payment", "invoice": invoice, "amount": outstanding, "mode": mode,
+                              "reference": payment_ref.strip(), "payment_date": nowdate()})
+    payment.insert(ignore_permissions=True)
+    payment.submit()
+    return {"subscription": subscription, "invoice": invoice, "payment": payment.name,
+            "ends_on": str(frappe.db.get_value("SaaS Subscription", subscription, "ends_on"))}
 
 
 @frappe.whitelist(methods=["POST"])
@@ -415,6 +419,9 @@ def operations_queue(per_group=3):
          ["name", "school_name", "modified"], lambda r: (r.school_name, last_error(r.name) or r.name)),
         ("overdue", "Payments overdue", "critical", "SaaS Subscription", {"status": ["in", ["Past Due", "Grace"]]},
          ["name", "tenant", "plan", "status", "modified"], lambda r: (school(r.tenant), f"{r.plan} · {r.status}")),
+        ("unpaid_invoices", "Invoices overdue", "critical", "SaaS Invoice", {"status": "Overdue", "docstatus": 1},
+         ["name", "tenant", "outstanding", "currency", "modified"],
+         lambda r: (school(r.tenant), f"{r.name} · {r.currency or ''} {r.outstanding:,.0f} owed".replace("  ", " "))),
         ("dns", "Domains waiting for DNS", "warning", "SaaS Domain", {"status": "Pending Verification"},
          ["name", "tenant", "modified"], lambda r: (school(r.tenant), r.name)),
         ("creating", "Sites being created", "info", "SaaS Tenant", {"status": ["in", ["Pending", "Provisioning"]]},

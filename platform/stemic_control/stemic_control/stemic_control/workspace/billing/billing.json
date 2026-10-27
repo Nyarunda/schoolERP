@@ -2,19 +2,15 @@
  "app": "stemic_control",
  "charts": [
   {
-   "chart_name": "Subscriptions Started",
-   "label": "Subscriptions Started"
-  },
-  {
-   "chart_name": "Subscriptions by Status",
-   "label": "Subscriptions by Status"
+   "chart_name": "Collections",
+   "label": "Collections"
   },
   {
    "chart_name": "Subscriptions by Plan",
    "label": "Subscriptions by Plan"
   }
  ],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Billing</b></span>\", \"col\": 12}}, {\"id\": \"nc0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Monthly Revenue\", \"col\": 3}}, {\"id\": \"nc1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active Subscriptions\", \"col\": 3}}, {\"id\": \"nc2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Trials\", \"col\": 3}}, {\"id\": \"nc3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Overdue Subscriptions\", \"col\": 3}}, {\"id\": \"ch0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Subscriptions Started\", \"col\": 12}}, {\"id\": \"ch1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Subscriptions by Status\", \"col\": 12}}, {\"id\": \"ch2\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Subscriptions by Plan\", \"col\": 12}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Subscriptions\", \"col\": 4}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Plans\", \"col\": 4}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Licenses\", \"col\": 4}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Subscriptions\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Plans\", \"col\": 4}}, {\"id\": \"cd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Licenses\", \"col\": 4}}]",
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Billing</b></span>\", \"col\": 12}}, {\"id\": \"nc0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Collected This Month\", \"col\": 3}}, {\"id\": \"nc1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Owed by Schools\", \"col\": 3}}, {\"id\": \"nc2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Overdue Invoices\", \"col\": 3}}, {\"id\": \"nc3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Monthly Revenue\", \"col\": 3}}, {\"id\": \"ch0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Collections\", \"col\": 6}}, {\"id\": \"ch1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Subscriptions by Plan\", \"col\": 6}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Unpaid Invoices\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payments\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Subscriptions\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Revenue\", \"col\": 3}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Billing\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Plans & Licenses\", \"col\": 4}}, {\"id\": \"cd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 4}}]",
  "creation": "2026-10-25 22:30:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -31,11 +27,33 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Subscriptions",
-   "link_count": 1,
+   "label": "Billing",
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Invoices",
+   "link_count": 0,
+   "link_to": "SaaS Invoice",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Payments",
+   "link_count": 0,
+   "link_to": "SaaS Payment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   },
   {
    "dependencies": "",
@@ -51,8 +69,8 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Plans",
-   "link_count": 1,
+   "label": "Plans & Licenses",
+   "link_count": 2,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -69,15 +87,6 @@
    "type": "Link"
   },
   {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Licenses",
-   "link_count": 1,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
    "dependencies": "",
    "hidden": 0,
    "is_query_report": 0,
@@ -87,28 +96,70 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Revenue",
+   "link_count": 0,
+   "link_to": "SaaS Revenue",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "What Schools Owe",
+   "link_count": 0,
+   "link_to": "SaaS Receivables",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Agent Commissions",
+   "link_count": 0,
+   "link_to": "Agent Commission Statement",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-10-25 22:30:00.000000",
+ "modified": "2026-10-26 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Stemic Control",
  "name": "Billing",
  "number_cards": [
   {
+   "label": "Collected This Month",
+   "number_card_name": "Collected This Month"
+  },
+  {
+   "label": "Owed by Schools",
+   "number_card_name": "Owed by Schools"
+  },
+  {
+   "label": "Overdue Invoices",
+   "number_card_name": "Overdue Invoices"
+  },
+  {
    "label": "Monthly Revenue",
    "number_card_name": "Monthly Revenue"
-  },
-  {
-   "label": "Active Subscriptions",
-   "number_card_name": "Active Subscriptions"
-  },
-  {
-   "label": "Trials",
-   "number_card_name": "Trials"
-  },
-  {
-   "label": "Overdue Subscriptions",
-   "number_card_name": "Overdue Subscriptions"
   }
  ],
  "owner": "Administrator",
@@ -126,25 +177,34 @@
  "sequence_id": 3.0,
  "shortcuts": [
   {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Unpaid Invoices",
+   "link_to": "SaaS Invoice",
+   "type": "DocType",
+   "stats_filter": "[[\"SaaS Invoice\", \"status\", \"in\", [\"Unpaid\", \"Partly Paid\", \"Overdue\"]], [\"SaaS Invoice\", \"docstatus\", \"=\", 1]]",
+   "format": "{} unpaid"
+  },
+  {
    "color": "Green",
+   "doc_view": "List",
+   "label": "Payments",
+   "link_to": "SaaS Payment",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
    "doc_view": "List",
    "label": "Subscriptions",
    "link_to": "SaaS Subscription",
    "type": "DocType"
   },
   {
-   "color": "Blue",
-   "doc_view": "List",
-   "label": "Plans",
-   "link_to": "SaaS Plan",
-   "type": "DocType"
-  },
-  {
    "color": "Grey",
-   "doc_view": "List",
-   "label": "Licenses",
-   "link_to": "SaaS License",
-   "type": "DocType"
+   "doc_view": "",
+   "label": "Revenue",
+   "link_to": "SaaS Revenue",
+   "type": "Report"
   }
  ],
  "standard": 1,

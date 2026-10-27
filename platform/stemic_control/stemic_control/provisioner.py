@@ -19,7 +19,7 @@ import subprocess
 import frappe
 from frappe.utils import add_to_date, get_bench_path, now_datetime
 
-from stemic_control import policy
+from stemic_control import config, policy
 
 DEFAULT_APPS = ["erpnext", "school_erp"]
 NEW_SITE_TIMEOUT = 45 * 60  # installing ERPNext can take several minutes
@@ -32,19 +32,19 @@ class ProvisioningError(Exception):
 
 
 def enabled() -> bool:
-    return bool(frappe.conf.get("stemic_local_provisioner"))
+    return bool(int(config.get("stemic_local_provisioner") or 0))
 
 
 def site_name(slug: str) -> str:
-    return f"{slug}.{(frappe.conf.get('stemic_site_domain') or 'localhost').strip('.')}"
+    return f"{slug}.{(config.get('stemic_site_domain') or 'localhost').strip('.')}"
 
 
 def _apps() -> list[str]:
-    return list(frappe.conf.get("stemic_site_apps") or DEFAULT_APPS)
+    return config.site_apps() or list(DEFAULT_APPS)
 
 
 def _bench() -> str:
-    return frappe.conf.get("stemic_bench_path") or get_bench_path()
+    return config.get("stemic_bench_path") or get_bench_path()
 
 
 def _root_password() -> str:
@@ -69,6 +69,11 @@ def _frappe_cli(*args, timeout=600, secrets_=()) -> str:
     if code != 0:
         raise ProvisioningError(f"`frappe {args[0] if args[0] != '--site' else ' '.join(args[:3])}` failed:\n{output[-3000:]}")
     return output
+
+
+def _site_dir_exists(site: str) -> bool:
+    """Whether the bench already has a folder for this site (tests replace this, not os.path.isdir itself)."""
+    return os.path.isdir(os.path.join(_bench(), "sites", site))
 
 
 def check_ready(site: str) -> None:
@@ -120,7 +125,7 @@ def run(job: str) -> str:
     password = None
     try:
         root = _root_password()
-        if os.path.isdir(os.path.join(_bench(), "sites", site)):
+        if _site_dir_exists(site):
             raise ProvisioningError(f"Site {site} already exists on this bench; refusing to overwrite it")
         password = secrets.token_urlsafe(14)
         args = ["new-site", site, "--db-root-password", root, "--admin-password", password]
@@ -148,7 +153,7 @@ def run(job: str) -> str:
         frappe.db.commit()
         return "Closed by operator"
 
-    base = frappe.conf.get("stemic_platform_domain") or "stemischools.com"
+    base = config.get("stemic_platform_domain")
     subdomain = f"{tenant.slug}.{base}"
     _set_job(job, "Succeeded")
     _set_tenant(tenant.name, "Active", canonical_site=site, site_admin_password=password,  # Password field: saved encrypted
@@ -161,7 +166,7 @@ def run(job: str) -> str:
 
 def _drop_partial_site(site) -> str:
     """Remove what a failed new-site left behind so the school can be retried cleanly."""
-    if not os.path.isdir(os.path.join(_bench(), "sites", site)):
+    if not _site_dir_exists(site):
         return ""
     try:
         _frappe_cli("drop-site", site, "--db-root-password", _root_password(), "--no-backup", "--force",

@@ -79,7 +79,9 @@ def seed():
                                     "status": "Active", "commission_rate": rate}).insert().name
         agents.append(agent)
 
-    base = frappe.conf.get("stemic_platform_domain") or "stemischools.com"
+    from stemic_control.config import get
+
+    base = get("stemic_platform_domain")
     today = getdate(nowdate())
     for i, (slug, school, status, plan, sub_status, agent_ix, months_ago, custom) in enumerate(SCHOOLS):
         if frappe.db.exists("SaaS Tenant", slug):

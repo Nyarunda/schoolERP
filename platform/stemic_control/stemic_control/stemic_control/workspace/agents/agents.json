@@ -6,7 +6,7 @@
    "label": "Schools by Agent"
   }
  ],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Agents</b></span>\", \"col\": 12}}, {\"id\": \"nc0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active Agents\", \"col\": 3}}, {\"id\": \"nc1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Schools\", \"col\": 3}}, {\"id\": \"nc2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active Subscriptions\", \"col\": 3}}, {\"id\": \"nc3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Licenses Issued\", \"col\": 3}}, {\"id\": \"ch0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Schools by Agent\", \"col\": 12}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Agents\", \"col\": 4}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Schools\", \"col\": 4}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Agents\", \"col\": 4}}]",
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Agents</b></span>\", \"col\": 12}}, {\"id\": \"nc0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active Agents\", \"col\": 3}}, {\"id\": \"nc1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Schools\", \"col\": 3}}, {\"id\": \"nc2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active Subscriptions\", \"col\": 3}}, {\"id\": \"nc3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Commission Due\", \"col\": 3}}, {\"id\": \"ch0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Schools by Agent\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Commission Due\", \"col\": 3}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Agents\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Commission Statement\", \"col\": 3}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Agents\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Commissions\", \"col\": 4}}]",
  "creation": "2026-10-25 22:30:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -24,7 +24,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Agents",
-   "link_count": 2,
+   "link_count": 1,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -41,18 +41,38 @@
    "type": "Link"
   },
   {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Commissions",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
    "dependencies": "",
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Users",
+   "label": "Commissions",
    "link_count": 0,
-   "link_to": "User",
+   "link_to": "SaaS Commission",
    "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Commission Statement",
+   "link_count": 0,
+   "link_to": "Agent Commission Statement",
+   "link_type": "Report",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-10-25 22:30:00.000000",
+ "modified": "2026-10-26 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Stemic Control",
  "name": "Agents",
@@ -70,8 +90,8 @@
    "number_card_name": "Active Subscriptions"
   },
   {
-   "label": "Licenses Issued",
-   "number_card_name": "Licenses Issued"
+   "label": "Commission Due",
+   "number_card_name": "Commission Due"
   }
  ],
  "owner": "Administrator",
@@ -91,16 +111,25 @@
   {
    "color": "Orange",
    "doc_view": "List",
+   "label": "Commission Due",
+   "link_to": "SaaS Commission",
+   "type": "DocType",
+   "stats_filter": "[[\"SaaS Commission\", \"status\", \"=\", \"Due\"]]",
+   "format": "{} due"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
    "label": "Agents",
    "link_to": "SaaS Agent",
    "type": "DocType"
   },
   {
-   "color": "Blue",
-   "doc_view": "List",
-   "label": "Schools",
-   "link_to": "SaaS Tenant",
-   "type": "DocType"
+   "color": "Grey",
+   "doc_view": "",
+   "label": "Commission Statement",
+   "link_to": "Agent Commission Statement",
+   "type": "Report"
   }
  ],
  "standard": 1,

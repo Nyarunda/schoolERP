@@ -1,0 +1,20 @@
+{
+ "doctype": "Print Format",
+ "name": "Stemic Invoice",
+ "doc_type": "SaaS Invoice",
+ "module": "Stemic Control",
+ "standard": "Yes",
+ "custom_format": 1,
+ "print_format_type": "Jinja",
+ "html": "<style>\n.sti{font-family:Inter,Arial,sans-serif;color:#1e293b;font-size:12px}\n.sti-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2a78d6;padding-bottom:12px;margin-bottom:16px}\n.sti-head h1{font-size:22px;margin:0 0 4px;color:#2a78d6;letter-spacing:.5px}\n.sti-muted{color:#64748b}.sti-right{text-align:right}\n.sti table{width:100%;border-collapse:collapse;margin:14px 0}\n.sti th{background:#f1f5f9;text-align:left;padding:8px;font-size:11px;text-transform:uppercase;color:#475569}\n.sti td{padding:8px;border-bottom:1px solid #e2e8f0}\n.sti .num{text-align:right}.sti .tot td{font-weight:700;border-bottom:none}\n.sti-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-top:10px}\n.sti-stamp{display:inline-block;border:2px solid #16a34a;color:#16a34a;font-weight:800;padding:4px 12px;border-radius:6px;transform:rotate(-4deg)}\n</style><div class=\"sti\">{%- set s = frappe.get_cached_doc(\"Stemic Settings\") -%}\n<div class=\"sti-head\"><div><b style=\"font-size:15px\">{{ s.seller_name or \"Stemic Schools\" }}</b>\n<div class=\"sti-muted\">{{ (s.seller_address or \"\")|replace(\"\\n\", \"<br>\") }}</div>\n{% if s.seller_pin %}<div class=\"sti-muted\">KRA PIN: {{ s.seller_pin }}</div>{% endif %}</div>\n<div class=\"sti-right\"><h1>INVOICE</h1><div><b>{{ doc.name }}</b></div>\n<div class=\"sti-muted\">Date: {{ frappe.format(doc.issue_date, {\"fieldtype\": \"Date\"}) }}<br>Due: {{ frappe.format(doc.due_date, {\"fieldtype\": \"Date\"}) }}</div></div></div>\n<div><span class=\"sti-muted\">Bill to</span><br><b>{{ doc.school_name }}</b></div>\n<table><thead><tr><th>Description</th><th>Period</th><th class=\"num\">Months</th><th class=\"num\">Monthly</th><th class=\"num\">Amount</th></tr></thead><tbody>\n<tr><td>Stemic Schools {{ doc.plan }} plan{% if doc.description %}<br><span class=\"sti-muted\">{{ doc.description }}</span>{% endif %}</td>\n<td>{{ frappe.format(doc.period_start, {\"fieldtype\": \"Date\"}) }} – {{ frappe.format(doc.period_end, {\"fieldtype\": \"Date\"}) }}</td>\n<td class=\"num\">{{ doc.months }}</td><td class=\"num\">{{ doc.get_formatted(\"monthly_price\") }}</td><td class=\"num\">{{ doc.get_formatted(\"amount\") }}</td></tr>\n{% if doc.discount_amount %}<tr><td colspan=\"4\">Discount</td><td class=\"num\">-{{ doc.get_formatted(\"discount_amount\") }}</td></tr>{% endif %}\n<tr class=\"tot\"><td colspan=\"4\" class=\"num\">Total</td><td class=\"num\">{{ doc.get_formatted(\"total\") }}</td></tr>\n{% if doc.paid_amount %}<tr><td colspan=\"4\" class=\"num\">Paid</td><td class=\"num\">{{ doc.get_formatted(\"paid_amount\") }}</td></tr>\n<tr class=\"tot\"><td colspan=\"4\" class=\"num\">Balance</td><td class=\"num\">{{ doc.get_formatted(\"outstanding\") }}</td></tr>{% endif %}\n</tbody></table>\n{% if doc.status == \"Paid\" %}<div class=\"sti-stamp\">PAID</div>\n{% elif s.payment_instructions %}<div class=\"sti-box\"><b>How to pay</b><br>{{ s.payment_instructions.replace(\"{invoice}\", doc.name).replace(\"{amount}\", doc.get_formatted(\"outstanding\")) }}</div>{% endif %}\n</div>",
+ "disabled": 0,
+ "creation": "2026-10-26 18:00:00.000000",
+ "modified": "2026-10-26 18:00:00.000000",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "font_size": 12,
+ "margin_top": 15,
+ "margin_bottom": 15,
+ "margin_left": 15,
+ "margin_right": 15
+}

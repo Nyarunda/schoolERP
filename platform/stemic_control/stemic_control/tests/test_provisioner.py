@@ -317,3 +317,63 @@ class TestSiteOperations(TestCase):
             self.assertEqual(out["status"], "Active")
             self.assertEqual(frappe.db.get_value("SaaS Tenant", school, "canonical_site"), self.site + ".free")
             self.assertRaises(frappe.ValidationError, site_runtime.link_existing_site, school, self.site + ".free")  # has a site now
+
+
+class TestSecrets(TestCase):
+    """Secrets come from the environment first (a protected file loaded by supervisor / systemd), then site_config."""
+
+    def test_the_environment_wins_over_site_config(self):
+        import os
+
+        from stemic_control import config
+
+        with patch.dict(frappe.local.conf, {"stemic_db_root_password": "from-site-config"}):
+            self.assertEqual(config.secret("stemic_db_root_password"), ("from-site-config", "site_config"))
+            with patch.dict(os.environ, {"STEMIC_DB_ROOT_PASSWORD": "from-env", "STEMIC_DB_ROOT_USERNAME": "stemic_provisioner"}):
+                self.assertEqual(config.secret("stemic_db_root_password"), ("from-env", "environment"))
+                self.assertEqual(provisioner._root_args(), ["--db-root-username", "stemic_provisioner", "--db-root-password", "from-env"])
+        with patch.dict(frappe.local.conf, {"stemic_db_root_password": None, "root_password": None}), patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("STEMIC_DB_ROOT_PASSWORD", None)
+            self.assertEqual(config.secret("stemic_db_root_password"), (None, None))
+            self.assertRaises(provisioner.ProvisioningError, provisioner._root_password)
+
+    def test_new_site_runs_as_the_configured_account(self):
+        import os
+
+        from stemic_control.tests.helpers import make_eligible, remove_school
+
+        slug = "sec-" + frappe.generate_hash(length=6).lower()
+        api.register_tenant("Secrets School", slug, "head@secrets.test")
+        make_eligible(slug)
+        conf = {"stemic_platform_domain": "stemic.test", "stemic_local_provisioner": 1, "stemic_site_domain": "localhost",
+                "stemic_provision_environment": "development", "stemic_provision_allowed_benches": [get_bench_path()]}
+        calls = []
+        try:
+            with patch.dict(frappe.local.conf, conf), patch.object(provisioner, "enqueue"), \
+                    patch.dict(os.environ, {"STEMIC_DB_ROOT_USERNAME": "stemic_provisioner", "STEMIC_DB_ROOT_PASSWORD": "env-secret"}), \
+                    patch.object(provisioner, "_frappe_cli", side_effect=lambda *a, **k: calls.append((a, k)) or (LISTED if "list-apps" in a else "")), \
+                    patch.object(provisioner, "_site_dir_exists", return_value=False), patch.object(provisioner, "_database_exists", return_value=False):
+                job = api.queue_provisioning(slug, "sec-" + frappe.generate_hash(length=12))
+                self.assertEqual(provisioner.run(job), "Succeeded")
+            new_site, kwargs = next((a, k) for a, k in calls if a[0] == "new-site")
+            self.assertEqual(new_site[new_site.index("--db-root-username") + 1], "stemic_provisioner")
+            self.assertIn("env-secret", kwargs["secrets_"])  # and it is scrubbed from any output
+        finally:
+            remove_school(slug)
+
+    def test_setup_check_says_where_secrets_come_from(self):
+        import os
+
+        from stemic_control import setup_check
+
+        with patch.dict(frappe.local.conf, {"stemic_db_root_password": "in-site-config", "stemic_provision_environment": "development"}):
+            os.environ.pop("STEMIC_DB_ROOT_PASSWORD", None)
+            item = next(i for i in setup_check._secret_sources() if i["label"] == "Db root password")
+            self.assertIsNone(item["ok"])  # development: a note, not a failure
+            with patch.dict(frappe.local.conf, {"stemic_provision_environment": "production"}):
+                item = next(i for i in setup_check._secret_sources() if i["label"] == "Db root password")
+                self.assertFalse(item["ok"])  # production: site_config is not good enough
+            with patch.dict(os.environ, {"STEMIC_DB_ROOT_PASSWORD": "from-env"}):
+                item = next(i for i in setup_check._secret_sources() if i["label"] == "Db root password")
+                self.assertTrue(item["ok"])
+                self.assertNotIn("from-env", str(item))  # the value is never shown

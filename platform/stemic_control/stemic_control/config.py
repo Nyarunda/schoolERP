@@ -41,6 +41,28 @@ def source(key) -> str:
     return "settings" if settings and settings.get(SETTINGS[key][0]) not in (None, "") else "default"
 
 
+# Secrets: the process environment first (in production, loaded by supervisor / systemd from a file only the bench's
+# user can read, e.g. /etc/stemic/secrets.env), then site_config.json (development). Never Stemic Settings.
+SECRETS = {
+    "stemic_db_root_username": "STEMIC_DB_ROOT_USERNAME",  # the MariaDB account that creates school databases
+    "stemic_db_root_password": "STEMIC_DB_ROOT_PASSWORD",
+    "stemic_license_private_key_file": "STEMIC_LICENSE_PRIVATE_KEY_FILE",
+}
+
+
+def secret(key):
+    """A secret's value and where it came from: (value, 'environment' | 'site_config' | None)."""
+    import os
+
+    value = os.environ.get(SECRETS[key])
+    if value:
+        return value, "environment"
+    value = frappe.conf.get(key)
+    if key == "stemic_db_root_password" and not value:
+        value = frappe.conf.get("root_password")  # bench's own name for it
+    return (value, "site_config") if value else (None, None)
+
+
 def site_apps() -> list[str]:
     apps = get("stemic_site_apps")
     if isinstance(apps, str):

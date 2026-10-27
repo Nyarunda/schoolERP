@@ -281,7 +281,7 @@ class TestSubscriptionBilling(TestCase):
             result = setup_check.status()
         self.assertTrue(result["items"])
         self.assertNotIn("never-show-this-9271", frappe.as_json(result))
-        root = next(i for i in result["items"] if i["label"] == "Database root access")
+        root = next(i for i in result["items"] if i["label"] == "Database access")
         self.assertIs(root["ok"], False)  # a wrong password is reported, not shown
         frappe.set_user(self.agent_user)
         self.assertRaises(frappe.PermissionError, setup_check.status)

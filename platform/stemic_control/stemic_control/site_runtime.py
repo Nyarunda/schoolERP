@@ -13,6 +13,8 @@ import re
 import frappe
 from frappe.utils import flt
 
+from stemic_control import config
+
 PING_TIMEOUT = 1.5
 SITE_NAME = re.compile(r"^[a-z0-9][a-z0-9.-]{0,252}$")
 
@@ -247,7 +249,7 @@ def perform_operation(operation):
     password = random.token_urlsafe(14) if action == "Reset Admin Password" else None
     if password:
         args = (*args, password)
-    secrets = tuple(filter(None, (_config(site).get("db_password"), frappe.conf.get("stemic_db_root_password"), password)))
+    secrets = tuple(filter(None, (_config(site).get("db_password"), config.secret("stemic_db_root_password")[0], password)))
     try:
         output = provisioner._frappe_cli("--site", site, *args, timeout=timeout, secrets_=secrets)
     except Exception as e:

@@ -25,7 +25,7 @@ def _platform():
 
 
 def _licensing():
-    path = frappe.conf.get("stemic_license_private_key_file")
+    path = config.secret("stemic_license_private_key_file")[0]
     if not path:
         return [_item("Licensing", "License signing key", False, "Not configured: Issue License will refuse.",
                       "Put the vendor private key in a file on the server and set stemic_license_private_key_file in site_config.json.")]
@@ -78,20 +78,43 @@ def _provisioner():
     out.append(_item("Provisioning", "School apps", not missing,
                      ", ".join(provisioner._apps()) + (f" (missing: {', '.join(missing)})" if missing else ""),
                      "Install the missing apps on the bench (bench get-app)." if missing else ""))
-    password = frappe.conf.get("stemic_db_root_password") or frappe.conf.get("root_password")
+    password, where = config.secret("stemic_db_root_password")
+    account = provisioner._root_username()
     if not password:
-        out.append(_item("Provisioning", "Database root access", False, "No root password configured.",
-                         "Set stemic_db_root_password in site_config.json."))
+        out.append(_item("Provisioning", "Database access", False, "No password for the account that creates school databases.",
+                         "Set STEMIC_DB_ROOT_PASSWORD in the workers' environment (README: Secrets)."))
     else:
         try:
             import MySQLdb
 
-            MySQLdb.connect(host=frappe.conf.db_host or "127.0.0.1", port=int(frappe.conf.db_port or 3306), user="root",
+            MySQLdb.connect(host=frappe.conf.db_host or "127.0.0.1", port=int(frappe.conf.db_port or 3306), user=account,
                             passwd=password, connect_timeout=5).close()
-            out.append(_item("Provisioning", "Database root access", True, "The root password logs in."))
+            out.append(_item("Provisioning", "Database access", True, f"The {account} account logs in (password from {where.replace('_', ' ')})."))
         except Exception:
-            out.append(_item("Provisioning", "Database root access", False, "The configured root password does not log in.",
-                             "Correct stemic_db_root_password in site_config.json."))
+            out.append(_item("Provisioning", "Database access", False, f"The {account} account's password does not log in.",
+                             "Correct STEMIC_DB_ROOT_PASSWORD (or stemic_db_root_password)."))
+        out.append(_item("Provisioning", "Limited database account", account != "root",
+                         f"Schools are created as {account}." + ("" if account != "root" else " Root can read and drop every "
+                                                                 "database on this server, including other applications'."),
+                         "" if account != "root" else "Create the stemic_provisioner account (README: Secrets) and set "
+                                                      "STEMIC_DB_ROOT_USERNAME."))
+    return out + _secret_sources()
+
+
+def _secret_sources():
+    """Where each secret is read from: the environment (loaded from a protected file) rather than site_config.json."""
+    out = []
+    production = frappe.conf.get("stemic_provision_environment") == "production"
+    for key, variable in config.SECRETS.items():
+        value, where = config.secret(key)
+        if not value:
+            continue
+        out.append(_item("Secrets", key.replace("stemic_", "").replace("_", " ").capitalize(),
+                         True if where == "environment" else (False if production else None),
+                         f"From the environment ({variable})." if where == "environment"
+                         else "From site_config.json, which every bench command and backup can read.",
+                         "" if where == "environment" else f"Move it to {variable} in a file only the bench's user can read "
+                                                           "(README: Secrets)."))
     return out
 
 

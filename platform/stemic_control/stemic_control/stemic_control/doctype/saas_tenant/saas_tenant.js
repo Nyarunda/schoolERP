@@ -58,7 +58,7 @@ function approval_actions(frm) {
     if (frm.doc.status === "Pending Approval") ask(__("Approve"), "approve_tenant", "note", __("Approved"));
     if (["Pending Approval", "Approved", "Failed"].includes(frm.doc.status)) ask(__("Reject"), "reject_tenant", "reason", __("Rejected"));
     if (["Approved", "Failed", "Pending Approval"].includes(frm.doc.status)) {
-        frappe.xcall("stemic_control.onboarding.status", { tenant: frm.doc.name }).then((s) => {
+        frappe.xcall("stemic_control.onboarding.status", { tenant: frm.doc.name }, "GET").then((s) => {
             const problems = [...s.problems, ...(s.environment_problem ? [s.environment_problem] : [])];
             if (!problems.length) return frm.set_intro(__("Ready to provision ({0}).", [__(s.basis)]), "green");
             frm.set_intro(`<b>${__("Not ready to provision")}</b><ul style="margin:6px 0 0">${problems.map((p) =>

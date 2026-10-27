@@ -7,6 +7,9 @@ from stemic_control import policy
 
 class SaaSSubscription(Document):
     def validate(self):
+        from stemic_control.onboarding import EXCEPTION_FIELDS, guard_fields
+
+        guard_fields(self, EXCEPTION_FIELDS)
         agent = frappe.db.get_value("SaaS Tenant", self.tenant, "agent")
         if (self.agent or None) != (agent or None):
             frappe.throw("Subscription agent must match the tenant's assigned agent", frappe.ValidationError)

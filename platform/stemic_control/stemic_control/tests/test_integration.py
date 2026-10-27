@@ -11,6 +11,7 @@ except ImportError:  # older test base class
     from frappe.tests.utils import FrappeTestCase as TestCase
 
 from stemic_control import api
+from stemic_control.tests.helpers import make_eligible
 
 DOMAIN = "stemic.test"
 
@@ -28,6 +29,11 @@ class TestControlPlane(TestCase):
 
     def tenant(self, agent=None):
         return api.register_tenant("Greenfield Academy", self.slug, "head@greenfield.test", agent)
+
+    def eligible(self):
+        t = self.tenant()
+        make_eligible(t)
+        return t
 
     def test_tenant_named_by_slug_and_duplicate_rejected(self):
         self.assertEqual(self.tenant(), self.slug)
@@ -52,7 +58,7 @@ class TestControlPlane(TestCase):
         self.assertRaises(frappe.ValidationError, api.request_domain, t, f"portal.{t}.ac.test")
 
     def test_provisioning_is_idempotent_and_moves_the_tenant(self):
-        t = self.tenant()
+        t = self.eligible()
         key = "create-" + frappe.generate_hash(length=10)
         job = api.queue_provisioning(t, key)
         self.assertEqual(api.queue_provisioning(t, key), job)
@@ -69,7 +75,7 @@ class TestControlPlane(TestCase):
         self.assertEqual(frappe.db.get_value("SaaS Provisioning Job", job, "status"), "Failed")
 
     def test_competing_job_keys_rejected(self):
-        t = self.tenant()
+        t = self.eligible()
         api.queue_provisioning(t, "primary-" + frappe.generate_hash(length=12))
         self.assertRaises(frappe.ValidationError, api.queue_provisioning, t, "secondary-" + frappe.generate_hash(length=12))
 
@@ -84,14 +90,14 @@ class TestControlPlane(TestCase):
         self.assertRaises(frappe.ValidationError, doc.save)
 
     def test_job_status_cannot_be_edited_directly(self):
-        t = self.tenant()
+        t = self.eligible()
         name = api.queue_provisioning(t, "secure-" + frappe.generate_hash(length=12))
         doc = frappe.get_doc("SaaS Provisioning Job", name)
         doc.status = "Succeeded"
         self.assertRaises(frappe.PermissionError, doc.save)
 
     def test_same_key_in_a_race_returns_the_winner(self):
-        t = self.tenant()
+        t = self.eligible()
         key = "race-" + frappe.generate_hash(length=10)
         job = api.queue_provisioning(t, key)
         real = frappe.db.get_value
@@ -163,7 +169,7 @@ class TestControlPlane(TestCase):
         frappe.db.set_value("SaaS Tenant", retried, "status", "Pending")
 
         groups = {g["key"]: g for g in api.operations_queue(per_group=10)["groups"]}
-        self.assertEqual(set(groups), {"failed_sites", "overdue", "unpaid_invoices", "dns", "creating"})  # every group, even when empty
+        self.assertEqual(set(groups), {"failed_sites", "overdue", "unpaid_invoices", "dns", "approval", "creating"})  # every group, even when empty
         failed_item = next(i for i in groups["failed_sites"]["items"] if i["name"] == failed)
         self.assertEqual((failed_item["school"], failed_item["detail"]), ("Greenfield Academy", "Database refused"))
         self.assertNotIn(retried, [i["name"] for i in groups["failed_sites"]["items"]])

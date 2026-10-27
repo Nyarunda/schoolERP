@@ -10,6 +10,11 @@ Admin site_config.json:
     stemic_site_domain         school sites are "<slug>.<this>"; default "localhost"
     stemic_site_apps           apps installed on each school site; default ["erpnext", "school_erp"]
     stemic_bench_path          bench to create sites in; default: this bench
+    stemic_provision_environment, stemic_provision_allowed_benches
+                               where this provisioner may build sites (site_config only): see onboarding.py
+
+A job is built only for an approved, commercially eligible school (onboarding.problems), checked again here on locked
+rows; anything else fails the job with the reason. Automated tests cannot run the CLI unless a test opts in.
 """
 
 import os
@@ -56,6 +61,9 @@ def _root_password() -> str:
 
 def _frappe_cli(*args, timeout=600, secrets_=()) -> str:
     """Run `frappe <args>` the way bench does, from the bench's sites folder. Returns output; raises with a scrubbed tail."""
+    if frappe.flags.in_test and not frappe.flags.stemic_cli_in_tests:
+        # a test that forgot to mock the CLI must not build (or drop) a real site
+        raise ProvisioningError("Automated tests cannot run the Frappe CLI (set frappe.flags.stemic_cli_in_tests)")
     bench = _bench()
     cmd = [os.path.join(bench, "env", "bin", "python"), "-m", "frappe.utils.bench_helper", "frappe", *args]
     try:
@@ -89,6 +97,7 @@ def _set_job(job, status, error=None):
     updates = {"status": status}
     if status == "Running":
         updates["attempts"] = (frappe.db.get_value("SaaS Provisioning Job", job, "attempts") or 0) + 1
+        updates["environment"] = frappe.conf.get("stemic_provision_environment")
     if status == "Failed":
         updates["last_error"] = (error or "Failed without a message")[:10000]
     frappe.db.set_value("SaaS Provisioning Job", job, updates)
@@ -112,9 +121,20 @@ def run(job: str) -> str:
     row = frappe.db.get_value("SaaS Provisioning Job", job, ["name", "tenant", "action", "status"], as_dict=True, for_update=True)
     if not row or row.status != "Queued" or row.action != "Create Site":
         return row.status if row else "missing"
-    tenant = frappe.get_doc("SaaS Tenant", row.tenant)
+    tenant = frappe.get_doc("SaaS Tenant", row.tenant, for_update=True)
     if tenant.notes == DEMO_NOTE:
         return "skipped (demo school)"
+    from stemic_control import onboarding
+
+    refused = onboarding.problems(tenant, lock=True, environment=True)
+    if refused:
+        message = "Refused: " + "; ".join(refused) + "."
+        _set_job(job, "Failed", message)
+        if tenant.status == "Pending":  # back to where the school stands, so it can be fixed and queued again
+            _set_tenant(tenant.name, "Approved" if onboarding.approved(tenant) else "Draft")
+        frappe.db.commit()
+        frappe.log_error(title=f"Provisioning refused for {tenant.name}", message=message)
+        return "refused"
 
     site = site_name(tenant.slug)
     _set_job(job, "Running")

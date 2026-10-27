@@ -15,7 +15,8 @@
     "action",
     "status",
     "attempts",
-    "last_error"
+    "last_error",
+    "environment"
   ],
   "fields": [
     {
@@ -65,6 +66,13 @@
       "fieldname": "last_error",
       "label": "Last Error",
       "read_only": 1
+    },
+    {
+      "fieldname": "environment",
+      "fieldtype": "Data",
+      "label": "Built In",
+      "read_only": 1,
+      "description": "stemic_provision_environment of the provisioner that ran the job"
     }
   ],
   "permissions": [

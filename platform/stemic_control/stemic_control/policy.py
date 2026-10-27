@@ -10,13 +10,17 @@ RESERVED = {"admin", "www", "api", "mail", "billing", "agents", "support", "stat
 VERIFICATION_PREFIX = "_stemic-verification."
 
 # Which status may follow which. Anything not listed is refused.
+# Draft -> Pending Approval -> Approved -> Pending (site job queued) -> Provisioning -> Active; see onboarding.py
 TENANT_TRANSITIONS = {
-    "Draft": {"Pending", "Failed"},
-    "Pending": {"Provisioning", "Failed", "Draft"},
+    "Draft": {"Pending Approval"},
+    "Pending Approval": {"Approved", "Rejected", "Draft"},
+    "Approved": {"Pending", "Rejected"},
+    "Pending": {"Provisioning", "Failed", "Approved", "Draft"},  # a refused job goes back to Approved (or Draft)
     "Provisioning": {"Active", "Failed"},
     "Active": {"Suspended"},
     "Suspended": {"Active"},
-    "Failed": {"Pending", "Draft"},
+    "Failed": {"Pending", "Pending Approval", "Rejected", "Draft"},
+    "Rejected": {"Draft"},
 }
 JOB_TRANSITIONS = {
     "Queued": {"Running", "Failed"},

@@ -104,6 +104,26 @@ class TestSubscriptionBilling(TestCase):
         item = next(i for i in setup_check._business() if i["label"] == "Invoices match their payments")
         self.assertFalse(item["ok"])
 
+    def test_invoice_summary_counts_only_submitted_payments(self):
+        """What the invoice card shows: the ledger, with cancelled payments listed but not counted, and drafts left out."""
+        inv = billing.create_invoice(self.sub, months=6)  # 30,000
+        cancelled = self.pay(inv, 10000)["payment"]
+        kept = self.pay(inv, 5000)["payment"]
+        frappe.get_doc("SaaS Payment", cancelled).cancel()
+        frappe.get_doc({"doctype": "SaaS Payment", "invoice": inv, "amount": 1000, "mode": "M-Pesa",
+                        "reference": "QDRAFT" + frappe.generate_hash(length=4).upper(), "payment_date": nowdate()}).insert()
+
+        summary = billing.invoice_summary(inv)
+        stored = frappe.db.get_value("SaaS Invoice", inv, ["paid_amount", "outstanding"], as_dict=True)
+        self.assertEqual((summary["total"], summary["paid"], summary["outstanding"], summary["paid_percent"]), (30000, 5000, 25000, 16))
+        self.assertEqual((summary["paid"], summary["outstanding"]), (flt(stored.paid_amount), flt(stored.outstanding)))
+        self.assertTrue(summary["matches_invoice"])
+        listed = {p["name"]: p["cancelled"] for p in summary["payments"]}
+        self.assertEqual(listed, {kept: False, cancelled: True})  # the draft is not on the card
+
+        frappe.set_user("Guest")
+        self.assertRaises(frappe.PermissionError, billing.invoice_summary, inv)
+
     def test_first_payment_only_commission(self):
         with patch.object(billing, "settings", lambda: frappe._dict(currency="KES", billing_months=12, payment_terms_days=14,
                                                                    renewal_notice_days=30, commission_basis="First payment only")):

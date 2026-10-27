@@ -99,6 +99,25 @@ function billing_tile(b, esc, fmt) {
     return stemic_control.tile(__("Billing"), __("No invoices yet"), __("Use Actions > Create Invoice."));
 }
 
+// A site before payment: an operator-approved free trial or internal / demo school (see onboarding.py)
+function site_exception_actions(frm) {
+    const d = frm.doc, group = __("Site Without Payment");
+    const grant = (kind, label) => frm.add_custom_button(label, () =>
+        frappe.prompt({ fieldname: "note", fieldtype: "Small Text", label: __("Reason"), reqd: 1 }, ({ note }) =>
+            frappe.call({ method: "stemic_control.onboarding.grant_billing_exception", args: { subscription: d.name, kind, note }, freeze: true })
+                .then(() => { frappe.show_alert({ message: __("{0} approved", [__(kind)]), indicator: "green" }); frm.reload_doc(); }),
+        label), group);
+    if (d.billing_exception) {
+        frm.add_custom_button(__("Revoke {0}", [__(d.billing_exception)]), () =>
+            frappe.confirm(__("Revoke the {0} exception? The school then needs a paid subscription to be provisioned.", [__(d.billing_exception)]), () =>
+                frappe.call({ method: "stemic_control.onboarding.revoke_billing_exception", args: { subscription: d.name } })
+                    .then(() => frm.reload_doc())), group);
+    } else if (!["Cancelled", "Suspended"].includes(d.status)) {
+        if (d.status === "Trial") grant("Free Trial", __("Approve Free Trial"));
+        grant("Internal / Demo", __("Approve as Internal / Demo"));
+    }
+}
+
 function add_actions(frm, s) {
     const d = frm.doc, act = __("Actions");
     const call = (method, args, msg) => frappe.call({ method: `stemic_control.api.${method}`, args, freeze: true }).then((r) => {
@@ -106,6 +125,7 @@ function add_actions(frm, s) {
         frm.reload_doc();
         return r;
     });
+    site_exception_actions(frm);
     if (d.status !== "Cancelled") {
         frm.add_custom_button(__("Renew"), () => {
             const dlg = new frappe.ui.Dialog({

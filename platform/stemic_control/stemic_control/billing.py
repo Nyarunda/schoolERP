@@ -366,6 +366,25 @@ def check_ledger():
 
 
 @frappe.whitelist(methods=["GET"])
+def invoice_summary(invoice):
+    """The summary card on an invoice. Paid is the ledger: submitted payments only; cancelled ones are listed as
+    cancelled and count for nothing, drafts are not shown. The page displays this, it does not add anything up."""
+    inv = frappe.get_doc("SaaS Invoice", invoice)
+    inv.check_permission("read")
+    payments = frappe.get_all("SaaS Payment", filters={"invoice": invoice, "docstatus": ("in", [1, 2])},
+                              fields=["name", "payment_date", "mode", "reference", "amount", "docstatus"],
+                              order_by="payment_date desc, creation desc", limit=50)
+    total = flt(inv.total, 2)
+    paid = flt(sum(flt(p.amount) for p in payments if p.docstatus == 1), 2) if inv.docstatus == 1 else 0
+    owed = flt(max(total - paid, 0), 2) if inv.docstatus != 2 else 0
+    return {"total": total, "paid": paid, "outstanding": owed, "currency": inv.currency or settings().currency,
+            "paid_percent": min(100, int(paid * 100 // total)) if total > 0 else 0,
+            "matches_invoice": abs(paid - flt(inv.paid_amount)) < 0.005 or inv.docstatus != 1,
+            "payments": [{"name": p.name, "payment_date": str(p.payment_date or ""), "mode": p.mode, "reference": p.reference,
+                          "amount": flt(p.amount, 2), "cancelled": p.docstatus == 2} for p in payments]}
+
+
+@frappe.whitelist(methods=["GET"])
 def subscription_billing(subscription):
     """The billing tile on a subscription: open invoice, last payment, totals."""
     sub = frappe.get_doc("SaaS Subscription", subscription)

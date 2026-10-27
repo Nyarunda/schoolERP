@@ -9,12 +9,21 @@ frappe.ui.form.on("M-Pesa Transaction", {
 			frm.set_intro(frappe.utils.escape_html(frm.doc.error), ["Failed", "Needs Review"].includes(frm.doc.status) ? "red" : "orange");
 		}
 		if (["Unmatched", "Failed", "Needs Review", "Ignored", "Received"].includes(frm.doc.status) && !frm.is_new()) {
-			frm.add_custom_button(__("Post to Student"), () => {
+			// A payment held for review failed our checks: whoever releases it records what they checked it against
+			const held = frm.doc.status === "Needs Review";
+			const fields = [{ fieldname: "student", label: __("Student"), fieldtype: "Link", options: "Student", reqd: 1, default: frm.doc.student }];
+			if (held) {
+				fields.push(
+					{ fieldname: "verified_reference", label: __("Checked against (Safaricom statement or transaction ref)"), fieldtype: "Data", reqd: 1 },
+					{ fieldname: "verification_note", label: __("Why it is genuine"), fieldtype: "Small Text", reqd: 1,
+					  description: __("Only a School Admin or accountant can release a held payment.") });
+			}
+			frm.add_custom_button(held ? __("Check & Post") : __("Post to Student"), () => {
 				frappe.prompt(
-					{ fieldname: "student", label: __("Student"), fieldtype: "Link", options: "Student", reqd: 1, default: frm.doc.student },
+					fields,
 					(v) => frappe.call({
 						method: "school_erp.api.paybill.assign_and_post",
-						args: { name: frm.doc.name, student: v.student },
+						args: { name: frm.doc.name, ...v },
 						freeze: true,
 						freeze_message: __("Posting..."),
 					}).then(({ message }) => {

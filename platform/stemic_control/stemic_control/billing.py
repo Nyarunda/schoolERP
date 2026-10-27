@@ -356,11 +356,15 @@ def ledger_mismatches(limit=50):
 def check_ledger():
     """Scheduler (daily): find invoices that disagree with their payments without anyone opening them, and record
     them in the Error Log for the operator."""
+    from stemic_control.alerts import notify_admins
+
     found = ledger_mismatches(limit=200)
     if found:
-        frappe.log_error(title=f"Billing ledger: {len(found)} invoice(s) disagree with their payments",
-                         message="\n".join(f"{m['invoice']} ({m['school'] or m['tenant']}): {m['problem']}" for m in found)
-                         + "\n\nThe submitted payments are authoritative. Check each invoice before correcting it.")
+        title = f"Billing ledger: {len(found)} invoice(s) disagree with their payments"
+        message = ("\n".join(f"{m['invoice']} ({m['school'] or m['tenant']}): {m['problem']}" for m in found)
+                   + "\n\nThe submitted payments are authoritative. Check each invoice before correcting it.")
+        log = frappe.log_error(title=title, message=message)
+        notify_admins(title, frappe.utils.escape_html(message).replace("\n", "<br>"), "Error Log", log.name if log else None)
         frappe.db.commit()
     return len(found)
 

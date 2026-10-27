@@ -111,6 +111,26 @@ jobs:
           STEMIC_RACE_SNAPSHOT_ISOLATION=OFF ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost protected control 2>&1 | tee -a ~/tests.log
           # 2) the server's default (ON on MariaDB 11.6+): still consistent
           ../env/bin/python ../apps/stemic_control/scripts/billing_concurrency.py admin.localhost protected 2>&1 | tee -a ~/tests.log
+      - name: End-to-end onboarding (register, pay, provision a real site, license, school login)
+        run: |
+          set -o pipefail
+          cd ~/frappe-bench
+          # A throwaway vendor key pair for this run only: the real private key never leaves the vendor. Its public
+          # half replaces School ERP's in this bench's copy only (nothing is committed).
+          ./env/bin/python -c "
+          from school_erp.logic.license import generate_keypair
+          private, public = generate_keypair()
+          open('$RUNNER_TEMP/e2e-vendor.key', 'w').write(private)
+          open('apps/school_erp/school_erp/licensing/public_key.py', 'w').write(f'PUBLIC_KEY = \"{public}\"\n')
+          "
+          bench --site admin.localhost set-config stemic_license_private_key_file "$RUNNER_TEMP/e2e-vendor.key"
+          bench --site admin.localhost set-config stemic_local_provisioner 1
+          bench --site admin.localhost set-config stemic_db_root_password root
+          bench --site admin.localhost set-config stemic_mariadb_user_host_login_scope '%'
+          bench --site admin.localhost set-config stemic_provision_environment development
+          bench --site admin.localhost set-config -p stemic_provision_allowed_benches "[\"$HOME/frappe-bench\"]"
+          cd sites
+          ../env/bin/python ../apps/stemic_control/scripts/e2e_onboarding.py admin.localhost 2>&1 | tee -a ~/tests.log
       - name: Show errors as annotations
         if: failure()
         run: |

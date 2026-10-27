@@ -10,6 +10,8 @@ Admin site_config.json:
     stemic_site_domain         school sites are "<slug>.<this>"; default "localhost"
     stemic_site_apps           apps installed on each school site; default ["erpnext", "school_erp"]
     stemic_bench_path          bench to create sites in; default: this bench
+    stemic_mariadb_user_host_login_scope   where school databases' logins may connect from ("%" when MariaDB is in a
+                               container); default: Frappe's own (this host)
     stemic_provision_environment, stemic_provision_allowed_benches
                                where this provisioner may build sites (site_config only): see onboarding.py
 
@@ -175,6 +177,9 @@ def run(job: str) -> str:
             raise ProvisioningError(f"A database or database login named {database} already exists; refusing to overwrite it")
         password = secrets.token_urlsafe(14)
         args = ["new-site", site, "--db-root-password", root, "--admin-password", password, "--db-name", database]
+        scope = frappe.conf.get("stemic_mariadb_user_host_login_scope")  # e.g. "%" when MariaDB runs in a container
+        if scope:
+            args += ["--mariadb-user-host-login-scope", scope]
         for app in _apps():
             args += ["--install-app", app]
         created = True

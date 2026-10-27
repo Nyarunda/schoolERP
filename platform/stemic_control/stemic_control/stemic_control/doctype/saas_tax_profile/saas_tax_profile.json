@@ -1,0 +1,86 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Tax Profile",
+  "module": "Stemic Control",
+  "autoname": "field:tenant",
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "field_order": [
+    "tenant",
+    "seller_pin",
+    "seller_name",
+    "branch_id",
+    "integration_mode",
+    "enabled",
+    "default_tax_treatment",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "tenant",
+      "fieldtype": "Link",
+      "label": "Tenant",
+      "options": "SaaS Tenant",
+      "reqd": 1,
+      "unique": 1
+    },
+    {
+      "fieldname": "seller_pin",
+      "fieldtype": "Data",
+      "label": "Seller Pin",
+      "mandatory_depends_on": "eval:doc.enabled",
+      "description": "KRA PIN, e.g. P051234567X. Needed before the profile can be enabled."
+    },
+    {
+      "fieldname": "seller_name",
+      "fieldtype": "Data",
+      "label": "Seller Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "branch_id",
+      "fieldtype": "Data",
+      "label": "Branch Id"
+    },
+    {
+      "fieldname": "integration_mode",
+      "fieldtype": "Select",
+      "label": "Integration Mode",
+      "options": "Manual\nCertified Integrator\nOSCU\nVSCU"
+    },
+    {
+      "fieldname": "enabled",
+      "fieldtype": "Check",
+      "label": "Enabled"
+    },
+    {
+      "fieldname": "default_tax_treatment",
+      "fieldtype": "Select",
+      "label": "Default Tax Treatment",
+      "options": "Review Required\nExempt\nZero Rated\nStandard Rated",
+      "default": "Review Required"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    }
+  ],
+  "modified": "2026-10-26 14:00:00.000000"
+}

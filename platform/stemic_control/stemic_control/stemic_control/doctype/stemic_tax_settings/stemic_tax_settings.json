@@ -1,0 +1,86 @@
+{
+  "doctype": "DocType",
+  "name": "Stemic Tax Settings",
+  "module": "Stemic Control",
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "issingle": 1,
+  "field_order": [
+    "seller_name",
+    "seller_pin",
+    "branch_id",
+    "integration_mode",
+    "enabled",
+    "vat_rate",
+    "tax_treatment",
+    "notes"
+  ],
+  "fields": [
+    {
+      "fieldname": "seller_name",
+      "fieldtype": "Data",
+      "label": "Seller Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "seller_pin",
+      "fieldtype": "Data",
+      "label": "Seller Pin",
+      "reqd": 1
+    },
+    {
+      "fieldname": "branch_id",
+      "fieldtype": "Data",
+      "label": "Branch Id"
+    },
+    {
+      "fieldname": "integration_mode",
+      "fieldtype": "Select",
+      "label": "Integration Mode",
+      "options": "Manual\nCertified Integrator\nOSCU\nVSCU"
+    },
+    {
+      "fieldname": "enabled",
+      "fieldtype": "Check",
+      "label": "Enabled",
+      "default": "0"
+    },
+    {
+      "fieldname": "vat_rate",
+      "fieldtype": "Percent",
+      "label": "VAT Rate",
+      "default": "16",
+      "depends_on": "eval:doc.tax_treatment=='Standard Rated'"
+    },
+    {
+      "fieldname": "tax_treatment",
+      "fieldtype": "Select",
+      "label": "Tax Treatment of Stemic Subscriptions",
+      "options": "Standard Rated\nZero Rated\nExempt",
+      "default": "Standard Rated",
+      "description": "Confirm with your tax adviser. Subscription invoice totals are what schools pay, so VAT is taken out of them."
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Small Text",
+      "label": "Notes"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    }
+  ],
+  "modified": "2026-10-26 21:00:00.000000"
+}

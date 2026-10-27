@@ -46,3 +46,6 @@ scheduler_events = {
     # Billing: overdue invoices and Past Due subscriptions; renewal invoices ahead of the end date
     "daily": ["stemic_control.billing.daily"],
 }
+
+# Finance operators review tax records through controlled service actions.
+doctype_js = {"SaaS eTIMS Invoice": "public/js/etims_invoice.js"}

@@ -1,0 +1,207 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS eTIMS Invoice",
+  "module": "Stemic Control",
+  "autoname": "field:invoice_key",
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "field_order": [
+    "invoice_key",
+    "seller_scope",
+    "tenant",
+    "subscription",
+    "saas_invoice",
+    "external_invoice_no",
+    "buyer_name",
+    "buyer_pin",
+    "seller_pin",
+    "tax_treatment",
+    "currency",
+    "net_amount",
+    "vat_amount",
+    "total_amount",
+    "status",
+    "provider_reference",
+    "kra_invoice_number",
+    "submitted_on",
+    "last_error",
+    "source_payload_hash",
+    "reviewed_by",
+    "reviewed_on"
+  ],
+  "fields": [
+    {
+      "fieldname": "invoice_key",
+      "label": "Invoice Identity",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "unique": 1,
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "seller_scope",
+      "fieldtype": "Select",
+      "label": "Legal Seller",
+      "options": "School\nStemic Platform",
+      "read_only": 1,
+      "default": "School"
+    },
+    {
+      "fieldname": "tenant",
+      "fieldtype": "Link",
+      "label": "Tenant",
+      "options": "SaaS Tenant",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "subscription",
+      "fieldtype": "Link",
+      "label": "Subscription",
+      "options": "SaaS Subscription",
+      "read_only": 1
+    },
+    {
+      "fieldname": "saas_invoice",
+      "fieldtype": "Link",
+      "label": "SaaS Invoice",
+      "options": "SaaS Invoice",
+      "read_only": 1,
+      "unique": 1,
+      "description": "Stemic's own invoices come only from a submitted SaaS Invoice."
+    },
+    {
+      "fieldname": "external_invoice_no",
+      "fieldtype": "Data",
+      "label": "External Invoice No",
+      "reqd": 1,
+      "unique": 0,
+      "read_only": 1
+    },
+    {
+      "fieldname": "buyer_name",
+      "fieldtype": "Data",
+      "label": "Buyer Name",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "buyer_pin",
+      "fieldtype": "Data",
+      "label": "Buyer Pin",
+      "read_only": 1
+    },
+    {
+      "fieldname": "seller_pin",
+      "fieldtype": "Data",
+      "label": "Seller Pin",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "tax_treatment",
+      "fieldtype": "Select",
+      "label": "Tax Treatment",
+      "options": "Review Required\nExempt\nZero Rated\nStandard Rated",
+      "reqd": 1,
+      "default": "Review Required",
+      "read_only": 1
+    },
+    {
+      "fieldname": "currency",
+      "fieldtype": "Data",
+      "label": "Currency",
+      "read_only": 1
+    },
+    {
+      "fieldname": "net_amount",
+      "fieldtype": "Currency",
+      "label": "Net Amount",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "vat_amount",
+      "fieldtype": "Currency",
+      "label": "Vat Amount",
+      "read_only": 1
+    },
+    {
+      "fieldname": "total_amount",
+      "fieldtype": "Currency",
+      "label": "Total Amount",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Draft\nReady\nPending Submission\nSubmitted\nRejected\nCancelled\nWithdrawn",
+      "default": "Draft",
+      "read_only": 1
+    },
+    {
+      "fieldname": "provider_reference",
+      "fieldtype": "Data",
+      "label": "Provider Reference",
+      "read_only": 1
+    },
+    {
+      "fieldname": "kra_invoice_number",
+      "fieldtype": "Data",
+      "label": "Kra Invoice Number",
+      "read_only": 1
+    },
+    {
+      "fieldname": "submitted_on",
+      "fieldtype": "Datetime",
+      "label": "Submitted On",
+      "read_only": 1
+    },
+    {
+      "fieldname": "last_error",
+      "fieldtype": "Small Text",
+      "label": "Last Error",
+      "read_only": 1
+    },
+    {
+      "fieldname": "source_payload_hash",
+      "fieldtype": "Data",
+      "label": "Source Payload Hash",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reviewed_by",
+      "fieldtype": "Link",
+      "label": "Reviewed By",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reviewed_on",
+      "fieldtype": "Datetime",
+      "label": "Reviewed On",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    }
+  ],
+  "naming_rule": "By fieldname",
+  "modified": "2026-10-26 21:00:00.000000"
+}

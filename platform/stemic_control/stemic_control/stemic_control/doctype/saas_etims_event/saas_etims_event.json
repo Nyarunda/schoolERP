@@ -1,0 +1,73 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS eTIMS Event",
+  "module": "Stemic Control",
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "autoname": "hash",
+  "field_order": [
+    "invoice",
+    "event_type",
+    "old_status",
+    "new_status",
+    "actor",
+    "details",
+    "recorded_on"
+  ],
+  "fields": [
+    {
+      "fieldname": "invoice",
+      "fieldtype": "Link",
+      "label": "Invoice",
+      "reqd": 1,
+      "options": "SaaS eTIMS Invoice"
+    },
+    {
+      "fieldname": "event_type",
+      "fieldtype": "Data",
+      "label": "Event Type",
+      "reqd": 1
+    },
+    {
+      "fieldname": "old_status",
+      "fieldtype": "Data",
+      "label": "Old Status"
+    },
+    {
+      "fieldname": "new_status",
+      "fieldtype": "Data",
+      "label": "New Status"
+    },
+    {
+      "fieldname": "actor",
+      "fieldtype": "Data",
+      "label": "Actor"
+    },
+    {
+      "fieldname": "details",
+      "fieldtype": "Small Text",
+      "label": "Details"
+    },
+    {
+      "fieldname": "recorded_on",
+      "fieldtype": "Datetime",
+      "label": "Recorded On"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    }
+  ]
+}

@@ -10,6 +10,7 @@ frappe.ui.form.on("SaaS Invoice", {
             frm.add_custom_button(__("Record Payment"), () => stemic_control.record_payment(frm.doc.name, frm.doc.outstanding, () => frm.reload_doc()))
                 .addClass("btn-primary");
         }
+        if (frm.doc.docstatus === 1 && frm.doc.status !== "Cancelled" && stemic_control.is_platform_admin()) etims_button(frm);
         if (!frm.is_new()) {
             frm.add_custom_button(__("Payments"), () => frappe.set_route("List", "SaaS Payment", { invoice: frm.doc.name }), __("View"));
             frm.add_custom_button(__("Subscription"), () => frappe.set_route("Form", "SaaS Subscription", frm.doc.subscription), __("View"));
@@ -29,3 +30,20 @@ frappe.ui.form.on("SaaS Invoice", {
         if (frm.doc.subscription) frappe.db.get_value("SaaS Subscription", frm.doc.subscription, "tenant").then(({ message }) => frm.set_value("tenant", message.tenant));
     },
 });
+
+// Stemic's tax invoice for KRA is prepared from this invoice (never from typed amounts): open it, or prepare it
+function etims_button(frm) {
+    frappe.db.get_value("Stemic Tax Settings", "Stemic Tax Settings", "enabled").then(({ message }) => {
+        if (!message || !cint(message.enabled)) return;
+        frappe.db.get_value("SaaS eTIMS Invoice", { saas_invoice: frm.doc.name }, ["name", "status"]).then(({ message: tax }) => {
+            if (tax && tax.name) {
+                frm.add_custom_button(__("Tax Invoice ({0})", [__(tax.status)]), () => frappe.set_route("Form", "SaaS eTIMS Invoice", tax.name), __("View"));
+            } else {
+                frm.add_custom_button(__("Prepare eTIMS"), () => frappe.confirm(
+                    __("Prepare Stemic's tax invoice for {0}? Amounts, buyer and period are taken from this invoice.", [frm.doc.name]),
+                    () => frappe.call({ method: "stemic_control.etims.prepare_from_saas_invoice", args: { invoice: frm.doc.name }, freeze: true })
+                        .then(({ message: r }) => frappe.set_route("Form", "SaaS eTIMS Invoice", r.name))), __("Billing"));
+            }
+        });
+    });
+}

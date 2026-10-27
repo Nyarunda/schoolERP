@@ -27,10 +27,12 @@ Exit status (so a CI job or script can gate on it):
     2  protected rounds were fine, but a control race no longer broke: the harness has stopped exercising it
 
 Every "protected" round must print CONSISTENT. The "control" rounds are expected to break for the races the locks
-exist for (double payment, two part-payments, two invoices, cancel vs pay, cancel invoice vs pay); if a control round
-stops breaking, the harness no longer exercises that race.
+exist for (double payment, two part-payments, two invoices, cancel vs pay, cancel invoice vs pay, and for eTIMS: two
+preparations, cancel vs prepare, cancel vs queue); if a control round stops breaking, the harness no longer exercises
+that race. The eTIMS scenarios switch on Stemic Tax Settings for the run and put the previous values back afterwards.
 
-Results on MariaDB 10.11 (REPEATABLE READ), 26 Oct 2026: protected 24/24 consistent; control broke 5 of 8 scenarios.
+Results on MariaDB 10.11 (REPEATABLE READ), 27 Oct 2026: protected 33/33 consistent; control broke 8 of 11 scenarios.
+With the tax invoice row read plainly (before the eTIMS fix) protected s9 broke 3/3 and s10 2/3.
 """
 
 import multiprocessing as mp
@@ -43,7 +45,9 @@ SITE = sys.argv[1] if len(sys.argv) > 1 else "admin.localhost"
 RUN = None  # this run's id, set in main(); fixtures are named with it and only they are cleaned up
 # Races the locks exist for: with the locks removed ("control") these must break, or the harness lost its teeth
 EXPECT_CONTROL_BREAKS = {"s1_double_payment", "s1b_two_part_payments", "s3_double_invoice", "s4_cancel_vs_pay",
-                         "s7_cancel_invoice_vs_pay"}
+                         "s7_cancel_invoice_vs_pay", "s8_double_prepare", "s9_cancel_vs_prepare", "s10_cancel_vs_queue"}
+ETIMS_ACTIONS = {"prepare", "queue", "cancel_taxed"}  # clients that get the pause after reading the tax invoice row
+LOCKED = ("`tabSaaS Subscription`", "`tabSaaS Invoice`", "`tabSaaS Payment`", "`tabSaaS eTIMS Invoice`")
 PAUSE = 1.5
 ROUNDS = 3
 
@@ -70,18 +74,22 @@ def connect():
     return frappe
 
 
-def instrument(frappe, mode):
+def instrument(frappe, mode, action):
     """Widen the race window; in control mode also remove the row locks under test."""
     from stemic_control import billing
 
     real_sql = frappe.db.sql
+    def sql(query, *a, **k):
+        locked_read = isinstance(query, str) and "FOR UPDATE" in query and any(t in query for t in LOCKED)
+        if mode == "control" and locked_read:
+            # switch off only the billing and tax row locks under test (not Frappe's own naming-series lock)
+            query = query.replace("FOR UPDATE", "")
+        out = real_sql(query, *a, **k)
+        if action in ETIMS_ACTIONS and locked_read and "`tabSaaS eTIMS Invoice`" in query:
+            time.sleep(PAUSE)  # prepare, cancel guard, queue: read the tax invoice row ... then write
+        return out
+    frappe.db.sql = sql
     if mode == "control":
-        def sql(query, *a, **k):
-            # switch off only the billing row locks under test (not Frappe's own naming-series lock)
-            if isinstance(query, str) and "FOR UPDATE" in query and ("`tabSaaS Subscription`" in query or "`tabSaaS Invoice`" in query or "`tabSaaS Payment`" in query):
-                query = query.replace("FOR UPDATE", "")
-            return real_sql(query, *a, **k)
-        frappe.db.sql = sql
         # no lock: report the status from an ordinary (snapshot) read, as the code did before the fix
         billing.lock_invoice = lambda invoice: frappe.db.get_value("SaaS Invoice", invoice, "docstatus")
 
@@ -102,8 +110,8 @@ def instrument(frappe, mode):
 def client(action, args, mode, barrier, results, idx):
     try:
         frappe = connect()
-        instrument(frappe, mode)
-        from stemic_control import billing
+        instrument(frappe, mode, action)
+        from stemic_control import billing, etims
 
         barrier.wait(timeout=60)
         try:
@@ -115,9 +123,16 @@ def client(action, args, mode, barrier, results, idx):
             elif action == "cancel":
                 frappe.get_doc("SaaS Payment", args[0]).cancel()
                 out = "cancelled"
-            elif action == "cancel_invoice":
+            elif action in ("cancel_invoice", "cancel_taxed"):
                 frappe.get_doc("SaaS Invoice", args[0]).cancel()
                 out = "invoice cancelled"
+            elif action == "prepare":
+                out = etims.prepare_from_saas_invoice(args[0])["name"]
+            elif action == "queue":
+                # a provider is "configured" for this client only; nothing is enqueued or sent
+                frappe.local.conf.update({"stemic_etims_live_enabled": 1, "stemic_etims_adapter": "stemic_control_integrations.race.submit"})
+                frappe.enqueue = lambda *a, **k: None
+                out = etims.queue_submission(args[0])["status"]
             elif action == "daily":
                 from unittest.mock import patch
 
@@ -163,15 +178,55 @@ def fixture(frappe, tag):
     return tenant, sub
 
 
+TAX_SELLER = {"enabled": 1, "seller_name": "Race Seller Ltd", "seller_pin": "P059999999Q", "branch_id": "00",
+              "tax_treatment": "Standard Rated", "vat_rate": 16}
+saved_tax_settings = None
+
+
+def tax_seller(frappe):
+    """Make Stemic a registered seller for the eTIMS scenarios, remembering what was there."""
+    global saved_tax_settings
+    doc = frappe.get_doc("Stemic Tax Settings")
+    if saved_tax_settings is None:
+        saved_tax_settings = {k: doc.get(k) for k in TAX_SELLER}
+    doc.update(TAX_SELLER)
+    doc.save()
+    frappe.db.commit()
+
+
+def taxed_invoice(frappe, tag, ready=False):
+    from stemic_control import billing, etims
+
+    tax_seller(frappe)
+    _t, sub = fixture(frappe, tag)
+    inv = billing._create_invoice(sub, 1); frappe.db.commit()
+    if not ready:
+        return inv, None
+    tax = etims.prepare_from_saas_invoice(inv)["name"]
+    etims.approve_invoice(tax); frappe.db.commit()
+    return inv, tax
+
+
+def tax_state(frappe, inv):
+    frappe.db.rollback()
+    rows = frappe.get_all("SaaS eTIMS Invoice", filters={"saas_invoice": inv}, fields=["name", "status"])
+    return frappe.db.get_value("SaaS Invoice", inv, "docstatus"), rows
+
+
 def cleanup(frappe):
     """Remove this run's fixtures, and nothing else."""
     tenants = frappe.get_all("SaaS Tenant", filters={"name": ("like", f"race-{RUN}-%")}, pluck="name") or [""]
     invoices = frappe.get_all("SaaS Invoice", filters={"tenant": ("in", tenants)}, pluck="name") or [""]
-    for dt, f in (("SaaS Commission", {"tenant": ("in", tenants)}), ("SaaS Payment", {"invoice": ("in", invoices)}),
+    taxed = frappe.get_all("SaaS eTIMS Invoice", filters={"tenant": ("in", tenants)}, pluck="name") or [""]
+    for dt, f in (("SaaS eTIMS Event", {"invoice": ("in", taxed)}), ("SaaS eTIMS Invoice", {"name": ("in", taxed)}),
+                  ("SaaS Commission", {"tenant": ("in", tenants)}), ("SaaS Payment", {"invoice": ("in", invoices)}),
                   ("SaaS Invoice", {"name": ("in", invoices)}), ("SaaS Subscription", {"tenant": ("in", tenants)}),
                   ("SaaS Domain", {"tenant": ("in", tenants)}), ("SaaS Tenant", {"name": ("in", tenants)}),
                   ("SaaS Agent", {"agent_name": f"Race Agent {RUN}"}), ("SaaS Plan", {"name": f"Race Plan {RUN}"})):
         frappe.db.delete(dt, f)
+    if saved_tax_settings is not None:  # written directly: what was there before may not be a complete seller
+        frappe.db.set_single_value("Stemic Tax Settings", saved_tax_settings)
+        frappe.clear_document_cache("Stemic Tax Settings", "Stemic Tax Settings")
     frappe.db.commit()
 
 
@@ -299,6 +354,39 @@ def s7_cancel_invoice_vs_pay(frappe, mode, tag):
     return ok, res, f"invoice docstatus {docstatus}, {payments} live payment(s)"
 
 
+def s8_double_prepare(frappe, mode, tag):
+    """Two clients prepare the tax invoice of the same SaaS Invoice: one record, and both get it back."""
+    inv, _ = taxed_invoice(frappe, tag)
+    res = run([("prepare", (inv,)), ("prepare", (inv,))], mode)
+    _d, rows = tax_state(frappe, inv)
+    # a refusal is only acceptable as MariaDB's own abort under snapshot isolation (error 1020), not a duplicate key
+    refused = [r[1] for r in res if r[0] == "refused" and "1020" not in r[1]]
+    same = len({r[1] for r in res if r[0] == "ok"}) <= 1
+    return len(rows) == 1 and not refused and same, res, f"{len(rows)} tax record(s)"
+
+
+def s9_cancel_vs_prepare(frappe, mode, tag):
+    """Someone cancels a SaaS Invoice while its tax invoice is being prepared."""
+    inv, _ = taxed_invoice(frappe, tag)
+    res = run([("cancel_taxed", (inv,)), ("prepare", (inv,))], mode)
+    docstatus, rows = tax_state(frappe, inv)
+    live = [r for r in rows if r.status != "Withdrawn"]
+    ok = not (docstatus == 2 and live)  # never a cancelled invoice whose tax invoice is still live
+    return ok, res, f"invoice docstatus {docstatus}; tax invoice {', '.join(r.status for r in rows) or 'none'}"
+
+
+def s10_cancel_vs_queue(frappe, mode, tag):
+    """Someone cancels a SaaS Invoice while its reviewed tax invoice is queued for KRA."""
+    inv, tax = taxed_invoice(frappe, tag, ready=True)
+    res = run([("cancel_taxed", (inv,)), ("queue", (tax,))], mode)
+    docstatus, rows = tax_state(frappe, inv)
+    status = rows[0].status
+    queued = frappe.db.exists("SaaS eTIMS Event", {"invoice": tax, "event_type": "Queued for provider"})
+    # cancelled with a tax invoice on its way to KRA, or withdrawn after being queued: both lose track of a KRA filing
+    ok = not (docstatus == 2 and status in ("Pending Submission", "Submitted")) and not (status == "Withdrawn" and queued)
+    return ok, res, f"invoice docstatus {docstatus}; tax invoice {status}{' (after being queued)' if queued else ''}"
+
+
 def main():
     global RUN
     import frappe
@@ -318,7 +406,7 @@ def main():
     print(f"run {RUN} on {SITE} | {version} | innodb_snapshot_isolation {snapshot}", flush=True)
     stuck = []
     scenarios = [s1_double_payment, s1b_two_part_payments, s2_same_reference, s3_double_invoice, s4_cancel_vs_pay, s5_pay_vs_invoice,
-                 s6_daily_vs_payment, s7_cancel_invoice_vs_pay]
+                 s6_daily_vs_payment, s7_cancel_invoice_vs_pay, s8_double_prepare, s9_cancel_vs_prepare, s10_cancel_vs_queue]
     summary = {}
     try:
         for mode in (sys.argv[2:] or ["protected", "control"]):

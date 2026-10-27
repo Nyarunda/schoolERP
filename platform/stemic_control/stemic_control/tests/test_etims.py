@@ -165,10 +165,26 @@ class TestEtims(TestCase):
 
     def test_only_kes_saas_invoices_are_prepared(self):
         self.stemic_seller()
-        inv = self.saas_invoice()
-        frappe.db.set_value("SaaS Invoice", inv, "currency", "USD")
-        self.assertRaises(frappe.ValidationError, etims.prepare_from_saas_invoice, inv)
-        self.assertFalse(frappe.db.exists("SaaS eTIMS Invoice", {"saas_invoice": inv}))
+        kes = self.saas_invoice()
+        self.assertEqual(frappe.db.get_value("SaaS Invoice", kes, "currency"), "KES")
+        prepared = etims.prepare_from_saas_invoice(kes)["name"]  # KES invoices still pass
+
+        events = frappe.db.count("SaaS eTIMS Event")
+        for currency in ("USD", None):  # the invoice's own currency decides; a blank one is not taken to be KES
+            inv = self.saas_invoice()
+            frappe.db.set_value("SaaS Invoice", inv, "currency", currency, update_modified=False)
+            before = frappe.db.get_value("SaaS Invoice", inv, ["modified", "status", "total"], as_dict=True)
+            self.assertEqual(frappe.db.get_single_value("Stemic Settings", "currency") or "KES", "KES")
+            self.assertRaises(frappe.ValidationError, etims.prepare_from_saas_invoice, inv)
+            self.assertFalse(frappe.db.exists("SaaS eTIMS Invoice", {"saas_invoice": inv}))
+            self.assertEqual(frappe.db.get_value("SaaS Invoice", inv, ["modified", "status", "total"], as_dict=True), before)
+        self.assertEqual(frappe.db.count("SaaS eTIMS Event"), events)  # refused before any audit record
+
+        # an existing tax invoice is no way around the check: preparing again re-checks the currency
+        frappe.db.set_value("SaaS Invoice", kes, "currency", "USD", update_modified=False)
+        self.assertRaises(frappe.ValidationError, etims.prepare_from_saas_invoice, kes)
+        frappe.db.set_value("SaaS Invoice", kes, "currency", "KES", update_modified=False)
+        self.assertEqual(etims.prepare_from_saas_invoice(kes)["name"], prepared)
 
     def test_cancelling_a_saas_invoice_follows_its_tax_invoice(self):
         self.stemic_seller(treatment="Exempt")

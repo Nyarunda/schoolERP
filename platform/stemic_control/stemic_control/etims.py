@@ -100,19 +100,20 @@ def prepare_from_saas_invoice(invoice):
     One tax record per SaaS Invoice; preparing again returns it."""
     _admin()
     # serialise with payments and cancellation of the same invoice (billing.lock_invoice); a locking read of status
-    row = frappe.db.sql("SELECT docstatus, status FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE", (invoice,))
+    row = frappe.db.sql("SELECT docstatus, status, currency FROM `tabSaaS Invoice` WHERE name = %s FOR UPDATE", (invoice,))
     if not row:
         frappe.throw(_("Unknown SaaS Invoice"))
     if row[0][0] != 1 or row[0][1] == "Cancelled":
         frappe.throw(_("Only a submitted SaaS Invoice can be prepared for eTIMS"))
+    # the invoice's own currency, not today's Stemic Settings; checked on every call, before anything is written.
+    # eTIMS invoices are in shillings, and converting needs a KRA-accepted exchange rate, which this does not hold
+    if row[0][2] != "KES":
+        frappe.throw(_("SaaS Invoice {0} is in {1}: only KES invoices can be prepared for eTIMS").format(invoice, row[0][2] or _("no currency")))
     # a locking read: after waiting for another preparation of this invoice, a plain read would miss what it committed
     existing = _tax_row(invoice)
     if existing:
         return {"name": existing.name, "status": existing.status}
     inv = frappe.get_doc("SaaS Invoice", invoice)
-    if (inv.currency or "KES") != "KES":
-        # eTIMS invoices are in shillings; converting needs a KRA-accepted exchange rate, which this does not hold
-        frappe.throw(_("SaaS Invoice {0} is in {1}: only KES invoices can be prepared for eTIMS").format(inv.name, inv.currency))
     treatment, net, vat, total = platform_amounts(inv.total)
     school_pin = frappe.db.get_value("SaaS Tax Profile", {"tenant": inv.tenant}, "seller_pin")
     return _prepare(tenant=inv.tenant, external_invoice_no=inv.name, buyer_name=inv.school_name or inv.tenant,

@@ -65,6 +65,12 @@ def _provisioner():
         return [_item("Provisioning", "Create sites on this server", None,
                       "Off: queued schools wait for an external provisioner.", "Switch it on in the Platform tab to create sites here.")]
     out = [_item("Provisioning", "Create sites on this server", True, f"On: sites are named <school>.{config.get('stemic_site_domain')}.")]
+    from stemic_control.onboarding import environment_problem
+
+    problem = environment_problem()
+    out.append(_item("Provisioning", "Authorised environment", not problem,
+                     problem or f"{frappe.conf.get('stemic_provision_environment')}: this bench may build school sites.",
+                     "Set stemic_provision_environment and stemic_provision_allowed_benches in site_config.json." if problem else ""))
     bench = provisioner._bench()
     ok = os.path.isfile(os.path.join(bench, "env", "bin", "python"))
     out.append(_item("Provisioning", "Bench", ok, bench, "" if ok else "Set Bench Path to a bench with an env/ folder."))

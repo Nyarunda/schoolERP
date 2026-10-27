@@ -21,7 +21,13 @@
     "status",
     "starts_on",
     "ends_on",
-    "external_payment_ref"
+    "external_payment_ref",
+    "exception_section",
+    "billing_exception",
+    "exception_approved_by",
+    "exception_approved_on",
+    "exception_column",
+    "exception_note"
   ],
   "fields": [
     {
@@ -105,6 +111,43 @@
       "label": "Payment Reference",
       "read_only": 1,
       "description": "Set when the subscription is activated or renewed (M-Pesa code, bank ref or invoice)."
+    },
+    {
+      "fieldname": "exception_section",
+      "fieldtype": "Section Break",
+      "label": "Site Without Payment",
+      "collapsible": 1,
+      "description": "An operator-approved free trial or internal / demo school may be given a site before paying."
+    },
+    {
+      "fieldname": "billing_exception",
+      "fieldtype": "Select",
+      "label": "Exception",
+      "options": "\nFree Trial\nInternal / Demo",
+      "read_only": 1
+    },
+    {
+      "fieldname": "exception_approved_by",
+      "fieldtype": "Link",
+      "label": "Approved By",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "exception_approved_on",
+      "fieldtype": "Datetime",
+      "label": "Approved On",
+      "read_only": 1
+    },
+    {
+      "fieldname": "exception_column",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "exception_note",
+      "fieldtype": "Small Text",
+      "label": "Reason",
+      "read_only": 1
     }
   ],
   "permissions": [

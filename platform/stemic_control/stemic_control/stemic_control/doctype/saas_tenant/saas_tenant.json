@@ -20,7 +20,12 @@
     "subscription",
     "notes",
     "sb_site",
-    "site_admin_password"
+    "site_admin_password",
+    "approval_section",
+    "approved_by",
+    "approved_on",
+    "approval_column",
+    "approval_note"
   ],
   "fields": [
     {
@@ -56,7 +61,7 @@
       "fieldtype": "Select",
       "fieldname": "status",
       "label": "Status",
-      "options": "Draft\nPending\nProvisioning\nActive\nSuspended\nFailed",
+      "options": "Draft\nPending Approval\nApproved\nRejected\nPending\nProvisioning\nActive\nSuspended\nFailed",
       "default": "Draft",
       "read_only": 1
     },
@@ -100,6 +105,36 @@
       "read_only": 1,
       "no_copy": 1,
       "print_hide": 1
+    },
+    {
+      "fieldname": "approval_section",
+      "fieldtype": "Section Break",
+      "label": "Approval",
+      "collapsible": 1,
+      "depends_on": "eval:doc.approved_on || doc.status == 'Rejected'"
+    },
+    {
+      "fieldname": "approved_by",
+      "fieldtype": "Link",
+      "label": "Approved By",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "approved_on",
+      "fieldtype": "Datetime",
+      "label": "Approved On",
+      "read_only": 1
+    },
+    {
+      "fieldname": "approval_column",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "approval_note",
+      "fieldtype": "Small Text",
+      "label": "Approval / Rejection Note",
+      "read_only": 1
     }
   ],
   "permissions": [

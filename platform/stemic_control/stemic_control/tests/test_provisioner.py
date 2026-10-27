@@ -11,10 +11,14 @@ try:
 except ImportError:
     from frappe.tests.utils import FrappeTestCase as TestCase
 
+from frappe.utils import get_bench_path
+
 from stemic_control import api, provisioner
+from stemic_control.tests.helpers import make_eligible, remove_school
 
 CONF = {"stemic_platform_domain": "stemic.test", "stemic_local_provisioner": 1, "stemic_db_root_password": "root-secret-123",
-        "stemic_site_domain": "localhost"}
+        "stemic_site_domain": "localhost", "stemic_provision_environment": "development",
+        "stemic_provision_allowed_benches": [get_bench_path()]}
 LISTED = "frappe     16.0.0 version-16\nerpnext    16.0.0 version-16\nschool_erp 1.0.0   main\n"
 
 
@@ -27,6 +31,7 @@ class TestProvisioner(TestCase):
         self._enqueue.start()
         self.slug = "prov-" + frappe.generate_hash(length=6).lower()
         api.register_tenant("Provisioned School", self.slug, "head@prov.test")
+        make_eligible(self.slug)
         api.request_domain(self.slug, f"{self.slug}.stemic.test")
         self.job = api.queue_provisioning(self.slug, "prov-" + frappe.generate_hash(length=12))
 
@@ -35,10 +40,7 @@ class TestProvisioner(TestCase):
         self._conf.stop()
         # provisioner.run commits, so this school would outlive the test; left Queued, a real scheduler on the same
         # site (with the local provisioner on) would later build an actual prov-* site for it
-        frappe.db.rollback()
-        for dt, f in (("SaaS Provisioning Job", "tenant"), ("SaaS Domain", "tenant"), ("SaaS Tenant", "name")):
-            frappe.db.delete(dt, {f: self.slug})
-        frappe.db.commit()
+        remove_school(self.slug)
 
     def cli(self, fail_new_site=False):
         calls = []
@@ -85,11 +87,20 @@ class TestProvisioner(TestCase):
 
     def test_secrets_are_scrubbed_from_command_output(self):
         result = SimpleNamespace(stdout="Access denied using password root-secret-123", stderr="", returncode=1)
-        with patch("subprocess.run", return_value=result):
-            with self.assertRaises(provisioner.ProvisioningError) as caught:
-                provisioner._frappe_cli("new-site", "x.localhost", secrets_=("root-secret-123",))
+        frappe.flags.stemic_cli_in_tests = True  # subprocess.run is mocked below; nothing real runs
+        try:
+            with patch("subprocess.run", return_value=result):
+                with self.assertRaises(provisioner.ProvisioningError) as caught:
+                    provisioner._frappe_cli("new-site", "x.localhost", secrets_=("root-secret-123",))
+        finally:
+            frappe.flags.stemic_cli_in_tests = False
         self.assertNotIn("root-secret-123", str(caught.exception))
         self.assertIn("********", str(caught.exception))
+
+    def test_tests_cannot_run_the_real_cli(self):
+        with patch("subprocess.run") as run:
+            self.assertRaises(provisioner.ProvisioningError, provisioner._frappe_cli, "new-site", "x.localhost")
+        run.assert_not_called()
 
     def test_demo_schools_are_never_provisioned(self):
         frappe.db.set_value("SaaS Tenant", self.slug, "notes", provisioner.DEMO_NOTE)

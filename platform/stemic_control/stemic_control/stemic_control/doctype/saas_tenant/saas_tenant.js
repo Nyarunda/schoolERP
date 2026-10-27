@@ -1,4 +1,4 @@
-const TENANT_COLORS_FORM = { Draft: "gray", Pending: "orange", Provisioning: "blue", Active: "green", Suspended: "red", Failed: "red" };
+const TENANT_COLORS_FORM = { Draft: "gray", "Pending Approval": "yellow", Approved: "cyan", Rejected: "red", Pending: "orange", Provisioning: "blue", Active: "green", Suspended: "red", Failed: "red" };
 
 frappe.ui.form.on("SaaS Tenant", {
     refresh(frm) {
@@ -14,7 +14,8 @@ frappe.ui.form.on("SaaS Tenant", {
                     setTimeout(() => frm.reload_doc(), 4000);
                 }), __("Actions"));
         }
-        if (["Draft", "Failed"].includes(frm.doc.status)) {
+        approval_actions(frm);
+        if (["Approved", "Failed"].includes(frm.doc.status) && frm.doc.approved_on) {
             frm.add_custom_button(frm.doc.status === "Failed" ? __("Retry Provisioning") : __("Queue Provisioning"), () =>
                 frappe.call({
                     method: "stemic_control.api.queue_provisioning",
@@ -40,6 +41,31 @@ frappe.ui.form.on("SaaS Tenant", {
         }
     },
 });
+
+// Draft -> Pending Approval -> Approved: who may move the school on, and why it cannot be provisioned yet
+function approval_actions(frm) {
+    const act = (label, method, args, message) => frm.add_custom_button(label, () =>
+        frappe.call({ method: `stemic_control.onboarding.${method}`, args: { tenant: frm.doc.name, ...args }, freeze: true })
+            .then(() => { frappe.show_alert({ message, indicator: "green" }); frm.reload_doc(); }), __("Approval"));
+    const ask = (label, method, field, message) => frm.add_custom_button(label, () =>
+        frappe.prompt({ fieldname: field, fieldtype: "Small Text", label: field === "reason" ? __("Reason") : __("Note"),
+                        reqd: field === "reason" }, (values) =>
+            frappe.call({ method: `stemic_control.onboarding.${method}`, args: { tenant: frm.doc.name, ...values }, freeze: true })
+                .then(() => { frappe.show_alert({ message, indicator: "green" }); frm.reload_doc(); }), label), __("Approval"));
+    if (frm.doc.status === "Draft" || (frm.doc.status === "Failed" && !frm.doc.approved_on)) {
+        act(__("Submit for Approval"), "submit_for_approval", {}, __("Sent for approval"));
+    }
+    if (frm.doc.status === "Pending Approval") ask(__("Approve"), "approve_tenant", "note", __("Approved"));
+    if (["Pending Approval", "Approved", "Failed"].includes(frm.doc.status)) ask(__("Reject"), "reject_tenant", "reason", __("Rejected"));
+    if (["Approved", "Failed", "Pending Approval"].includes(frm.doc.status)) {
+        frappe.xcall("stemic_control.onboarding.status", { tenant: frm.doc.name }).then((s) => {
+            const problems = [...s.problems, ...(s.environment_problem ? [s.environment_problem] : [])];
+            if (!problems.length) return frm.set_intro(__("Ready to provision ({0}).", [__(s.basis)]), "green");
+            frm.set_intro(`<b>${__("Not ready to provision")}</b><ul style="margin:6px 0 0">${problems.map((p) =>
+                `<li>${frappe.utils.escape_html(p)}</li>`).join("")}</ul>`, "orange");
+        });
+    }
+}
 
 // Pending / Provisioning: say what is happening and refresh until it settles; Failed: show why
 function show_progress(frm) {

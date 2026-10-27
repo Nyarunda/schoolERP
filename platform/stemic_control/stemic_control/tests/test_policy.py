@@ -20,7 +20,10 @@ class TestPolicy(unittest.TestCase):
 
     def test_transitions(self):
         t = policy.TENANT_TRANSITIONS
-        self.assertTrue(policy.can_move(t, "Draft", "Pending"))
+        self.assertTrue(policy.can_move(t, "Draft", "Pending Approval"))
+        self.assertFalse(policy.can_move(t, "Draft", "Pending"))  # no site job before an operator approves
+        self.assertFalse(policy.can_move(t, "Pending Approval", "Pending"))
+        self.assertEqual(policy.TENANT_TRANSITIONS["Rejected"], {"Draft"})
         self.assertTrue(policy.can_move(t, "Active", "Active"))
         self.assertFalse(policy.can_move(t, "Draft", "Active"))  # only a finished job activates a school
         self.assertFalse(policy.can_move(t, "Suspended", "Draft"))

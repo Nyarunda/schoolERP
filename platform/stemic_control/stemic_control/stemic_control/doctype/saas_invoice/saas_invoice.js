@@ -39,26 +39,34 @@ function etims_button(frm) {
     });
 }
 
-// The card at the top: what is owed and by when, how far it is paid, the period it covers and the payments so far
-function render_summary(frm) {
+// The card at the top: what is owed and by when, how far it is paid, the period it covers and the payments so far.
+// Every figure comes from billing.invoice_summary (the ledger on the server); nothing is added up here.
+async function render_summary(frm) {
     const $box = frm.get_field("summary_html").$wrapper;
     if (frm.is_new()) return $box.empty();
-    const d = frm.doc, esc = frappe.utils.escape_html, money = stemic_control.money, day = (x) => frappe.datetime.str_to_user(x);
-    const total = flt(d.total), paid = flt(d.paid_amount), owed = flt(d.outstanding);
-    const share = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+    const d = frm.doc, name = d.name, esc = frappe.utils.escape_html, money = stemic_control.money, day = (x) => frappe.datetime.str_to_user(x);
+    const s = await frappe.xcall("stemic_control.billing.invoice_summary", { invoice: name }, "GET");
+    if (frm.doc.name !== name) return;  // moved to another invoice meanwhile
     const left = d.due_date ? frappe.datetime.get_diff(d.due_date, frappe.datetime.get_today()) : null;
     const tone = { Paid: "green", Overdue: "red", Cancelled: "gray", Draft: "gray" }[d.status] || "orange";
 
     // the one line that says where this invoice stands
     const headline = d.docstatus === 0 ? __("Draft: submit it to send it to the school")
         : d.docstatus === 2 ? __("Cancelled")
-        : owed <= 0 ? __("Paid in full")
-        : d.status === "Overdue" ? __("{0} overdue by {1} days", [money(owed), Math.abs(left)])
-        : left === 0 ? __("{0} due today", [money(owed)])
-        : __("{0} due in {1} days", [money(owed), left]);
+        : s.outstanding <= 0 ? __("Paid in full")
+        : d.status === "Overdue" ? __("{0} overdue by {1} days", [money(s.outstanding), Math.abs(left)])
+        : left === 0 ? __("{0} due today", [money(s.outstanding)])
+        : __("{0} due in {1} days", [money(s.outstanding), left]);
 
     const fact = (label, value) => `<div style="min-width:0"><div class="text-muted small">${label}</div>
         <div style="font-weight:600;overflow-wrap:anywhere">${value}</div></div>`;
+    const payments = s.payments.length ? `<div class="text-muted small" style="margin-bottom:4px">${__("Payments")}</div>` + s.payments.map((p) => `
+            <a href="/app/saas-payment/${encodeURIComponent(p.name)}" style="display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;
+               padding:6px 0;border-top:1px solid var(--border-color);color:inherit;text-decoration:none;${p.cancelled ? "opacity:.55" : ""}">
+                <span>${day(p.payment_date)} · ${esc(__(p.mode || ""))}${p.reference ? ` · <code>${esc(p.reference)}</code>` : ""}</span>
+                <span style="font-weight:600;${p.cancelled ? "text-decoration:line-through" : ""}">${money(p.amount)}${p.cancelled ? ` · ${__("cancelled, not counted")}` : ""}</span>
+            </a>`).join("")
+        : d.docstatus === 1 ? `<div class="text-muted small">${__("No payments recorded yet.")}</div>` : "";
     $box.html(`
         <div class="saas-invoice-summary" style="border:1px solid var(--border-color);border-radius:var(--border-radius-md);padding:14px 16px;margin-bottom:8px">
             <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline">
@@ -67,33 +75,18 @@ function render_summary(frm) {
             </div>
             ${d.docstatus === 1 ? `
             <div style="margin:12px 0 6px;height:8px;border-radius:4px;background:var(--gray-100);overflow:hidden"
-                 role="progressbar" aria-valuenow="${share}" aria-valuemin="0" aria-valuemax="100" aria-label="${__("Paid")}">
-                <div style="height:100%;width:${share}%;background:var(--${share >= 100 ? "green" : "blue"}-500)"></div>
+                 role="progressbar" aria-valuenow="${s.paid_percent}" aria-valuemin="0" aria-valuemax="100" aria-label="${__("Paid")}">
+                <div style="height:100%;width:${s.paid_percent}%;background:var(--${s.paid_percent >= 100 ? "green" : "blue"}-500)"></div>
             </div>
-            <div class="text-muted small">${__("{0} of {1} paid ({2}%)", [money(paid), money(total), share])}</div>` : ""}
+            <div class="text-muted small">${__("{0} of {1} paid ({2}%)", [money(s.paid), money(s.total), s.paid_percent])}</div>` : ""}
+            ${s.matches_invoice ? "" : `<div class="small" style="margin-top:6px;color:var(--red-600)">${
+                __("The payments do not add up to the invoice's paid amount ({0}). Reload; if it persists, report it.", [money(d.paid_amount)])}</div>`}
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px 20px;margin-top:14px">
-                ${fact(__("Total"), money(total))}
-                ${fact(__("Still owed"), money(d.docstatus === 1 ? owed : total))}
+                ${fact(__("Total"), money(s.total))}
+                ${fact(__("Still owed"), money(s.outstanding))}
                 ${fact(__("Period"), `${day(d.period_start)} – ${day(d.period_end)}`)}
                 ${fact(__("Plan"), `${esc(d.plan || "")}${d.months ? ` · ${__("{0} months", [d.months])}` : ""}`)}
             </div>
-            <div class="saas-invoice-payments" style="margin-top:14px"></div>
+            <div style="margin-top:14px">${payments}</div>
         </div>`);
-    if (d.docstatus !== 0) load_payments(frm, $box.find(".saas-invoice-payments"));
-}
-
-function load_payments(frm, $list) {
-    const esc = frappe.utils.escape_html, money = stemic_control.money;
-    frappe.db.get_list("SaaS Payment", {
-        filters: { invoice: frm.doc.name, docstatus: ["!=", 0] },
-        fields: ["name", "payment_date", "mode", "reference", "amount", "docstatus"], order_by: "payment_date desc, creation desc", limit: 50,
-    }).then((rows) => {
-        if (!rows.length) return $list.html(`<div class="text-muted small">${__("No payments recorded yet.")}</div>`);
-        $list.html(`<div class="text-muted small" style="margin-bottom:4px">${__("Payments")}</div>` + rows.map((p) => `
-            <a href="/app/saas-payment/${encodeURIComponent(p.name)}" style="display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:space-between;
-               padding:6px 0;border-top:1px solid var(--border-color);color:inherit;text-decoration:none;${p.docstatus === 2 ? "opacity:.55" : ""}">
-                <span>${frappe.datetime.str_to_user(p.payment_date)} · ${esc(__(p.mode || ""))}${p.reference ? ` · <code>${esc(p.reference)}</code>` : ""}</span>
-                <span style="font-weight:600;${p.docstatus === 2 ? "text-decoration:line-through" : ""}">${money(p.amount)}${p.docstatus === 2 ? ` · ${__("cancelled")}` : ""}</span>
-            </a>`).join(""));
-    });
 }

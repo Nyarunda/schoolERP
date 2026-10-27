@@ -7,6 +7,8 @@
   "track_changes": 1,
   "engine": "InnoDB",
   "field_order": [
+    "summary_html",
+    "details_section",
     "tenant",
     "school_name",
     "subscription",
@@ -34,6 +36,16 @@
   ],
   "fields": [
     {
+      "fieldname": "summary_html",
+      "fieldtype": "HTML",
+      "label": "Summary"
+    },
+    {
+      "fieldname": "details_section",
+      "fieldtype": "Section Break",
+      "label": "Invoice"
+    },
+    {
       "fieldname": "tenant",
       "fieldtype": "Link",
       "label": "School",
@@ -47,7 +59,8 @@
       "label": "School Name",
       "fetch_from": "tenant.school_name",
       "read_only": 1,
-      "in_list_view": 1
+      "in_list_view": 1,
+      "hidden": 1
     },
     {
       "fieldname": "subscription",
@@ -97,7 +110,8 @@
       "read_only": 1,
       "in_list_view": 1,
       "in_standard_filter": 1,
-      "no_copy": 1
+      "no_copy": 1,
+      "hidden": 1
     },
     {
       "fieldname": "period_section",
@@ -236,7 +250,7 @@
     }
   ],
   "creation": "2026-10-26 18:00:00.000000",
-  "modified": "2026-10-26 18:00:00.000000",
+  "modified": "2026-10-27 12:30:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator",
   "autoname": "format:SINV-{YYYY}-{#####}",

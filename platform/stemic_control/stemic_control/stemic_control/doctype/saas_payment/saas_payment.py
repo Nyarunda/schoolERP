@@ -1,6 +1,6 @@
 from frappe.model.document import Document
 
-from stemic_control import billing
+from stemic_control import accounting, billing
 
 
 class SaaSPayment(Document):
@@ -12,9 +12,11 @@ class SaaSPayment(Document):
 
     def on_submit(self):
         billing.apply_payment(self)
+        accounting.post_payment(self)
 
     def before_cancel(self):
         billing.lock_invoice(self.invoice)
 
     def on_cancel(self):
         billing.reverse_payment(self)
+        accounting.cancel_payment(self)

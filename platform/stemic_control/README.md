@@ -102,6 +102,33 @@ databases, and the file holding the license signing key. In development they can
    read and drop every database on the server, including other applications'. One limit: MariaDB's CREATE USER
    privilege, which every new school's login needs, also lets it drop other logins (not read their data).
 
+## Stemic's books (optional)
+
+Subscription invoices, payments and agents' commission can be posted to ERPNext on the admin site, so Stemic's own
+accounts (P&L, VAT, receivables, agents payable) come from the Control Center without retyping (`stemic_control/accounting.py`):
+
+| Control Center | ERPNext | Debit | Credit |
+| --- | --- | --- | --- |
+| SaaS Invoice submitted | Sales Invoice (customer = the school, item = the plan) | Debtors | Deferred Subscription Income, Output VAT |
+| ... each month of its period | Process Deferred Accounting (ERPNext's monthly job) | Deferred Subscription Income | Subscription Income - <plan> |
+| SaaS Payment submitted | Payment Entry against that invoice | M-Pesa Paybill / Stemic Bank / Cash (by mode) | Debtors |
+| Commission earned | Journal Entry | Agent Commission | Agent Commission Payable (the agent, as supplier) |
+| Commission paid out | Journal Entry (Bank Entry) | Agent Commission Payable | M-Pesa Paybill / Stemic Bank |
+
+Plan prices include VAT: with Stemic Tax Settings on Standard Rated, 16/116 of each invoice goes to Output VAT; Exempt
+or Zero Rated invoices carry none. Each posting is in the same transaction as its Control Center record, so the books
+never disagree with it: if ERPNext refuses (no fiscal year, a closed period, another currency), the invoice or payment
+is refused with that reason. Cancelling a payment or invoice cancels its entry. Invoices raised before posting was
+switched on are not back-posted (the Setup Check counts them).
+
+To switch it on:
+
+    bench --site <admin site> install-app erpnext       # then finish ERPNext's setup wizard: company, Kenya, KES, fiscal year
+
+then Stemic Settings > Accounting: enter the company's exact name, save, **Set Up Accounts** (creates the accounts,
+one income account and item per plan, the VAT template, the modes of payment and monthly deferred processing; safe to
+run again), and tick **Post to accounts**. Check the bank and M-Pesa accounts it created against your real ones.
+
 ## APIs
 
 Authenticated platform admin only:

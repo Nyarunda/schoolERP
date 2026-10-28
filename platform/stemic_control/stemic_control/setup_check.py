@@ -174,6 +174,8 @@ def _business():
 def status():
     if frappe.session.user == "Guest" or not ({"System Manager", "Stemic Platform Admin"} & set(frappe.get_roles())):
         frappe.throw("Platform administrator access required", frappe.PermissionError)
-    items = _platform() + _licensing() + _provisioner() + _background() + _business()
+    from stemic_control import accounting
+
+    items = _platform() + _licensing() + _provisioner() + _background() + _business() + accounting.check()
     sources = {key: config.source(key) for key in config.SETTINGS}
     return {"items": items, "ready": all(i["ok"] is not False for i in items), "sources": sources}

@@ -70,6 +70,10 @@ def process_delivery(name):
         return
     try:
         if doc.channel == "SMS":
+            from school_erp.api.communication_policy import reserve_sms
+            if not reserve_sms(settings):
+                frappe.db.set_value(DOCTYPE, name, {"status": "Skipped", "provider_response": "School SMS attempt budget exceeded"})
+                return
             from school_erp.api.messaging import send_sms
             result = send_sms([doc.recipient], doc.message)
             if result.get("skipped"):

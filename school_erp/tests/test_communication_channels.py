@@ -23,7 +23,8 @@ class TestCommunicationChannelControls(unittest.TestCase):
     @patch("school_erp.api.messaging._send_frappe")
     @patch("school_erp.api.messaging.normalize_phone", return_value="254712345678")
     def test_enabled_sms_preserves_existing_provider(self, normalize, provider, get_settings, require):
-        get_settings.return_value = {"enable_sms_notifications": 1, "sms_provider": "Frappe SMS Settings", "country_code": "254"}
+        get_settings.return_value = MagicMock(sms_provider="Frappe SMS Settings", country_code="254")
+        get_settings.return_value.get.return_value = 1
         provider.return_value = {"sent": ["254712345678"], "failed": []}
         result = messaging.send_sms(["0712345678"], "Hello")
         self.assertEqual(result["sent"], ["254712345678"])

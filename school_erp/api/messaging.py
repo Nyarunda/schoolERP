@@ -15,6 +15,8 @@ def send_sms(numbers: list[str], message: str) -> dict:
 	"""Send one message to several numbers. Returns {"sent": [...], "failed": [...]}."""
 	licensing.require("messaging")
 	settings = frappe.get_cached_doc("School Settings")
+	if not settings.get("enable_sms_notifications", 1):
+		return {"sent": [], "failed": [], "skipped": True, "reason": "SMS disabled in School Settings"}
 	clean = sorted({n for n in (normalize_phone(x, settings.country_code) for x in numbers) if n})
 	if not clean:
 		return {"sent": [], "failed": list(numbers)}
@@ -133,6 +135,9 @@ def sms_student(student_doc, template, extra=None):
 def email_student(student_doc, subject, body, attach_statement=True):
 	from school_erp.api.statement import statement_pdf
 
+	settings = frappe.get_cached_doc("School Settings")
+	if not settings.get("enable_email_notifications", 1):
+		return 0
 	contacts = _guardians(student_doc, "email")
 	if not contacts:
 		return 0

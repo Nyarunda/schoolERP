@@ -1,0 +1,67 @@
+{
+ "doctype": "DocType",
+ "name": "School Webhook Endpoint",
+ "module": "School",
+ "autoname": "hash",
+ "engine": "InnoDB",
+ "field_order": [
+  "endpoint_url",
+  "enabled",
+  "event_types",
+  "secret",
+  "max_attempts"
+ ],
+ "fields": [
+  {
+   "fieldname": "endpoint_url",
+   "fieldtype": "Data",
+   "label": "HTTPS Endpoint",
+   "idx": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "idx": 2,
+   "default": "0"
+  },
+  {
+   "fieldname": "event_types",
+   "fieldtype": "Small Text",
+   "label": "Event Types (one per line)",
+   "idx": 3,
+   "reqd": 1
+  },
+  {
+   "fieldname": "secret",
+   "fieldtype": "Password",
+   "label": "Signing Secret",
+   "idx": 4,
+   "reqd": 1
+  },
+  {
+   "fieldname": "max_attempts",
+   "fieldtype": "Int",
+   "label": "Maximum Attempts",
+   "idx": 5,
+   "default": "3"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "create": 1,
+   "write": 1
+  },
+  {
+   "role": "School Admin",
+   "read": 1,
+   "create": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC"
+}

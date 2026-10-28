@@ -1,0 +1,49 @@
+{
+ "doctype": "DocType",
+ "name": "School SMS Usage",
+ "module": "School",
+ "autoname": "field:period_key",
+ "engine": "InnoDB",
+ "field_order": [
+  "period_key",
+  "period_type",
+  "attempt_count"
+ ],
+ "fields": [
+  {
+   "fieldname": "period_key",
+   "fieldtype": "Data",
+   "label": "Period Key",
+   "unique": 1,
+   "reqd": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "period_type",
+   "fieldtype": "Select",
+   "label": "Period Type",
+   "options": "Day\nMonth",
+   "reqd": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "attempt_count",
+   "fieldtype": "Int",
+   "label": "Attempted SMS Recipients",
+   "default": "0",
+   "idx": 3
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1
+  },
+  {
+   "role": "School Admin",
+   "read": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC"
+}

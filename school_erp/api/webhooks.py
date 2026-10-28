@@ -50,7 +50,7 @@ def publish(event_id, event_type, payload):
         if frappe.db.exists(DELIVERY, key):
             continue
         try:
-            frappe.get_doc({"doctype": DELIVERY, "name": key, "endpoint": ep.name,
+            frappe.get_doc({"doctype": DELIVERY, "delivery_key": key, "endpoint": ep.name,
                             "event_id": event_id, "event_type": event_type, "payload": data}).insert(ignore_permissions=True)
         except frappe.DuplicateEntryError:
             continue

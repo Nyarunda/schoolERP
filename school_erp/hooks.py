@@ -98,7 +98,10 @@ scheduler_events = {
 	"cron": {
 		"*/15 4-10 * * 1-6": ["school_erp.api.transport_ops.alert_missing_checkins"],
 		"*/30 15-20 * * 1-5": ["school_erp.api.staff.alert_missing_duty_reports"],
-		"*/5 * * * *": ["school_erp.api.stk.query_stale_requests"],
+		"*/5 * * * *": [
+            "school_erp.api.stk.query_stale_requests",
+            "school_erp.api.notification_delivery.retry_due",
+        ],
 	},
 	"hourly": ["school_erp.api.paybill.retry_pending"],
 }

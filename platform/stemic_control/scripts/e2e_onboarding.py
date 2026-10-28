@@ -248,7 +248,7 @@ def cleanup(frappe):
     site = frappe.db.get_value("SaaS Tenant", s, "canonical_site") or provisioner.site_name(s)
     if provisioner._site_dir_exists(site):
         try:
-            provisioner._frappe_cli("drop-site", site, "--db-root-password", provisioner._root_password(), "--no-backup",
+            provisioner._frappe_cli("drop-site", site, *provisioner._root_args(), "--no-backup",
                                     "--force", timeout=600, secrets_=(provisioner._root_password(),))
             print(f"  dropped {site}")
         except Exception as e:

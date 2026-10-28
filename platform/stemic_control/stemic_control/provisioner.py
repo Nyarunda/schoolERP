@@ -6,7 +6,9 @@ A production provisioner should run on separate infrastructure with its own cred
 
 Admin site_config.json:
     stemic_local_provisioner   1 to enable (nothing runs without it)
-    stemic_db_root_password    MariaDB root password used to create school databases
+    stemic_db_root_password    password of the MariaDB account that creates school databases; with
+    stemic_db_root_username    that account (default root; better a limited one: README, Secrets). Both are
+                               read from the environment first (STEMIC_DB_ROOT_PASSWORD / _USERNAME)
     stemic_site_domain         school sites are "<slug>.<this>"; default "localhost"
     stemic_site_apps           apps installed on each school site; default ["erpnext", "school_erp"]
     stemic_bench_path          bench to create sites in; default: this bench
@@ -56,8 +58,8 @@ def _database_exists(name: str) -> bool:
     """Whether MariaDB already has this database or login (never overwritten: new-site would drop and recreate them)."""
     import MySQLdb
 
-    conn = MySQLdb.connect(host=frappe.conf.db_host or "127.0.0.1", port=int(frappe.conf.db_port or 3306), user="root",
-                           passwd=_root_password(), connect_timeout=10)
+    conn = MySQLdb.connect(host=frappe.conf.db_host or "127.0.0.1", port=int(frappe.conf.db_port or 3306),
+                           user=_root_username(), passwd=_root_password(), connect_timeout=10)
     try:
         cur = conn.cursor()
         cur.execute("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name = %s", (name,))
@@ -77,11 +79,22 @@ def _bench() -> str:
     return config.get("stemic_bench_path") or get_bench_path()
 
 
+def _root_username() -> str:
+    """The MariaDB account that creates school databases: root, or better a limited one (README: Secrets)."""
+    return config.secret("stemic_db_root_username")[0] or "root"
+
+
 def _root_password() -> str:
-    password = frappe.conf.get("stemic_db_root_password") or frappe.conf.get("root_password")
+    password = config.secret("stemic_db_root_password")[0]
     if not password:
-        raise ProvisioningError("Set stemic_db_root_password in the admin site's site_config.json")
+        raise ProvisioningError("Set STEMIC_DB_ROOT_PASSWORD in the workers' environment (or stemic_db_root_password in "
+                                "the admin site's site_config.json)")
     return password
+
+
+def _root_args() -> list[str]:
+    """new-site / drop-site / restore arguments for the database account that creates and drops school databases."""
+    return ["--db-root-username", _root_username(), "--db-root-password", _root_password()]
 
 
 def _frappe_cli(*args, timeout=600, secrets_=()) -> str:
@@ -177,7 +190,7 @@ def run(job: str) -> str:
         if _database_exists(database):
             raise ProvisioningError(f"A database or database login named {database} already exists; refusing to overwrite it")
         password = secrets.token_urlsafe(14)
-        args = ["new-site", site, "--db-root-password", root, "--admin-password", password, "--db-name", database]
+        args = ["new-site", site, *_root_args(), "--admin-password", password, "--db-name", database]
         scope = frappe.conf.get("stemic_mariadb_user_host_login_scope")  # e.g. "%" when MariaDB runs in a container
         if scope:
             args += ["--mariadb-user-host-login-scope", scope]
@@ -233,7 +246,7 @@ def _drop_partial_site(site) -> str:
     if not _site_dir_exists(site):
         return ""
     try:
-        _frappe_cli("drop-site", site, "--db-root-password", _root_password(), "--no-backup", "--force",
+        _frappe_cli("drop-site", site, *_root_args(), "--no-backup", "--force",
                     timeout=600, secrets_=(_root_password(),))
         return f"\n\nThe partly created site {site} was removed."
     except Exception as e:

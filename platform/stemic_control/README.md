@@ -76,6 +76,32 @@ Three things cover that:
 Keep each school's `encryption_key` (in its `site_config.json`) somewhere other than its server: the backup does not
 contain it, and without it a restored school's stored passwords and secrets are unreadable.
 
+## Secrets (production)
+
+Two secrets let the control plane act on the server: the password of the MariaDB account that creates school
+databases, and the file holding the license signing key. In development they can sit in the admin site's
+`site_config.json`; in production keep them out of it (every bench command and every backup can read that file):
+
+1. **A file only the bench's user can read**, outside the bench:
+
+       sudo install -d -m 700 -o <user> /etc/stemic
+       sudo install -m 600 -o <user> /dev/null /etc/stemic/secrets.env
+
+   with
+
+       STEMIC_DB_ROOT_USERNAME=stemic_provisioner
+       STEMIC_DB_ROOT_PASSWORD=<its password>
+       STEMIC_LICENSE_PRIVATE_KEY_FILE=/etc/stemic/vendor.key      (also mode 600)
+
+2. **Load it into the bench's processes.** With supervisor (from `bench setup production`), add to each program in
+   `config/supervisor.conf`: `environment=` with those variables, or start supervisord with them in its environment;
+   with systemd, `EnvironmentFile=/etc/stemic/secrets.env`. The environment wins over `site_config.json`
+   (`stemic_control.config.secret`), and the Setup Check shows where each secret comes from.
+3. **A limited database account instead of root.** `scripts/provisioner_account.sql` creates `stemic_provisioner`,
+   which can create and drop only school databases (`sch_...`) and restore-check copies, and their logins. Root can
+   read and drop every database on the server, including other applications'. One limit: MariaDB's CREATE USER
+   privilege, which every new school's login needs, also lets it drop other logins (not read their data).
+
 ## APIs
 
 Authenticated platform admin only:

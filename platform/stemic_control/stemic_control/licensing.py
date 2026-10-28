@@ -13,7 +13,7 @@ import json
 import frappe
 from frappe.utils import getdate, nowdate
 
-from stemic_control import policy
+from stemic_control import config, policy
 
 
 def _b64e(data: bytes) -> str:
@@ -44,11 +44,11 @@ def decode(key: str) -> dict | None:
 
 
 def can_sign() -> bool:
-    return bool(frappe.conf.get("stemic_license_private_key_file"))
+    return bool(config.secret("stemic_license_private_key_file")[0])
 
 
 def _private_key() -> str:
-    path = frappe.conf.get("stemic_license_private_key_file")
+    path = config.secret("stemic_license_private_key_file")[0]
     if not path:
         frappe.throw("License signing is not set up: put the vendor private key in a file and set "
                      "stemic_license_private_key_file in this site's site_config.json", frappe.ValidationError)

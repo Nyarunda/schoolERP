@@ -2,9 +2,10 @@
  "doctype": "DocType",
  "name": "School Webhook Delivery",
  "module": "School",
- "autoname": "hash",
+ "autoname": "field:delivery_key",
  "engine": "InnoDB",
  "field_order": [
+  "delivery_key",
   "endpoint",
   "event_id",
   "event_type",
@@ -17,10 +18,19 @@
  ],
  "fields": [
   {
+   "fieldname": "delivery_key",
+   "fieldtype": "Data",
+   "label": "Delivery Key",
+   "unique": 1,
+   "reqd": 1,
+   "read_only": 1,
+   "idx": 1
+  },
+  {
    "fieldname": "endpoint",
    "fieldtype": "Link",
    "label": "Endpoint",
-   "idx": 1,
+   "idx": 2,
    "options": "School Webhook Endpoint",
    "reqd": 1
   },
@@ -28,28 +38,28 @@
    "fieldname": "event_id",
    "fieldtype": "Data",
    "label": "Event ID",
-   "idx": 2,
+   "idx": 3,
    "reqd": 1
   },
   {
    "fieldname": "event_type",
    "fieldtype": "Data",
    "label": "Event Type",
-   "idx": 3,
+   "idx": 4,
    "reqd": 1
   },
   {
    "fieldname": "payload",
    "fieldtype": "Long Text",
    "label": "Payload",
-   "idx": 4,
+   "idx": 5,
    "reqd": 1
   },
   {
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "idx": 5,
+   "idx": 6,
    "options": "Queued\nSending\nAccepted\nRetrying\nFailed\nUnknown",
    "default": "Queued"
   },
@@ -57,25 +67,25 @@
    "fieldname": "attempts",
    "fieldtype": "Int",
    "label": "Attempts",
-   "idx": 6
+   "idx": 7
   },
   {
    "fieldname": "next_attempt_at",
    "fieldtype": "Datetime",
    "label": "Next Attempt At",
-   "idx": 7
+   "idx": 8
   },
   {
    "fieldname": "response_code",
    "fieldtype": "Int",
    "label": "Response Code",
-   "idx": 8
+   "idx": 9
   },
   {
    "fieldname": "error",
    "fieldtype": "Small Text",
    "label": "Error",
-   "idx": 9
+   "idx": 10
   }
  ],
  "permissions": [

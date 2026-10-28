@@ -1,7 +1,7 @@
 import frappe
 from frappe.model.document import Document
 
-from stemic_control import billing
+from stemic_control import accounting, billing
 
 
 class SaaSInvoice(Document):
@@ -13,6 +13,7 @@ class SaaSInvoice(Document):
 
     def on_submit(self):
         billing.refresh_invoice(self.name)
+        accounting.post_invoice(self)
 
     def before_cancel(self):
         billing.lock_invoice(self.name)
@@ -24,3 +25,4 @@ class SaaSInvoice(Document):
 
     def on_cancel(self):
         self.db_set("status", "Cancelled")
+        accounting.cancel_invoice(self)

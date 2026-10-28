@@ -16,6 +16,7 @@
     "currency",
     "mode",
     "reference",
+    "payment_entry",
     "notes",
     "amended_from",
     "reference_key"
@@ -111,6 +112,14 @@
       "hidden": 1,
       "read_only": 1,
       "no_copy": 1
+    },
+    {
+      "fieldname": "payment_entry",
+      "fieldtype": "Data",
+      "label": "Payment Entry (accounts)",
+      "read_only": 1,
+      "no_copy": 1,
+      "description": "The ERPNext Payment Entry this was posted as."
     }
   ],
   "permissions": [

@@ -28,7 +28,11 @@
     "renewal_notice_days",
     "payment_instructions",
     "commission_tab",
-    "commission_basis"
+    "commission_basis",
+    "accounting_tab",
+    "post_to_accounts",
+    "accounting_company",
+    "accounting_html"
   ],
   "fields": [
     {
@@ -155,6 +159,31 @@
       "options": "Every payment\nFirst payment only",
       "default": "Every payment",
       "description": "Each agent's rate is on their agent record."
+    },
+    {
+      "fieldname": "accounting_tab",
+      "fieldtype": "Tab Break",
+      "label": "Accounting"
+    },
+    {
+      "fieldname": "post_to_accounts",
+      "fieldtype": "Check",
+      "label": "Post to accounts",
+      "default": "0",
+      "description": "Post each subscription invoice, payment and agent commission to ERPNext on this site, as Sales Invoices, Payment Entries and Journal Entries. Needs ERPNext installed here and Set Up Accounts run."
+    },
+    {
+      "fieldname": "accounting_company",
+      "fieldtype": "Data",
+      "label": "Company",
+      "depends_on": "post_to_accounts",
+      "mandatory_depends_on": "post_to_accounts",
+      "description": "The ERPNext company that keeps Stemic's books, e.g. Stemic Schools Ltd."
+    },
+    {
+      "fieldname": "accounting_html",
+      "fieldtype": "HTML",
+      "label": "Accounts used"
     }
   ],
   "permissions": [

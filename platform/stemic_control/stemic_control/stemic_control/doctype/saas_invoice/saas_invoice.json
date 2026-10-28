@@ -30,6 +30,7 @@
     "paid_amount",
     "outstanding",
     "currency",
+    "sales_invoice",
     "notes_section",
     "description",
     "amended_from"
@@ -213,6 +214,14 @@
       "read_only": 1,
       "hidden": 1,
       "no_copy": 1
+    },
+    {
+      "fieldname": "sales_invoice",
+      "fieldtype": "Data",
+      "label": "Sales Invoice (accounts)",
+      "read_only": 1,
+      "no_copy": 1,
+      "description": "The ERPNext Sales Invoice this was posted as (Stemic Settings > Accounting)."
     }
   ],
   "permissions": [

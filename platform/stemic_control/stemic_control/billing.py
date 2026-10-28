@@ -10,7 +10,7 @@ the end date.
 import frappe
 from frappe.utils import add_days, add_months, flt, getdate, nowdate
 
-from stemic_control import policy
+from stemic_control import accounting, policy
 
 OPEN = ("Unpaid", "Partly Paid", "Overdue")
 
@@ -246,6 +246,7 @@ def reverse_payment(doc):
             frappe.throw(f"Commission {name} on this payment was already paid to the agent. Recover it first, then cancel.",
                          frappe.ValidationError)
         frappe.db.set_value("SaaS Commission", name, "status", "Cancelled")
+        accounting.cancel_commission(name)
     inv = refresh_invoice(doc.invoice)
     if inv.status != "Paid":
         sub = frappe.get_doc("SaaS Subscription", inv.subscription)
@@ -284,11 +285,12 @@ def earn_commission(payment, inv):
         "amount": flt(flt(payment.amount) * flt(agent.commission_rate) / 100, 2), "status": "Due",
     })
     com.insert(ignore_permissions=True)
+    accounting.post_commission(com.name)
     return com.name
 
 
 @frappe.whitelist(methods=["POST"])
-def pay_commissions(agent, reference, paid_on=None):
+def pay_commissions(agent, reference, paid_on=None, mode="M-Pesa"):
     """Mark all of an agent's due commission as paid out in one payout (e.g. one M-Pesa transfer)."""
     _admin()
     if not (reference or "").strip():
@@ -298,6 +300,7 @@ def pay_commissions(agent, reference, paid_on=None):
         frappe.db.set_value("SaaS Commission", name, {"status": "Paid", "paid_on": paid_on or nowdate(),
                                                      "paid_reference": reference.strip()})
     total = flt(sum(frappe.get_all("SaaS Commission", filters={"name": ("in", names or [""])}, pluck="amount")), 2)
+    accounting.post_payout(agent, names, reference.strip(), paid_on or nowdate(), mode)
     return {"paid": len(names), "total": total}
 
 

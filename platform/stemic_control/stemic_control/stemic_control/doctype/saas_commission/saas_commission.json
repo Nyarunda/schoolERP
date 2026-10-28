@@ -20,7 +20,9 @@
     "status",
     "paid_section",
     "paid_on",
-    "paid_reference"
+    "paid_reference",
+    "journal_entry",
+    "payout_entry"
   ],
   "fields": [
     {
@@ -117,6 +119,22 @@
       "fieldtype": "Data",
       "label": "Payout Reference",
       "read_only": 1
+    },
+    {
+      "fieldname": "journal_entry",
+      "fieldtype": "Data",
+      "label": "Journal Entry (accounts)",
+      "read_only": 1,
+      "no_copy": 1,
+      "description": "Commission earned, posted to the accounts."
+    },
+    {
+      "fieldname": "payout_entry",
+      "fieldtype": "Data",
+      "label": "Payout entry (accounts)",
+      "read_only": 1,
+      "no_copy": 1,
+      "description": "The payout that settled it."
     }
   ],
   "permissions": [

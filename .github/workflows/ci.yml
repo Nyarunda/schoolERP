@@ -102,6 +102,17 @@ jobs:
               --mariadb-user-host-login-scope='%' --install-app stemic_control
           bench --site admin.localhost set-config allow_tests true
           bench --site admin.localhost run-tests --app stemic_control 2>&1 | tee -a ~/tests.log
+      - name: Stemic's books (the Control Center with ERPNext on its site)
+        run: |
+          set -o pipefail
+          cd ~/frappe-bench
+          bench new-site books.localhost --db-root-password root --admin-password admin \
+              --mariadb-user-host-login-scope='%' --install-app erpnext --install-app stemic_control
+          bench --site books.localhost set-config allow_tests true
+          # installed together, Stemic Settings takes ERPNext's install-time currency; the books are in KES
+          bench --site books.localhost execute frappe.db.set_single_value --args '["Stemic Settings", "currency", "KES"]'
+          bench --site books.localhost execute frappe.db.commit
+          bench --site books.localhost run-tests --module stemic_control.tests.test_accounting 2>&1 | tee -a ~/tests.log
       - name: Billing concurrency (two real clients per scenario against MariaDB)
         run: |
           set -o pipefail

@@ -31,7 +31,8 @@
     "approval_column",
     "approval_note",
     "notes_section",
-    "notes"
+    "notes",
+    "erp_customer"
   ],
   "fields": [
     {
@@ -176,6 +177,14 @@
       "fieldtype": "Small Text",
       "fieldname": "notes",
       "label": "Notes"
+    },
+    {
+      "fieldname": "erp_customer",
+      "fieldtype": "Data",
+      "label": "Customer (accounts)",
+      "read_only": 1,
+      "no_copy": 1,
+      "description": "The ERPNext Customer this school is billed as."
     }
   ],
   "permissions": [

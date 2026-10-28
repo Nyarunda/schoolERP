@@ -101,6 +101,7 @@ scheduler_events = {
 		"*/5 * * * *": [
             "school_erp.api.stk.query_stale_requests",
             "school_erp.api.notification_delivery.retry_due",
+            "school_erp.api.webhooks.retry_due",
         ],
 	},
 	"hourly": ["school_erp.api.paybill.retry_pending"],

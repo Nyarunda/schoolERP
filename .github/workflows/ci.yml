@@ -131,6 +131,12 @@ jobs:
           bench --site admin.localhost set-config -p stemic_provision_allowed_benches "[\"$HOME/frappe-bench\"]"
           cd sites
           ../env/bin/python ../apps/stemic_control/scripts/e2e_onboarding.py admin.localhost 2>&1 | tee -a ~/tests.log
+      - name: Backup restores (back up the school test site, restore it into a throwaway site, compare)
+        run: |
+          set -o pipefail
+          cd ~/frappe-bench/sites
+          # uses the admin site's database root password, set in the step above
+          ../env/bin/python ../apps/stemic_control/scripts/restore_check.py admin.localhost test.localhost 2>&1 | tee -a ~/tests.log
       - name: Show errors as annotations
         if: failure()
         run: |

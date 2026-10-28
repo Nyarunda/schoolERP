@@ -258,6 +258,10 @@ def perform_operation(operation):
             message = message.replace(secret, "********")
         _set(operation, {"status": "Failed", "finished_on": frappe.utils.now_datetime(), "summary": message.splitlines()[0][:500]
                          if message else "Failed", "output": message[-20000:]})
+        from stemic_control.alerts import notify_admins
+
+        notify_admins(f"{action} failed on {site}", frappe.utils.escape_html(message.splitlines()[0][:500]) if message else "",
+                      "SaaS Site Operation", operation)
         return "Failed"
     if password:
         from frappe.utils.password import set_encrypted_password

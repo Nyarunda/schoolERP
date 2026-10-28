@@ -172,6 +172,7 @@ def run(job: str) -> str:
             _set_tenant(tenant.name, "Approved" if onboarding.approved(tenant) else "Draft")
         frappe.db.commit()
         frappe.log_error(title=f"Provisioning refused for {tenant.name}", message=message)
+        _alert(job, f"The site for {tenant.school_name} was refused", "; ".join(refused))
         return "refused"
 
     site = site_name(tenant.slug)
@@ -207,6 +208,7 @@ def run(job: str) -> str:
         _set_tenant(tenant.name, "Failed")
         frappe.db.commit()
         frappe.log_error(title=f"Provisioning failed for {tenant.name}", message=message)
+        _alert(job, f"Creating the site for {tenant.school_name} failed", message)
         return "Failed"
 
     # An operator may have marked the job Failed while it ran (e.g. thinking the worker was stuck): their call stands
@@ -227,6 +229,16 @@ def run(job: str) -> str:
         frappe.db.set_value("SaaS Domain", subdomain, {"status": "Active", "is_primary": 1})
     frappe.db.commit()
     return "Succeeded"
+
+
+def _alert(job, title, detail):
+    """A failed or refused site build is something a platform admin must act on (stemic_control.alerts)."""
+    from stemic_control.alerts import notify_admins
+
+    first = next((line.strip() for line in (detail or "").splitlines()
+                  if line.strip() and not line.startswith(("Traceback", "  File", "    "))), "")
+    notify_admins(title, frappe.utils.escape_html(first[:500]) + "<br>Open the job for the full error; the school's "
+                  "form has Retry Provisioning.", "SaaS Provisioning Job", job)
 
 
 def _drop_partial_site(site) -> str:
@@ -264,6 +276,7 @@ def process_queue() -> int:
         if slug and not has_site:
             message += _drop_partial_site(site_name(slug))
         _set_job(name, "Failed", message)
+        _alert(name, f"The site build for {frappe.db.get_value('SaaS Tenant', tenant, 'school_name') or tenant} was abandoned", message)
         if policy.can_move(policy.TENANT_TRANSITIONS, frappe.db.get_value("SaaS Tenant", tenant, "status"), "Failed"):
             _set_tenant(tenant, "Failed")
     frappe.db.commit()

@@ -9,7 +9,7 @@ import frappe
 
 # key -> (Stemic Settings field, default)
 SETTINGS = {
-    "stemic_platform_domain": ("platform_domain", "stemischools.com"),
+    "stemic_platform_domain": ("platform_domain", "stemicschools.com"),
     "stemic_site_domain": ("site_domain", "localhost"),
     "stemic_site_apps": ("site_apps", "erpnext\nschool_erp"),
     "stemic_bench_path": ("bench_path", None),

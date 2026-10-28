@@ -18,6 +18,6 @@ class SaaSDomain(Document):
             tenant = frappe.get_doc("SaaS Tenant", self.tenant)
             from stemic_control.config import get
 
-            base = (get("stemic_platform_domain") or "stemischools.com").lower().rstrip(".")
+            base = (get("stemic_platform_domain") or "stemicschools.com").lower().rstrip(".")
             if self.domain_type != "Stemic Subdomain" or self.hostname != f"{tenant.slug}.{base}":
                 frappe.throw("Custom domains require DNS verification", frappe.PermissionError)

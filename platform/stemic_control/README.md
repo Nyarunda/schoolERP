@@ -1,6 +1,6 @@
 # Stemic Schools control plane (review implementation)
 
-A dedicated **Frappe v16** app for the separate `admin.stemischools.com` management site. Do **not** install this on a school tenant.
+A dedicated **Frappe v16** app for the separate `admin.stemicschools.com` management site. Do **not** install this on a school tenant.
 
 ## Delivered
 
@@ -12,7 +12,7 @@ Seven DocTypes: SaaS Tenant (named by slug), SaaS Domain (named by hostname), Sa
 
 | Key | Default | Purpose |
 | --- | --- | --- |
-| `stemic_platform_domain` | `stemischools.com` | Domain school subdomains live under (`<slug>.<domain>`); its reserved names (admin, www, api, ...) cannot be claimed |
+| `stemic_platform_domain` | `stemicschools.com` | Domain school subdomains live under (`<slug>.<domain>`); its reserved names (admin, www, api, ...) cannot be claimed |
 | `stemic_dns_over_https` | `https://cloudflare-dns.com/dns-query` | DNS-over-HTTPS resolver used to verify custom domains (JSON API) |
 
 ## Status model
@@ -45,8 +45,8 @@ Example using a symlink for local development:
 cd ~/admin-bench
 ln -s /absolute/path/to/schoolERP/platform/stemic_control apps/stemic_control
 ./env/bin/pip install -e apps/stemic_control
-bench --site admin.stemischools.com install-app stemic_control
-bench --site admin.stemischools.com migrate
+bench --site admin.stemicschools.com install-app stemic_control
+bench --site admin.stemicschools.com migrate
 ```
 
 Only run after reviewing app import paths and local Bench permissions. Do not use the `school.localhost` tenant site as admin.

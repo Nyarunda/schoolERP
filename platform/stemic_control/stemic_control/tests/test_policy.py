@@ -7,7 +7,7 @@ from stemic_control import policy
 
 class TestPolicy(unittest.TestCase):
     def test_hostnames(self):
-        for good in ("greenfield.stemischools.com", "portal.greenfield.ac.ke", "school.com", "a-b.co.ke"):
+        for good in ("greenfield.stemicschools.com", "portal.greenfield.ac.ke", "school.com", "a-b.co.ke"):
             self.assertTrue(policy.is_hostname(good), good)
         for bad in ("http://evil.com", "127.0.0.1", "a/../b.com", "foo..com", "x\\.com", "-a.com", "com", "a.c", "", "a b.com"):
             self.assertFalse(policy.is_hostname(bad), bad)

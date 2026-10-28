@@ -9,7 +9,7 @@ from frappe.utils import now_datetime
 from stemic_control import config, policy
 from stemic_control.policy import HOST, RESERVED, SLUG  # noqa: F401  (re-exported for callers and tests)
 
-DEFAULT_PLATFORM_DOMAIN = "stemischools.com"
+DEFAULT_PLATFORM_DOMAIN = "stemicschools.com"
 DEFAULT_DOH_URL = "https://cloudflare-dns.com/dns-query"
 
 

@@ -49,7 +49,7 @@
       "fieldname": "platform_domain",
       "fieldtype": "Data",
       "label": "Platform Domain",
-      "description": "Schools' default addresses are <school>.<this domain>, e.g. stemischools.com."
+      "description": "Schools' default addresses are <school>.<this domain>, e.g. stemicschools.com."
     },
     {
       "fieldname": "dns_over_https",

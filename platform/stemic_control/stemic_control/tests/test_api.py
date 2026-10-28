@@ -13,7 +13,7 @@ class TestTenantIdentifiers(unittest.TestCase):
         self.assertIn("admin", RESERVED)
 
     def test_hostname(self):
-        self.assertTrue(HOST.fullmatch("greenfield.stemischools.com"))
+        self.assertTrue(HOST.fullmatch("greenfield.stemicschools.com"))
         self.assertTrue(HOST.fullmatch("portal.greenfield.ac.ke"))
         for value in ["http://evil.com", "127.0.0.1", "a/../b.com", "foo..com", "x\\.com"]:
             self.assertFalse(HOST.fullmatch(value))

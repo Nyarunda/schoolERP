@@ -1,0 +1,97 @@
+{
+ "doctype": "DocType",
+ "name": "School Webhook Delivery",
+ "module": "School",
+ "autoname": "hash",
+ "engine": "InnoDB",
+ "field_order": [
+  "endpoint",
+  "event_id",
+  "event_type",
+  "payload",
+  "status",
+  "attempts",
+  "next_attempt_at",
+  "response_code",
+  "error"
+ ],
+ "fields": [
+  {
+   "fieldname": "endpoint",
+   "fieldtype": "Link",
+   "label": "Endpoint",
+   "idx": 1,
+   "options": "School Webhook Endpoint",
+   "reqd": 1
+  },
+  {
+   "fieldname": "event_id",
+   "fieldtype": "Data",
+   "label": "Event ID",
+   "idx": 2,
+   "reqd": 1
+  },
+  {
+   "fieldname": "event_type",
+   "fieldtype": "Data",
+   "label": "Event Type",
+   "idx": 3,
+   "reqd": 1
+  },
+  {
+   "fieldname": "payload",
+   "fieldtype": "Long Text",
+   "label": "Payload",
+   "idx": 4,
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "idx": 5,
+   "options": "Queued\nSending\nAccepted\nRetrying\nFailed\nUnknown",
+   "default": "Queued"
+  },
+  {
+   "fieldname": "attempts",
+   "fieldtype": "Int",
+   "label": "Attempts",
+   "idx": 6
+  },
+  {
+   "fieldname": "next_attempt_at",
+   "fieldtype": "Datetime",
+   "label": "Next Attempt At",
+   "idx": 7
+  },
+  {
+   "fieldname": "response_code",
+   "fieldtype": "Int",
+   "label": "Response Code",
+   "idx": 8
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Error",
+   "idx": 9
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "create": 0,
+   "write": 0
+  },
+  {
+   "role": "School Admin",
+   "read": 1,
+   "create": 0,
+   "write": 0
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC"
+}

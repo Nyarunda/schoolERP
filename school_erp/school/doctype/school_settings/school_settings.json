@@ -46,6 +46,8 @@
   "statement_accent_color",
   "show_fee_breakdown",
   "messaging_tab",
+  "enable_email_notifications",
+  "enable_sms_notifications",
   "sms_provider",
   "country_code",
   "at_username",
@@ -1098,6 +1100,20 @@
    "label": "Max Students",
    "read_only": 1,
    "hidden": 1
+  },
+  {
+   "fieldname": "enable_email_notifications",
+   "fieldtype": "Check",
+   "label": "Enable Outgoing Email Notifications",
+   "default": "1",
+   "description": "Master switch for School ERP outgoing messages. Requires a configured Frappe outgoing Email Account."
+  },
+  {
+   "fieldname": "enable_sms_notifications",
+   "fieldtype": "Check",
+   "label": "Enable Outgoing SMS Notifications",
+   "default": "1",
+   "description": "Master switch for School ERP SMS through the selected provider. Turn off to prevent SMS charges. Existing schools retain enabled behavior until explicitly disabled."
   }
  ],
  "index_web_pages_for_search": 0,

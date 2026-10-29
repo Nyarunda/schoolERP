@@ -11,8 +11,9 @@ from stemic_control import provisioner, site_runtime
 
 
 def _support_email():
-    account = frappe.db.get_value("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}, "email_id")
-    return account or "support@stemicschools.com"
+    from stemic_control.communications import brand
+
+    return brand().email
 
 
 def _set(site, key, value, parse=False):
@@ -36,8 +37,10 @@ def apply(tenant, suspend):
         return None
     school = frappe.db.get_value("SaaS Tenant", tenant, "school_name") or tenant
     if suspend:
-        _set(site, "stemic_suspended_message",
-             f"{school}'s Stemic Schools service is suspended. Contact Stemic Schools to restore it.")
+        from stemic_control.communications import brand
+
+        name = brand().name
+        _set(site, "stemic_suspended_message", f"{school}'s {name} service is suspended. Contact {name} to restore it.")
         _set(site, "stemic_support_email", _support_email())
         _set(site, "pause_scheduler", "1", parse=True)
         _set(site, "stemic_suspended", "1", parse=True)  # last: the block starts once everything else is in place

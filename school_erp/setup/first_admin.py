@@ -5,7 +5,7 @@ contact: they set their own password, so no password travels by email. Running i
 """
 
 import frappe
-from frappe.utils import validate_email_address
+from frappe.utils import cint, validate_email_address
 
 ROLES = ["School Admin", "System Manager"]
 LINK_HOURS = 24  # Frappe's default for password links is 20 minutes: too short for a welcome email
@@ -31,7 +31,7 @@ def create(email, full_name=None):
 		user.enabled = 1
 		user.save(ignore_permissions=True)
 	seconds = LINK_HOURS * 3600
-	if (frappe.get_system_settings("reset_password_link_expiry_duration") or 0) < seconds:
+	if cint(frappe.get_system_settings("reset_password_link_expiry_duration")) < seconds:
 		frappe.db.set_single_value("System Settings", "reset_password_link_expiry_duration", seconds)
 	link = user._reset_password(send_email=False)
 	frappe.db.commit()

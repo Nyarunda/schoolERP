@@ -2,6 +2,7 @@
 bench --site <site> run-tests --module school_erp.tests.test_first_admin"""
 
 import frappe
+from frappe.utils import cint
 
 from school_erp.setup import first_admin
 from school_erp.tests.test_integration import TestCase
@@ -27,7 +28,7 @@ class TestFirstAdmin(TestCase):
 		self.assertTrue({"School Admin", "System Manager"} <= {r.role for r in user.roles})
 		self.assertTrue(user.reset_password_key)  # stored hashed; the link carries the key itself
 		self.assertNotIn(user.reset_password_key, out["link"])
-		self.assertGreaterEqual(frappe.get_system_settings("reset_password_link_expiry_duration"), 24 * 3600)
+		self.assertGreaterEqual(cint(frappe.get_system_settings("reset_password_link_expiry_duration")), 24 * 3600)
 
 	def test_running_again_reuses_the_user_and_replaces_the_link(self):
 		first = first_admin.create(self.email)

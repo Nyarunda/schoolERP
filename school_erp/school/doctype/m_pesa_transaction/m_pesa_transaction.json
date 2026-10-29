@@ -279,6 +279,12 @@
    "role": "Bursar",
    "share": 1,
    "write": 1
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
   }
  ],
  "row_format": "Dynamic",

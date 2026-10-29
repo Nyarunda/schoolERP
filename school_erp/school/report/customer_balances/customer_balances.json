@@ -5,7 +5,7 @@
  "docstatus": 0,
  "doctype": "Report",
  "is_standard": "Yes",
- "modified": "2026-10-26 17:00:00.000000",
+ "modified": "2026-10-29 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Customer Balances",
@@ -23,6 +23,9 @@
   },
   {
    "role": "Bursar"
+  },
+  {
+   "role": "School Viewer"
   }
  ]
 }

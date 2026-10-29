@@ -1,6 +1,7 @@
 """Local provisioner against a database, with Frappe's CLI mocked (no real sites are created).
 bench --site <site> run-tests --module stemic_control.tests.test_provisioner"""
 
+import os
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -90,6 +91,20 @@ class TestProvisioner(TestCase):
         self.assertIn(("--site", site, "set-config", "host_name", f"https://{site}"), calls)
         self.assertLess(next(i for i, c in enumerate(calls) if "list-apps" in c),
                         next(i for i, c in enumerate(calls) if "host_name" in c))  # after the readiness check
+
+    def test_the_new_sites_config_is_readable_by_the_bench_user_only(self):
+        import tempfile
+
+        calls, fake = self.cli()
+        with tempfile.TemporaryDirectory() as folder:
+            config = os.path.join(folder, "site_config.json")
+            with open(config, "w") as f:
+                f.write("{}")
+            os.chmod(config, 0o664)
+            with patch.object(provisioner, "_site_config_path", return_value=config), patch.object(provisioner, "_frappe_cli", side_effect=fake), \
+                    patch.object(provisioner, "_site_dir_exists", return_value=False):
+                self.assertEqual(provisioner.run(self.job), "Succeeded")
+            self.assertEqual(os.stat(config).st_mode & 0o777, 0o600)
 
     def test_a_development_site_keeps_plain_http(self):
         calls, fake = self.cli()

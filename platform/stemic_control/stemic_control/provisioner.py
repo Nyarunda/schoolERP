@@ -140,6 +140,18 @@ def set_public_url(site: str) -> None:
     _frappe_cli("--site", site, "set-config", "host_name", f"https://{site}", timeout=120)
 
 
+def _site_config_path(site: str) -> str:
+    return os.path.join(_bench(), "sites", site, "site_config.json")
+
+
+def protect_config(site: str) -> None:
+    """Only the bench's user may read the new site's site_config.json: it holds the school's database password and
+    encryption key, and the web server (nginx) never needs it."""
+    path = _site_config_path(site)
+    if os.path.exists(path):
+        os.chmod(path, 0o600)
+
+
 def _set_job(job, status, error=None):
     updates = {"status": status}
     if status == "Running":
@@ -209,6 +221,7 @@ def run(job: str) -> str:
         _frappe_cli(*args, timeout=NEW_SITE_TIMEOUT, secrets_=(root, password))
         check_ready(site)
         set_public_url(site)
+        protect_config(site)
     except Exception as e:
         frappe.db.rollback()
         message = str(e) if isinstance(e, ProvisioningError) else frappe.get_traceback()

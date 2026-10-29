@@ -251,6 +251,9 @@ def run(job: str) -> str:
     if frappe.db.get_value("SaaS Domain", subdomain, "status") == "Verified":
         frappe.db.set_value("SaaS Domain", subdomain, {"status": "Active", "is_primary": 1})
     frappe.db.commit()
+    from stemic_control import welcome
+
+    welcome.after_provisioning(tenant.name)  # the school's contact gets the address and a set-password link
     return "Succeeded"
 
 

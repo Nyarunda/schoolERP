@@ -114,7 +114,8 @@ def provision(frappe):
     with patch.object(provisioner, "enqueue"):  # this script is the worker, so a real one does not race it
         job = api.queue_provisioning(slug(), f"e2e-{RUN}-create")
     frappe.db.commit()
-    result = provisioner.run(job)
+    with patch.object(frappe, "sendmail") as sendmail:  # the welcome email is checked here, never really sent
+        result = provisioner.run(job)
     error = frappe.db.get_value("SaaS Provisioning Job", job, "last_error") or ""
     check(result == "Succeeded", f"provisioning {result}: {error.splitlines()[-1] if error else ''}")
     t = frappe.db.get_value("SaaS Tenant", slug(), ["status", "canonical_site", "database_name", "primary_domain"], as_dict=True)
@@ -123,7 +124,11 @@ def provision(frappe):
     check(frappe.db.get_value("SaaS Provisioning Job", job, "environment") == frappe.conf.stemic_provision_environment,
           "the job did not record its environment")
     check(frappe.db.get_value("SaaS Domain", t.primary_domain, "status") == "Active", "the subdomain is not Active")
-    return f"{t.canonical_site}, database {t.database_name}, domain {t.primary_domain}"
+    welcome = [c.kwargs for c in sendmail.call_args_list if c.kwargs.get("reference_name") == slug()]
+    check(welcome and welcome[0]["recipients"] == [f"head@{slug()}.test"], "the school's contact was not sent a welcome email")
+    check("/update-password?key=" in welcome[0]["message"] and t.canonical_site in welcome[0]["message"],
+          "the welcome email has no set-password link to the new site")
+    return f"{t.canonical_site}, database {t.database_name}, domain {t.primary_domain}; welcome email to head@{slug()}.test"
 
 
 server = None  # a web server this run started for its site, stopped at the end

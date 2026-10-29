@@ -22,6 +22,7 @@
     "sb_site",
     "canonical_site",
     "database_name",
+    "welcome_sent_on",
     "primary_domain",
     "site_column",
     "site_admin_password",
@@ -117,6 +118,14 @@
       "label": "Database",
       "read_only": 1,
       "description": "sch_<slug> for sites created by the provisioner; older sites keep the name Frappe gave them."
+    },
+    {
+      "fieldname": "welcome_sent_on",
+      "fieldtype": "Datetime",
+      "label": "Welcome Email Sent",
+      "read_only": 1,
+      "no_copy": 1,
+      "description": "When the school's contact was last emailed their address and a link to set their password."
     },
     {
       "fieldtype": "Data",

@@ -95,3 +95,19 @@ class TestWelcome(TestCase):
     def test_no_welcome_before_the_site_is_ready(self):
         self.assertRaises(frappe.ValidationError, welcome.send, self.slug)
         self.sendmail.assert_not_called()
+
+    def test_the_welcome_carries_the_payment_details(self):
+        from stemic_control import billing
+
+        sub = frappe.db.get_value("SaaS Subscription", {"tenant": self.slug}, ["name", "plan"], as_dict=True)
+        frappe.db.set_value("SaaS Plan", sub.plan, "monthly_price", 9500)
+        inv = billing.create_invoice(sub.name, months=12)
+        with self.cli(), patch.dict(frappe.local.conf, {}), \
+                patch("stemic_control.communications._instructions", side_effect=lambda i: f"Paybill 123456, Account {i}"):
+            provisioner.run(self.job)
+        message = self.sendmail.call_args.kwargs["message"]
+        self.assertIn(sub.plan, message)
+        self.assertIn("9,500", message)  # the plan's monthly price
+        self.assertIn(inv, message)  # the latest invoice, still owed
+        self.assertIn(f"Paybill 123456, Account {inv}", message)  # how to pay that invoice
+        self.assertIn("Set your password", message)

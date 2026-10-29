@@ -15,6 +15,7 @@
     "school_name",
     "slug",
     "admin_email",
+    "contact_phone",
     "school_column",
     "agent",
     "subscription",
@@ -69,6 +70,13 @@
       "label": "School Admin Email",
       "options": "Email",
       "reqd": 1
+    },
+    {
+      "fieldname": "contact_phone",
+      "fieldtype": "Data",
+      "label": "Contact Phone",
+      "options": "Phone",
+      "description": "For SMS from Stemic (invoices, receipts, reminders), when SMS is on in Stemic Settings."
     },
     {
       "fieldname": "school_column",

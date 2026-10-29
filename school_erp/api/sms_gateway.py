@@ -150,13 +150,16 @@ def _redact(text, secret):
 	return text.replace(secret, "***") if secret else text
 
 
-def send(gateway, numbers, message):
-	"""Send one message to normalised numbers (2547XXXXXXXX). Returns {"sent": [...], "failed": [...], "errors": [...]}."""
+def send(gateway, numbers, message, country_code=None):
+	"""Send one message to normalised numbers (2547XXXXXXXX). Returns {"sent": [...], "failed": [...], "errors": [...]}.
+
+	`gateway` is a School SMS Gateway (or its name), or any object with the same fields and get_password("api_key"):
+	the Control Center sends its own messages to schools through one built from Stemic Settings."""
 	gw = frappe.get_doc(DOCTYPE, gateway) if isinstance(gateway, str) else gateway
 	if not gw.enabled:
 		frappe.throw(_("The SMS gateway {0} is disabled").format(gw.name))
 	fields, headers, key = _base(gw)
-	cc = frappe.get_cached_doc("School Settings").country_code or "254"
+	cc = country_code or frappe.get_cached_doc("School Settings").country_code or "254"
 	batches = [numbers] if gw.recipients_mode == "All numbers in one request" else [[n] for n in numbers]
 	sent, failed, errors = [], [], []
 	for batch in batches:

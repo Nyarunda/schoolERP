@@ -15,6 +15,9 @@ class StemicSettings(Document):
                 frappe.throw("Months and days cannot be negative", frappe.ValidationError)
         if self.billing_months == 0:
             self.billing_months = 12
+        from stemic_control.communications import check_gateway_url
+
+        check_gateway_url(self)
 
     def on_update(self):
         frappe.clear_document_cache("Stemic Settings", "Stemic Settings")

@@ -1,0 +1,142 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Communication",
+  "module": "Stemic Control",
+  "custom": 0,
+  "engine": "InnoDB",
+  "track_changes": 0,
+  "autoname": "COMM-.#####",
+  "naming_rule": "Expression (old style)",
+  "title_field": "event",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "in_create": 1,
+  "description": "Every email and SMS sent to a school: what, to whom, and whether it went out.",
+  "field_order": [
+    "tenant",
+    "event",
+    "channel",
+    "audience",
+    "status",
+    "cb_main",
+    "recipient",
+    "sent_on",
+    "reference_doctype",
+    "reference_name",
+    "message_section",
+    "subject",
+    "detail",
+    "dedupe_key"
+  ],
+  "fields": [
+    {
+      "fieldname": "tenant",
+      "fieldtype": "Link",
+      "label": "School",
+      "options": "SaaS Tenant",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "event",
+      "fieldtype": "Select",
+      "label": "Event",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "options": "Welcome\nInvoice Issued\nPayment Received\nInvoice Overdue\nLicense Issued\nSuspended\nResumed\nSchool Registered\nAlert"
+    },
+    {
+      "fieldname": "channel",
+      "fieldtype": "Select",
+      "label": "Channel",
+      "options": "Email\nSMS",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "audience",
+      "fieldtype": "Select",
+      "label": "Audience",
+      "options": "School\nPlatform admins",
+      "default": "School",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Sent\nFailed\nSkipped",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "cb_main",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "recipient",
+      "fieldtype": "Data",
+      "label": "To"
+    },
+    {
+      "fieldname": "sent_on",
+      "fieldtype": "Datetime",
+      "label": "When"
+    },
+    {
+      "fieldname": "reference_doctype",
+      "fieldtype": "Link",
+      "label": "About",
+      "options": "DocType"
+    },
+    {
+      "fieldname": "reference_name",
+      "fieldtype": "Dynamic Link",
+      "label": "Record",
+      "options": "reference_doctype"
+    },
+    {
+      "fieldname": "message_section",
+      "fieldtype": "Section Break",
+      "label": "Message"
+    },
+    {
+      "fieldname": "subject",
+      "fieldtype": "Data",
+      "label": "Subject"
+    },
+    {
+      "fieldname": "detail",
+      "fieldtype": "Small Text",
+      "label": "Detail",
+      "description": "Why it failed or was skipped. Links and keys are never stored here."
+    },
+    {
+      "fieldname": "dedupe_key",
+      "fieldtype": "Data",
+      "label": "Dedupe Key",
+      "unique": 1,
+      "hidden": 1,
+      "no_copy": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    }
+  ],
+  "creation": "2026-10-29 12:00:00.000000",
+  "modified": "2026-10-29 12:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator"
+}

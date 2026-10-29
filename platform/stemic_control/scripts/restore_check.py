@@ -14,7 +14,7 @@ change while this runs: differences there are reported, not failed.
     ../env/bin/python ../apps/stemic_control/scripts/restore_check.py admin.localhost school.localhost
     ../env/bin/python ../apps/stemic_control/scripts/restore_check.py admin.localhost school.localhost --keep
 
-Run with the admin site (for the database root password and bench path) and the school site to check.
+Run with the admin site (for the database account, as the provisioner uses it, and the bench path) and the school site to check.
 Exit status: 0 the backup restored and matches; 1 it did not.
 """
 
@@ -89,13 +89,13 @@ def main():
 
         # restore needs a site to restore into: a bare one (Frappe only), which the backup then replaces
         t = time.time()
-        new = ["new-site", scratch, "--db-root-password", root, "--admin-password", password,
+        new = ["new-site", scratch, *provisioner._root_args(), "--admin-password", password,
                "--db-name", "restorecheck_" + scratch.split("-")[1].split(".")[0]]
         scope = frappe.conf.get("stemic_mariadb_user_host_login_scope")
         if scope:
             new += ["--mariadb-user-host-login-scope", scope]
         cli(*new, timeout=1800)
-        args = ["--site", scratch, "restore", found["Database"], "--db-root-password", root, "--admin-password", password,
+        args = ["--site", scratch, "restore", found["Database"], *provisioner._root_args(), "--admin-password", password,
                 "--force"]
         if found.get("Public"):
             args += ["--with-public-files", found["Public"]]
@@ -134,7 +134,7 @@ def main():
             print(f"  kept {scratch} (drop it with: bench drop-site {scratch} --no-backup --force)")
         elif provisioner._site_dir_exists(scratch):
             try:
-                cli("drop-site", scratch, "--db-root-password", root, "--no-backup", "--force", timeout=600)
+                cli("drop-site", scratch, *provisioner._root_args(), "--no-backup", "--force", timeout=600)
                 print(f"  dropped {scratch}")
             except Exception as e:
                 print(f"  could not drop {scratch}: {e}")

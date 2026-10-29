@@ -29,6 +29,42 @@
     "payment_instructions",
     "commission_tab",
     "commission_basis",
+    "communications_tab",
+    "notify_schools_by_email",
+    "notify_schools_by_sms",
+    "cb_comms",
+    "notify_welcome",
+    "notify_invoice",
+    "notify_payment",
+    "notify_overdue",
+    "notify_license",
+    "notify_status",
+    "notify_registered",
+    "admins_section",
+    "notify_admins_copy",
+    "notify_admins_by_sms",
+    "sms_gateway_section",
+    "sms_url",
+    "sms_http_method",
+    "sms_body_format",
+    "sms_recipient_param",
+    "sms_message_param",
+    "sms_number_format",
+    "sms_country_code",
+    "cb_sms",
+    "sms_sender_param",
+    "sms_sender_id",
+    "sms_api_key_param",
+    "sms_api_key_in",
+    "sms_api_key_prefix",
+    "sms_api_key",
+    "sms_parameters",
+    "sms_success_section",
+    "sms_success_field",
+    "sms_success_values",
+    "cb_sms_success",
+    "sms_success_text",
+    "sms_test_number",
     "accounting_tab",
     "post_to_accounts",
     "accounting_company",
@@ -159,6 +195,220 @@
       "options": "Every payment\nFirst payment only",
       "default": "Every payment",
       "description": "Each agent's rate is on their agent record."
+    },
+    {
+      "fieldname": "communications_tab",
+      "fieldtype": "Tab Break",
+      "label": "Communications"
+    },
+    {
+      "fieldname": "notify_schools_by_email",
+      "fieldtype": "Check",
+      "label": "Email schools",
+      "default": "1",
+      "description": "From the default outgoing Email Account, to each school's contact email."
+    },
+    {
+      "fieldname": "notify_schools_by_sms",
+      "fieldtype": "Check",
+      "label": "SMS schools",
+      "default": "0",
+      "description": "Also by SMS to each school's contact phone, through the gateway below. Links and license keys go by email only."
+    },
+    {
+      "fieldname": "cb_comms",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "notify_welcome",
+      "fieldtype": "Check",
+      "label": "Site ready (welcome)",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_invoice",
+      "fieldtype": "Check",
+      "label": "Invoice issued",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_payment",
+      "fieldtype": "Check",
+      "label": "Payment received",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_overdue",
+      "fieldtype": "Check",
+      "label": "Invoice overdue",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_license",
+      "fieldtype": "Check",
+      "label": "License issued",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_status",
+      "fieldtype": "Check",
+      "label": "Suspended / resumed",
+      "default": "1"
+    },
+    {
+      "fieldname": "notify_registered",
+      "fieldtype": "Check",
+      "label": "New school registered (admins only)",
+      "default": "1"
+    },
+    {
+      "fieldname": "admins_section",
+      "fieldtype": "Section Break",
+      "label": "Platform Admins"
+    },
+    {
+      "fieldname": "notify_admins_copy",
+      "fieldtype": "Check",
+      "label": "Tell platform admins about every event",
+      "default": "1",
+      "description": "A short summary of each event above in every platform admin's notification bell and email."
+    },
+    {
+      "fieldname": "notify_admins_by_sms",
+      "fieldtype": "Check",
+      "label": "Also by SMS to platform admins",
+      "default": "1",
+      "description": "To each admin's mobile number (User > Mobile No), when SMS schools is on. Problem alerts (a failed build, a failed operation, invoices that disagree with payments) go by SMS too."
+    },
+    {
+      "fieldname": "sms_gateway_section",
+      "fieldtype": "Section Break",
+      "label": "SMS Gateway",
+      "depends_on": "eval:doc.notify_schools_by_sms",
+      "description": "Any HTTP SMS provider, from its API documentation (Africa's Talking: POST, Form, username in Other Parameters, apiKey as a header, success field SMSMessageData.Recipients.0.statusCode = 100,101,102)."
+    },
+    {
+      "fieldname": "sms_url",
+      "fieldtype": "Data",
+      "label": "Send URL",
+      "options": "URL",
+      "mandatory_depends_on": "eval:doc.notify_schools_by_sms"
+    },
+    {
+      "fieldname": "sms_http_method",
+      "fieldtype": "Select",
+      "label": "Method",
+      "options": "POST\nGET",
+      "default": "POST"
+    },
+    {
+      "fieldname": "sms_body_format",
+      "fieldtype": "Select",
+      "label": "Body Format",
+      "options": "JSON\nForm",
+      "default": "JSON",
+      "depends_on": "eval:doc.notify_schools_by_sms && doc.sms_http_method==\"POST\""
+    },
+    {
+      "fieldname": "sms_recipient_param",
+      "fieldtype": "Data",
+      "label": "Phone Number Parameter",
+      "mandatory_depends_on": "eval:doc.notify_schools_by_sms"
+    },
+    {
+      "fieldname": "sms_message_param",
+      "fieldtype": "Data",
+      "label": "Message Parameter",
+      "mandatory_depends_on": "eval:doc.notify_schools_by_sms"
+    },
+    {
+      "fieldname": "sms_number_format",
+      "fieldtype": "Select",
+      "label": "Number Format",
+      "options": "2547XXXXXXXX\n+2547XXXXXXXX\n07XXXXXXXX",
+      "default": "2547XXXXXXXX"
+    },
+    {
+      "fieldname": "sms_country_code",
+      "fieldtype": "Data",
+      "label": "Country Code",
+      "default": "254"
+    },
+    {
+      "fieldname": "cb_sms",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "sms_sender_param",
+      "fieldtype": "Data",
+      "label": "Sender ID Parameter"
+    },
+    {
+      "fieldname": "sms_sender_id",
+      "fieldtype": "Data",
+      "label": "Sender ID"
+    },
+    {
+      "fieldname": "sms_api_key_param",
+      "fieldtype": "Data",
+      "label": "API Key Parameter"
+    },
+    {
+      "fieldname": "sms_api_key_in",
+      "fieldtype": "Select",
+      "label": "Send API Key In",
+      "options": "Body\nHeader",
+      "default": "Body"
+    },
+    {
+      "fieldname": "sms_api_key_prefix",
+      "fieldtype": "Data",
+      "label": "API Key Prefix"
+    },
+    {
+      "fieldname": "sms_api_key",
+      "fieldtype": "Password",
+      "label": "API Key",
+      "length": 255
+    },
+    {
+      "fieldname": "sms_parameters",
+      "fieldtype": "Small Text",
+      "label": "Other Parameters",
+      "description": "One per line: name=value. Start a line with header: for an HTTP header, e.g. header:Accept=application/json"
+    },
+    {
+      "fieldname": "sms_success_section",
+      "fieldtype": "Section Break",
+      "label": "How to Tell an SMS Was Accepted",
+      "depends_on": "eval:doc.notify_schools_by_sms"
+    },
+    {
+      "fieldname": "sms_success_field",
+      "fieldtype": "Data",
+      "label": "Success Field",
+      "description": "Dotted path in the JSON reply, e.g. responses.0.response-code"
+    },
+    {
+      "fieldname": "sms_success_values",
+      "fieldtype": "Data",
+      "label": "Success Values",
+      "description": "Comma-separated, e.g. 200"
+    },
+    {
+      "fieldname": "cb_sms_success",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "sms_success_text",
+      "fieldtype": "Data",
+      "label": "Or: Reply Contains"
+    },
+    {
+      "fieldname": "sms_test_number",
+      "fieldtype": "Data",
+      "label": "Test Phone Number",
+      "description": "Save, then Send Test SMS."
     },
     {
       "fieldname": "accounting_tab",

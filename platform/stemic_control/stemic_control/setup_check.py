@@ -155,6 +155,19 @@ def _business():
                      "Seller name and payment instructions set." if s.seller_name and s.payment_instructions else "Invoices would show no seller name or way to pay.",
                      "" if s.seller_name and s.payment_instructions else "Fill in the Billing tab."))
     email = frappe.db.get_value("Email Account", {"default_outgoing": 1, "enable_outgoing": 1})
+    from stemic_control import communications
+
+    if s.get("notify_schools_by_sms"):
+        ready = communications.sms_on()
+        rule = bool(s.get("sms_success_field") or s.get("sms_success_text"))
+        out.append(_item("Communications", "SMS to schools", ready and rule,
+                         "On, through the gateway in Stemic Settings." if ready and rule else
+                         "On, but the gateway is not filled in." if not ready else
+                         "On, but no success rule: any HTTP 200 reply counts as sent.",
+                         "" if ready and rule else "Stemic Settings > Communications: complete the SMS Gateway and its success rule."))
+    else:
+        out.append(_item("Communications", "SMS to schools", None, "Off: schools are told by email only.",
+                         "Stemic Settings > Communications to add SMS."))
     out.append(_item("Billing", "Outgoing email", bool(email), email or "No default outgoing email account.",
                      "" if email else "Add one under Email Account to send invoices and keys."))
     from stemic_control.billing import ledger_mismatches

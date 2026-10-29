@@ -110,8 +110,8 @@ printf '%s\n' "${RESULTS[@]}"
 if [ "$REPORT" = 1 ]; then
     state=$([ "$FAILED" = 0 ] && echo success || echo failure)
     passed=$(printf '%s\n' "${RESULTS[@]}" | grep -c "^PASS")
-    gh api -X POST "repos/{owner}/{repo}/statuses/$COMMIT" -f state="$state" -f context="local-ci" \
-        -f description="$passed of ${#RESULTS[@]} steps passed on $(hostname) ($([ "$QUICK" = 1 ] && echo quick || echo full))" >/dev/null \
+    (cd "$REPO" && gh api -X POST "repos/{owner}/{repo}/statuses/$COMMIT" -f state="$state" -f context="local-ci" \
+        -f description="$passed of ${#RESULTS[@]} steps passed on $(hostname) ($([ "$QUICK" = 1 ] && echo quick || echo full))" >/dev/null) \
         && echo "recorded on GitHub as local-ci: $state" || echo "could not record the status on GitHub"
 fi
 exit "$FAILED"

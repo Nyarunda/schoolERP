@@ -204,8 +204,22 @@ def set_tenant_status(tenant, status):
     doc = frappe.get_doc("SaaS Tenant", tenant)
     changed = doc.status != status
     doc.status = status
+    doc.flags.via_status_switch = True
+    frappe.db.savepoint("tenant_status")
     doc.save()  # SaasTenant.validate refuses moves the policy does not allow
     if changed:
+        from stemic_control import suspension
+
+        # the school's own site must really stop (or start): otherwise this status would be untrue
+        try:
+            suspension.apply(doc.name, status == "Suspended")
+        except Exception:
+            frappe.db.rollback(save_point="tenant_status")  # the status change only
+            try:
+                suspension.apply(doc.name, status != "Suspended")  # put the site back as it was
+            except Exception:
+                frappe.log_error(title=f"Could not put {tenant}'s site back after a failed {status.lower()}")
+            raise
         from stemic_control import communications
 
         communications.queue("Suspended" if status == "Suspended" else "Resumed", tenant=doc.name)

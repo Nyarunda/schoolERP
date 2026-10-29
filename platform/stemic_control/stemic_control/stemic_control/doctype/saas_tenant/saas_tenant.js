@@ -5,6 +5,13 @@ frappe.ui.form.on("SaaS Tenant", {
         if (frm.is_new()) return;
         frm.page.set_indicator(__(frm.doc.status), TENANT_COLORS_FORM[frm.doc.status] || "gray");
         if (frm.doc.canonical_site) frm.add_custom_button(__("Open Site"), () => open_site(frm));
+        if (frm.doc.canonical_site && frm.doc.status === "Active") frm.add_custom_button(__("Send Welcome Email"), () =>
+            frappe.confirm(__("Email {0} the school's address and a new link to set their password?", [frappe.utils.escape_html(frm.doc.admin_email || "")]), () =>
+                frappe.call({ method: "stemic_control.welcome.resend", args: { tenant: frm.doc.name }, freeze: true,
+                    freeze_message: __("Sending...") }).then(({ message: r }) => {
+                    frappe.show_alert({ message: __("Welcome email sent to {0}", [r.to]), indicator: "green" });
+                    frm.reload_doc();
+                })), __("Actions"));
         show_progress(frm);
         render_overview(frm);
         // Manual fallbacks for the automated provisioner

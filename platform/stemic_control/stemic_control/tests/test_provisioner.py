@@ -21,6 +21,7 @@ CONF = {"stemic_platform_domain": "stemic.test", "stemic_local_provisioner": 1, 
         "stemic_site_domain": "localhost", "stemic_provision_environment": "development",
         "stemic_provision_allowed_benches": [get_bench_path()]}
 LISTED = "frappe     16.0.0 version-16\nerpnext    16.0.0 version-16\nschool_erp 1.0.0   main\n"
+WELCOME = 'warning noise\n{"user": "head@prov.test", "link": "http://x.localhost/update-password?key=K3Y", "hours": 24}\n'
 
 
 class TestProvisioner(TestCase):
@@ -32,6 +33,8 @@ class TestProvisioner(TestCase):
         self._enqueue.start()
         self._db = patch.object(provisioner, "_database_exists", return_value=False)  # no real MariaDB root login
         self._db.start()
+        self._mail = patch.object(frappe, "sendmail")  # the welcome email: recorded, never sent
+        self.sendmail = self._mail.start()
         self.slug = "prov-" + frappe.generate_hash(length=6).lower()
         api.register_tenant("Provisioned School", self.slug, "head@prov.test")
         make_eligible(self.slug)
@@ -39,6 +42,7 @@ class TestProvisioner(TestCase):
         self.job = api.queue_provisioning(self.slug, "prov-" + frappe.generate_hash(length=12))
 
     def tearDown(self):
+        self._mail.stop()
         self._db.stop()
         self._enqueue.stop()
         self._conf.stop()
@@ -53,6 +57,8 @@ class TestProvisioner(TestCase):
             calls.append(args)
             if args[0] == "new-site" and fail_new_site:
                 raise provisioner.ProvisioningError("new-site failed: database error")
+            if "execute" in args:  # school_erp.setup.first_admin.create on the new site
+                return WELCOME
             return LISTED if "list-apps" in args else ""
         return calls, fake
 

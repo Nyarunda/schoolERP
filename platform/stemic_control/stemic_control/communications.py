@@ -15,17 +15,27 @@ from frappe.utils import escape_html, fmt_money, formatdate, now_datetime
 EVENTS = {  # event -> Stemic Settings switch
     "Welcome": "notify_welcome", "Invoice Issued": "notify_invoice", "Payment Received": "notify_payment",
     "Invoice Overdue": "notify_overdue", "License Issued": "notify_license", "Suspended": "notify_status",
-    "Resumed": "notify_status",
+    "Resumed": "notify_status", "School Registered": "notify_registered",
 }
+ADMIN_ONLY = {"School Registered"}
+# RFC 2606 / 6761 names that never belong to a real school: tests and scripts use them, so nothing is ever sent there
+RESERVED = (".test", ".example", ".invalid", ".localhost", "@example.com", "@example.org", "@example.net")
 
 
 def _settings():
     return frappe.get_cached_doc("Stemic Settings")
 
 
+def _on(value):
+    return value is None or bool(int(value or 0))  # a switch not saved yet counts as on
+
+
 def wanted(event):
-    switch = _settings().get(EVENTS[event])
-    return switch is None or bool(int(switch))  # a switch not saved yet counts as on
+    return _on(_settings().get(EVENTS[event]))
+
+
+def _reserved(address):
+    return (address or "").strip().lower().endswith(RESERVED)
 
 
 # ----------------------------------------------------------------------------- SMS through the platform gateway
@@ -91,8 +101,10 @@ def check_gateway_url(settings):
 
 
 # ----------------------------------------------------------------------------- the record of what was sent
-def _log(tenant, event, channel, status, recipient=None, reference=(None, None), subject=None, detail=None, key=None):
+def _log(tenant, event, channel, status, recipient=None, reference=(None, None), subject=None, detail=None, key=None,
+         audience="School"):
     doc = frappe.get_doc({"doctype": "SaaS Communication", "tenant": tenant, "event": event, "channel": channel,
+                          "audience": audience,
                           "status": status, "recipient": recipient, "reference_doctype": reference[0],
                           "reference_name": reference[1], "subject": subject, "detail": (detail or "")[:1000],
                           "sent_on": now_datetime(), "dedupe_key": key})
@@ -117,6 +129,8 @@ def deliver(tenant, event, reference=(None, None), email=None, sms=None, dedupe=
             subject, html = email
             if not t.admin_email:
                 out.append(_log(tenant, event, "Email", "Skipped", None, reference, subject, "The school has no contact email"))
+            elif _reserved(t.admin_email):
+                out.append(_log(tenant, event, "Email", "Skipped", t.admin_email, reference, subject, "A reserved test address"))
             else:
                 try:
                     frappe.sendmail(recipients=[t.admin_email], subject=subject, message=html, reference_doctype="SaaS Tenant",
@@ -143,8 +157,50 @@ def queue(event, **kwargs):
     """Send `event` once the current transaction commits, in the background."""
     if not wanted(event):
         return
+    if frappe.flags.in_test and not frappe.flags.stemic_comms_in_tests:
+        return  # a test that commits must not leave real messages queued for the worker
     frappe.enqueue("stemic_control.communications.send_event", queue="short", enqueue_after_commit=True,
                    event=event, **kwargs)
+
+
+# ----------------------------------------------------------------------------- platform admins
+def _admin_phones():
+    from stemic_control.alerts import platform_admins
+
+    users = platform_admins()
+    if not users:
+        return []
+    return frappe.get_all("User", filters={"name": ("in", users), "mobile_no": ("is", "set")}, fields=["name", "mobile_no"])
+
+
+def sms_admins(event, text, reference=(None, None), tenant=None, key=None):
+    """SMS every platform admin with a mobile number, when SMS is on (and admin SMS is). Once per key and admin."""
+    s = _settings()
+    if not (sms_on() and _on(s.get("notify_admins_by_sms"))):
+        return []
+    out = []
+    for admin in _admin_phones():
+        k = f"{key}|{admin.name}" if key else None
+        if _already_sent(k):
+            continue
+        try:
+            ok, detail = send_sms(admin.mobile_no, text)
+        except Exception as exc:
+            ok, detail = False, str(exc)
+        out.append(_log(tenant, event, "SMS", "Sent" if ok else "Failed", admin.mobile_no, reference, None,
+                        None if ok else detail, key=k if ok else None, audience="Platform admins"))
+    return out
+
+
+def tell_admins(event, title, description="", reference=(None, None), tenant=None, dedupe=True):
+    """A short summary of a school event for every platform admin: bell and email (alerts.notify_admins), and SMS."""
+    if not (wanted(event) and _on(_settings().get("notify_admins_copy"))):
+        return
+    from stemic_control.alerts import notify_admins
+
+    notify_admins(title, description, reference[0], reference[1], sms=False)
+    key = f"admin|{event}|{reference[0]}|{reference[1]}" if dedupe and reference[1] else None
+    sms_admins(event, f"Stemic: {title}", reference, tenant, key)
 
 
 # ----------------------------------------------------------------------------- the messages
@@ -182,7 +238,10 @@ def send_event(event, **kw):
                               ("Period", f"{formatdate(inv.period_start)} to {formatdate(inv.period_end)}"),
                               ("Amount due", total), ("Due date", due)],
                       f"<p><b>How to pay:</b> {escape_html(pay)}</p>" if pay else "")
-        return deliver(inv.tenant, event, ("SaaS Invoice", inv.name), (subject, html), sms)
+        out = deliver(inv.tenant, event, ("SaaS Invoice", inv.name), (subject, html), sms)
+        what = "issued to" if event == "Invoice Issued" else "overdue for"
+        tell_admins(event, f"Invoice {inv.name} {what} {school}: {total}, due {due}", "", ("SaaS Invoice", inv.name), inv.tenant)
+        return out
 
     if event == "Payment Received":
         pay = frappe.get_doc("SaaS Payment", kw["payment"])
@@ -196,7 +255,10 @@ def send_event(event, **kw):
                        ("Subscription active until", until)])
         sms = f"Stemic Schools: received {amount} ({pay.reference}) for {pay.invoice}. Balance {balance}." + (
             f" Active until {until}." if until else "")
-        return deliver(pay.tenant, event, ("SaaS Payment", pay.name), (subject, html), sms)
+        out = deliver(pay.tenant, event, ("SaaS Payment", pay.name), (subject, html), sms)
+        tell_admins(event, f"Payment {amount} received from {inv.school_name or pay.tenant} for {pay.invoice} ({pay.mode} "
+                           f"{pay.reference}); balance {balance}", "", ("SaaS Payment", pay.name), pay.tenant)
+        return out
 
     if event == "License Issued":
         lic = frappe.get_doc("SaaS License", kw["license"])
@@ -207,7 +269,10 @@ def send_event(event, **kw):
                       "<p>Sign in to your school's site, open <b>School Settings</b>, click <b>Install Key</b> and paste:</p>"
                       f"<pre style=\"white-space:pre-wrap;word-break:break-all;background:#f5f5f5;padding:10px\">{escape_html(lic.signed_key)}</pre>")
         sms = f"Stemic Schools: your license for {lic.school_name or lic.tenant} is ready. The key is in your email."
-        return deliver(lic.tenant, event, ("SaaS License", lic.name), (subject, html), sms)
+        out = deliver(lic.tenant, event, ("SaaS License", lic.name), (subject, html), sms)
+        tell_admins(event, f"License {lic.name} issued to {lic.school_name or lic.tenant} ({lic.plan})", "",
+                    ("SaaS License", lic.name), lic.tenant)
+        return out
 
     if event in ("Suspended", "Resumed"):
         tenant = kw["tenant"]
@@ -219,5 +284,13 @@ def send_event(event, **kw):
             subject, line = f"{school} is active again on Stemic Schools", f"<b>{escape_html(school)}</b>'s Stemic Schools service is active again."
             sms = f"Stemic Schools: {school}'s service is active again."
         # a school can be suspended and resumed more than once: each change is its own message
-        return deliver(tenant, event, ("SaaS Tenant", tenant), (subject, _email(line, [])), sms, dedupe=False)
+        out = deliver(tenant, event, ("SaaS Tenant", tenant), (subject, _email(line, [])), sms, dedupe=False)
+        tell_admins(event, f"{school} was {event.lower()}", "", ("SaaS Tenant", tenant), tenant, dedupe=False)
+        return out
+
+    if event == "School Registered":  # platform admins only
+        t = frappe.db.get_value("SaaS Tenant", kw["tenant"], ["school_name", "admin_email", "contact_phone", "agent"], as_dict=True)
+        extra = ", ".join(x for x in (t.admin_email, t.contact_phone, t.agent and f"agent {t.agent}") if x)
+        return tell_admins(event, f"New school registered: {t.school_name} ({kw['tenant']})" + (f", {extra}" if extra else ""),
+                           "", ("SaaS Tenant", kw["tenant"]), kw["tenant"])
     frappe.throw(f"Unknown school communication {event}")

@@ -65,6 +65,8 @@ def send(tenant_name):
     communications.deliver(tenant.name, "Welcome", ("SaaS Tenant", tenant.name), dedupe=False,
                            sms=f"Stemic Schools: {tenant.school_name or tenant.name} is ready at https://{site}. "
                                f"We emailed {tenant.admin_email} a link to set your password.")
+    communications.tell_admins("Welcome", f"{tenant.school_name or tenant.name} is ready at https://{site}; welcome sent to "
+                                          f"{tenant.admin_email}", "", ("SaaS Tenant", tenant.name), tenant.name, dedupe=False)
     return {"to": tenant.admin_email, "user": data["user"], "site": site}
 
 

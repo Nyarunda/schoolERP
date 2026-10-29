@@ -39,6 +39,10 @@
     "notify_overdue",
     "notify_license",
     "notify_status",
+    "notify_registered",
+    "admins_section",
+    "notify_admins_copy",
+    "notify_admins_by_sms",
     "sms_gateway_section",
     "sms_url",
     "sms_http_method",
@@ -250,6 +254,31 @@
       "fieldtype": "Check",
       "label": "Suspended / resumed",
       "default": "1"
+    },
+    {
+      "fieldname": "notify_registered",
+      "fieldtype": "Check",
+      "label": "New school registered (admins only)",
+      "default": "1"
+    },
+    {
+      "fieldname": "admins_section",
+      "fieldtype": "Section Break",
+      "label": "Platform Admins"
+    },
+    {
+      "fieldname": "notify_admins_copy",
+      "fieldtype": "Check",
+      "label": "Tell platform admins about every event",
+      "default": "1",
+      "description": "A short summary of each event above in every platform admin's notification bell and email."
+    },
+    {
+      "fieldname": "notify_admins_by_sms",
+      "fieldtype": "Check",
+      "label": "Also by SMS to platform admins",
+      "default": "1",
+      "description": "To each admin's mobile number (User > Mobile No), when SMS schools is on. Problem alerts (a failed build, a failed operation, invoices that disagree with payments) go by SMS too."
     },
     {
       "fieldname": "sms_gateway_section",

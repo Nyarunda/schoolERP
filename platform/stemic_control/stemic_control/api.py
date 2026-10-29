@@ -42,9 +42,13 @@ def register_tenant(school_name, slug, admin_email, agent=None, contact_phone=No
         frappe.throw("Slug already taken", frappe.ValidationError)
     if agent and not frappe.db.exists("SaaS Agent", agent):
         frappe.throw("Unknown agent", frappe.ValidationError)
-    return frappe.get_doc({"doctype": "SaaS Tenant", "school_name": school_name,
+    name = frappe.get_doc({"doctype": "SaaS Tenant", "school_name": school_name,
         "slug": slug, "admin_email": admin_email, "agent": agent, "contact_phone": (contact_phone or "").strip() or None,
         "status": "Draft"}).insert().name
+    from stemic_control import communications
+
+    communications.queue("School Registered", tenant=name)
+    return name
 
 
 @frappe.whitelist(methods=["POST"])

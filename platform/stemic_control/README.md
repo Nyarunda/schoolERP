@@ -143,7 +143,14 @@ when **Stemic Settings → Communications → SMS schools** is on and the gatewa
 | License issued | The key and how to install it | "The key is in your email" |
 | Suspended / resumed | Notice | Short notice |
 
-Links and license keys go by email only. Each event has its own switch on the Communications tab. Messages are sent
+**Platform admins** (System Manager / Stemic Platform Admin) get a one-line summary of every event above, plus **new
+school registered**, in the notification bell and by email, and by SMS to their mobile number (User > Mobile No)
+when SMS is on. Problem alerts (a failed or refused build, a failed site operation, invoices that disagree with their
+payments) go by SMS too. Each part has a switch.
+
+Links and license keys go by email only. Each event has its own switch on the Communications tab. Nothing is ever
+sent to reserved test addresses (`*.test`, `*.example`, `*.invalid`, `*.localhost`), and nothing is queued by
+automated tests. Messages are sent
 in the background after the record that caused them is committed, and never block billing. Each message and channel
 is recorded as a **SaaS Communication** (Sent, Failed with the reason, Skipped with the reason), which also stops the
 same invoice or payment being announced twice. The SMS gateway is the same setup-based sender schools use (any HTTP

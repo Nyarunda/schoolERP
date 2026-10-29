@@ -16,6 +16,7 @@
     "tenant",
     "event",
     "channel",
+    "audience",
     "status",
     "cb_main",
     "recipient",
@@ -42,13 +43,22 @@
       "label": "Event",
       "in_list_view": 1,
       "in_standard_filter": 1,
-      "options": "Welcome\nInvoice Issued\nPayment Received\nInvoice Overdue\nLicense Issued\nSuspended\nResumed"
+      "options": "Welcome\nInvoice Issued\nPayment Received\nInvoice Overdue\nLicense Issued\nSuspended\nResumed\nSchool Registered\nAlert"
     },
     {
       "fieldname": "channel",
       "fieldtype": "Select",
       "label": "Channel",
       "options": "Email\nSMS",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "audience",
+      "fieldtype": "Select",
+      "label": "Audience",
+      "options": "School\nPlatform admins",
+      "default": "School",
       "in_list_view": 1,
       "in_standard_filter": 1
     },

@@ -21,10 +21,13 @@ SMS_KEY = "sms-secret-key-123"
 class TestCommunications(TestCase):
     def setUp(self):
         frappe.set_user("Administrator")
+        frappe.flags.stemic_comms_in_tests = True  # queue() records into the patched enqueue below
         self._conf = patch.dict(frappe.local.conf, {"stemic_platform_domain": "stemic.test"})
         self._conf.start()
         self.settings({"notify_schools_by_email": 1, "notify_schools_by_sms": 0, "payment_instructions": "Paybill 999999, Account {invoice}",
-                       **{f: 1 for f in set(communications.EVENTS.values())}})
+                       "notify_admins_copy": 1, "notify_admins_by_sms": 1, **{f: 1 for f in set(communications.EVENTS.values())}})
+        self._alert = patch("stemic_control.alerts.notify_admins")
+        self.alert = self._alert.start()
         self._mail = patch.object(frappe, "sendmail")
         self.sendmail = self._mail.start()
         self._enqueue = patch.object(frappe, "enqueue")
@@ -32,13 +35,15 @@ class TestCommunications(TestCase):
         self._sms = patch("school_erp.api.sms_gateway._request", return_value=(200, '{"status": "Success"}'))
         self.http = self._sms.start()
         slug = "com-" + frappe.generate_hash(length=6).lower()
-        self.tenant = api.register_tenant("Comms Academy", slug, "head@comms.test", contact_phone=PHONE)
+        self.tenant = api.register_tenant("Comms Academy", slug, "head@comms-academy.co.ke", contact_phone=PHONE)
         self.plan = frappe.get_doc({"doctype": "SaaS Plan", "plan_name": "Comms " + frappe.generate_hash(length=5), "enabled": 1,
                                     "monthly_price": 5000, "modules": "[]"}).insert().name
         self.sub = frappe.get_doc({"doctype": "SaaS Subscription", "tenant": self.tenant, "plan": self.plan,
                                    "starts_on": nowdate(), "ends_on": add_days(nowdate(), 10)}).insert().name
 
     def tearDown(self):
+        frappe.flags.stemic_comms_in_tests = False
+        self._alert.stop()
         self._sms.stop()
         self._enqueue.stop()
         self._mail.stop()
@@ -83,7 +88,7 @@ class TestCommunications(TestCase):
         inv = billing.create_invoice(self.sub, months=3)
         self.run_queued("Invoice Issued")
         mail = self.sendmail.call_args.kwargs
-        self.assertEqual(mail["recipients"], ["head@comms.test"])
+        self.assertEqual(mail["recipients"], ["head@comms-academy.co.ke"])
         self.assertIn(inv, mail["subject"])
         self.assertIn("15,000", mail["message"])
         self.assertIn(f"Paybill 999999, Account {inv}", mail["message"])
@@ -183,11 +188,77 @@ class TestCommunications(TestCase):
 
         self.sms_on()
         frappe.db.set_value("SaaS Tenant", self.tenant, {"status": "Active", "canonical_site": "comms.localhost"})
-        reply = '{"user": "head@comms.test", "link": "http://comms.localhost/update-password?key=SECRET-LINK", "hours": 24}'
+        reply = '{"user": "head@comms-academy.co.ke", "link": "http://comms.localhost/update-password?key=SECRET-LINK", "hours": 24}'
         with patch.object(provisioner, "_frappe_cli", return_value=reply):
             welcome.send(self.tenant)
         sms_text = self.http.call_args.args[3]["message"]
         self.assertIn("https://comms.localhost", sms_text)
-        self.assertIn("head@comms.test", sms_text)
+        self.assertIn("head@comms-academy.co.ke", sms_text)
         self.assertNotIn("SECRET-LINK", sms_text)
         self.assertEqual([(l.channel, l.status) for l in self.logs("Welcome")], [("Email", "Sent"), ("SMS", "Sent")])
+
+    # ------------------------------------------------------------------ platform admins
+    def admin(self, mobile="0722 111 222"):
+        email = f"ops-{frappe.generate_hash(length=5)}@stemicschools.co.ke"
+        frappe.get_doc({"doctype": "User", "email": email, "first_name": "Ops", "send_welcome_email": 0, "mobile_no": mobile,
+                        "roles": [{"role": "Stemic Platform Admin"}]}).insert(ignore_permissions=True)
+        return email
+
+    def test_admins_get_a_summary_of_every_school_event(self):
+        inv = billing.create_invoice(self.sub, months=1)
+        self.run_queued("Invoice Issued")
+        title = self.alert.call_args.args[0]
+        self.assertIn(inv, title)
+        self.assertIn("Comms Academy", title)
+        self.assertEqual(self.alert.call_args.kwargs.get("sms"), False)  # the summary's own SMS, not a second one
+
+    def test_admins_are_texted_on_their_mobile_when_sms_is_on(self):
+        self.sms_on()
+        admin = self.admin()
+        self.pay(billing.create_invoice(self.sub, months=1), 5000)
+        self.run_queued("Payment Received")
+        admin_sms = frappe.get_all("SaaS Communication", filters={"audience": "Platform admins", "event": "Payment Received"},
+                                   fields=["recipient", "status"])
+        self.assertEqual([(a.recipient, a.status) for a in admin_sms], [("0722 111 222", "Sent")])
+        texts = [c.args[3]["message"] for c in self.http.call_args_list]
+        self.assertTrue(any(t.startswith("Stemic: Payment") and "Comms Academy" in t for t in texts))
+        self.assertTrue(frappe.db.exists("User", admin))
+
+    def test_admin_copies_can_be_switched_off(self):
+        self.settings({"notify_admins_copy": 0})
+        billing.create_invoice(self.sub, months=1)
+        self.run_queued("Invoice Issued")
+        self.alert.assert_not_called()
+        self.assertEqual(self.sendmail.call_count, 1)  # the school is still told
+
+    def test_a_new_registration_goes_to_admins_only(self):
+        self.run_queued("School Registered")
+        self.assertIn("New school registered: Comms Academy", self.alert.call_args.args[0])
+        self.sendmail.assert_not_called()
+
+    def test_problem_alerts_are_texted_to_admins_too(self):
+        self._alert.stop()
+        try:
+            self.sms_on()
+            self.admin()
+            from stemic_control.alerts import notify_admins
+
+            notify_admins("Creating the site for X failed", "detail", "SaaS Tenant", self.tenant)
+            notify_admins("Creating the site for X failed", "detail", "SaaS Tenant", self.tenant)  # the same alert again
+        finally:
+            self.alert = self._alert.start()
+        alerts = frappe.get_all("SaaS Communication", filters={"event": "Alert", "audience": "Platform admins"}, pluck="status")
+        self.assertEqual(alerts, ["Sent"])  # once, like the bell
+
+    def test_reserved_test_addresses_are_never_emailed(self):
+        frappe.db.set_value("SaaS Tenant", self.tenant, "admin_email", "head@school.test")
+        billing.create_invoice(self.sub, months=1)
+        self.run_queued("Invoice Issued")
+        self.sendmail.assert_not_called()
+        self.assertEqual([(l.status, l.detail) for l in self.logs("Invoice Issued")], [("Skipped", "A reserved test address")])
+
+    def test_nothing_is_queued_in_tests_that_did_not_ask(self):
+        frappe.flags.stemic_comms_in_tests = False
+        self.enqueue.reset_mock()
+        billing.create_invoice(self.sub, months=1)
+        self.assertFalse([c for c in self.enqueue.call_args_list if c.args and c.args[0] == "stemic_control.communications.send_event"])

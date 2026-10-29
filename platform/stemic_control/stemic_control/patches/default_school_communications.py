@@ -6,7 +6,7 @@ Settings, the new switches would otherwise read as off and nothing would be sent
 import frappe
 
 ON = ["notify_schools_by_email", "notify_welcome", "notify_invoice", "notify_payment", "notify_overdue",
-      "notify_license", "notify_status"]
+      "notify_license", "notify_status", "notify_registered", "notify_admins_copy", "notify_admins_by_sms"]
 
 
 def execute():

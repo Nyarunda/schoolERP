@@ -35,10 +35,18 @@ frappe.ui.form.on("SaaS Tenant", {
         frm.add_custom_button(__("Claim a Domain"), () => stemic_control.claim_domain(frm.doc.name), __("Actions"));
         if (["Active", "Suspended"].includes(frm.doc.status)) {
             const next = frm.doc.status === "Active" ? "Suspended" : "Active";
-            frm.add_custom_button(next === "Suspended" ? __("Suspend") : __("Resume"), () =>
-                frappe.confirm(__("Set {0} to {1}?", [frm.doc.school_name, __(next)]), () =>
-                    frappe.call({ method: "stemic_control.api.set_tenant_status", args: { tenant: frm.doc.name, status: next } })
-                        .then(() => frm.reload_doc())), __("Actions"));
+            const change = (reason) => frappe.call({ method: "stemic_control.api.set_tenant_status", freeze: true,
+                args: { tenant: frm.doc.name, status: next, reason }, freeze_message: next === "Suspended" ? __("Suspending...") : __("Resuming...") })
+                .then(() => frm.reload_doc());
+            frm.add_custom_button(next === "Suspended" ? __("Suspend") : __("Resume"), () => next === "Suspended"
+                ? frappe.prompt([
+                    { fieldname: "why", fieldtype: "Select", label: __("Reason shown to the school"), default: "Unpaid invoice",
+                      options: ["Unpaid invoice", "Requested by the school", "Breach of the terms of service", "Other", "(Do not say)"].join("\n") },
+                    { fieldname: "note", fieldtype: "Small Text", label: __("Note for the school (optional)"),
+                      description: __("Shown on the school's suspended page, e.g. what to do to restore the service.") },
+                ], ({ why, note }) => change([why === "(Do not say)" ? "" : why, note].filter(Boolean).join(". ")),
+                __("Suspend {0}?", [frm.doc.school_name]), __("Suspend"))
+                : frappe.confirm(__("Resume {0}? Its site opens again at once.", [frm.doc.school_name]), () => change()), __("Actions"));
         }
         frm.add_custom_button(__("Domains"), () => frappe.set_route("List", "SaaS Domain", { tenant: frm.doc.name }), __("View"));
         frm.add_custom_button(__("Provisioning Jobs"), () => frappe.set_route("List", "SaaS Provisioning Job", { tenant: frm.doc.name }), __("View"));

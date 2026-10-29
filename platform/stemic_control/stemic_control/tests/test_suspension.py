@@ -41,7 +41,9 @@ class TestSuspension(TestCase):
         self.calls.append(args)
         if "set-config" in args:
             key, value = args[-2], args[-1]
-            self.site_conf[key] = int(value) if "-p" in args else value
+            import ast
+
+            self.site_conf[key] = ast.literal_eval(value) if "-p" in args else value
         return ""
 
     def keys(self):
@@ -54,6 +56,20 @@ class TestSuspension(TestCase):
         self.assertIn("Suspend Academy", self.site_conf["stemic_suspended_message"])
         self.assertEqual(self.keys()[-1], "stemic_suspended")  # the block starts last, once the message is in place
         self.assertTrue(all(c[:2] == ("--site", self.site) for c in self.calls))
+
+    def test_the_page_gets_the_reason_and_what_is_owed(self):
+        from stemic_control import billing
+
+        plan = frappe.get_doc({"doctype": "SaaS Plan", "plan_name": "Sus " + frappe.generate_hash(length=5), "enabled": 1,
+                               "monthly_price": 5000, "modules": "[]"}).insert().name
+        sub = frappe.get_doc({"doctype": "SaaS Subscription", "tenant": self.tenant, "plan": plan,
+                              "starts_on": frappe.utils.nowdate()}).insert().name
+        inv = billing.create_invoice(sub, months=2)
+        api.set_tenant_status(self.tenant, "Suspended", reason="Unpaid invoice")
+        info = self.site_conf["stemic_suspension"]
+        self.assertEqual((info["school"], info["reason"], info["invoice"]), ("Suspend Academy", "Unpaid invoice", inv))
+        self.assertEqual(info["amount_due"], "KES 10,000.00")
+        self.assertTrue(info["email"])
 
     def test_resume_unblocks_first_then_restarts_jobs(self):
         api.set_tenant_status(self.tenant, "Suspended")

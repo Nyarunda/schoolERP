@@ -81,6 +81,22 @@ class TestProvisioner(TestCase):
         self.assertTrue(access["password"] and access["password"] != "*" * len(access["password"]))
         self.assertEqual(provisioner.run(self.job), "Succeeded")  # a second run does nothing
 
+    def test_a_site_on_a_real_domain_is_told_its_https_address(self):
+        calls, fake = self.cli()
+        with patch.dict(frappe.local.conf, {"stemic_site_domain": "stemic.test"}), \
+                patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", return_value=False):
+            self.assertEqual(provisioner.run(self.job), "Succeeded")
+        site = f"{self.slug}.stemic.test"
+        self.assertIn(("--site", site, "set-config", "host_name", f"https://{site}"), calls)
+        self.assertLess(next(i for i, c in enumerate(calls) if "list-apps" in c),
+                        next(i for i, c in enumerate(calls) if "host_name" in c))  # after the readiness check
+
+    def test_a_development_site_keeps_plain_http(self):
+        calls, fake = self.cli()
+        with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", return_value=False):
+            self.assertEqual(provisioner.run(self.job), "Succeeded")
+        self.assertFalse(any("host_name" in c for c in calls))
+
     def test_failure_marks_job_and_school_failed(self):
         calls, fake = self.cli(fail_new_site=True)
         with patch.object(provisioner, "_frappe_cli", side_effect=fake), patch.object(provisioner, "_site_dir_exists", side_effect=[False, True]):

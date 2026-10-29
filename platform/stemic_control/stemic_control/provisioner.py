@@ -131,6 +131,15 @@ def check_ready(site: str) -> None:
         raise ProvisioningError(f"Site {site} is missing apps: {', '.join(missing)}")
 
 
+def set_public_url(site: str) -> None:
+    """Tell the new site its https:// address, so links in its emails (password resets, the parent portal, receipts)
+    are https. Frappe otherwise builds them from the bare site name as http://, since jobs that send email have no
+    request to read the scheme from. Development sites (*.localhost) are served over plain http and are left alone."""
+    if site.endswith(".localhost") or site == "localhost":
+        return
+    _frappe_cli("--site", site, "set-config", "host_name", f"https://{site}", timeout=120)
+
+
 def _set_job(job, status, error=None):
     updates = {"status": status}
     if status == "Running":
@@ -199,6 +208,7 @@ def run(job: str) -> str:
         created = True
         _frappe_cli(*args, timeout=NEW_SITE_TIMEOUT, secrets_=(root, password))
         check_ready(site)
+        set_public_url(site)
     except Exception as e:
         frappe.db.rollback()
         message = str(e) if isinstance(e, ProvisioningError) else frappe.get_traceback()

@@ -5,7 +5,7 @@
  "docstatus": 0,
  "doctype": "Report",
  "is_standard": "Yes",
- "modified": "2026-10-21 20:00:00.000000",
+ "modified": "2026-10-29 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Driver Check-in Register",
@@ -26,6 +26,9 @@
   },
   {
    "role": "Transport Manager"
+  },
+  {
+   "role": "School Viewer"
   }
  ]
 }

@@ -1,0 +1,67 @@
+"""A school suspended by Stemic answers every request with "service suspended".
+bench --site <site> run-tests --module school_erp.tests.test_suspension"""
+
+import json
+import os
+import unittest
+from unittest.mock import patch
+
+import frappe
+from werkzeug.exceptions import HTTPException
+
+from school_erp import suspension
+
+
+class TestSuspension(unittest.TestCase):
+	def request(self, path, accept="text/html", suspended=True, **conf):
+		values = {"stemic_suspended": 1 if suspended else 0, **conf}
+		with patch.object(suspension, "_site_config", return_value=frappe._dict(values)), \
+				patch.object(frappe.local, "request", frappe._dict(path=path), create=True), \
+				patch.object(frappe, "get_request_header", side_effect=lambda h: accept if h == "Accept" else None):
+			try:
+				suspension.check()
+			except HTTPException as e:
+				return e.response
+		return None
+
+	def test_pages_and_the_desk_show_service_suspended(self):
+		for path in ("/", "/app", "/login", "/app/fee-payment/new"):
+			with self.subTest(path=path):
+				response = self.request(path, stemic_suspended_message="Greenfield's service is suspended.",
+										stemic_support_email="support@stemicschools.com")
+				self.assertEqual(response.status_code, 503)
+				page = response.get_data(as_text=True)
+				self.assertIn("Service suspended", page)
+				self.assertIn("Greenfield", page)
+				self.assertIn("s service is suspended.", page)  # the message, escaped
+				self.assertIn("support@stemicschools.com", page)
+
+	def test_the_api_refuses_with_json(self):
+		for path, accept in (("/api/method/frappe.auth.get_logged_user", "text/html"), ("/app", "application/json")):
+			with self.subTest(path=path):
+				response = self.request(path, accept)
+				self.assertEqual((response.status_code, response.mimetype), (503, "application/json"))
+				self.assertEqual(json.loads(response.get_data())["exc_type"], "SchoolSuspended")
+
+	def test_stylesheets_and_images_still_load(self):
+		for path in ("/assets/frappe/dist/css/website.bundle.css", "/files/logo.png", "/favicon.ico"):
+			with self.subTest(path=path):
+				self.assertIsNone(self.request(path))
+
+	def test_a_running_school_is_untouched(self):
+		self.assertIsNone(self.request("/app", suspended=False))
+
+	def test_a_change_on_disk_is_seen_at_once(self):
+		"""Frappe caches site config for a minute per web worker; the suspension reads the file when it changes."""
+		import tempfile
+
+		with tempfile.TemporaryDirectory() as folder, \
+				patch.object(suspension, "_config_path", return_value=f"{folder}/site_config.json"):
+			path = f"{folder}/site_config.json"
+			with open(path, "w") as f:
+				json.dump({"stemic_suspended": 0}, f)
+			self.assertFalse(suspension.suspended())
+			with open(path, "w") as f:
+				json.dump({"stemic_suspended": 1}, f)
+			os.utime(path, ns=(1, 2))  # a different modified time, as any real write gives
+			self.assertTrue(suspension.suspended())

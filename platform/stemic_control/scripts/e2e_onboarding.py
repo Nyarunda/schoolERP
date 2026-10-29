@@ -241,6 +241,39 @@ def visibility(frappe, url, session):
     return f"{LICENSED_REPORT} runs, {HIDDEN_REPORT} refused; desk offers {VISIBLE_PROBE}, hides {HIDDEN_PROBE}"
 
 
+@step("Suspending blocks the school's site; resuming restores it")
+def suspend_resume(frappe, url, session):
+    from unittest.mock import patch
+
+    import requests
+
+    from stemic_control import api, communications
+
+    with patch.object(communications, "queue"):  # the suspension notices are tested on their own
+        api.set_tenant_status(slug(), "Suspended")
+        frappe.db.commit()
+        page = session.get(f"{url}/app", timeout=30)
+        check(page.status_code == 503 and "Service suspended" in page.text,
+              f"a signed-in user still reaches the desk while suspended ({page.status_code})")
+        call = session.get(f"{url}/api/method/frappe.auth.get_logged_user", timeout=30)
+        check(call.status_code == 503 and call.json().get("exc_type") == "SchoolSuspended",
+              f"the API still answers while suspended ({call.status_code})")
+        # the right password, fresh: Frappe checks it before any app hook, but the answer is still "suspended"
+        access = api.site_access(slug())
+        fresh = requests.Session()
+        fresh.headers.update({"Host": session.headers.get("Host", "")})
+        login = fresh.post(f"{url}/api/method/login", data={"usr": access["user"], "pwd": access["password"]}, timeout=30)
+        check(login.status_code == 503, f"signing in still works while suspended ({login.status_code})")
+        after = fresh.get(f"{url}/api/method/frappe.auth.get_logged_user", timeout=30)
+        check(after.status_code == 503, f"a sign-in made while suspended reaches the site ({after.status_code})")
+        api.set_tenant_status(slug(), "Active")
+        frappe.db.commit()
+    back = session.get(f"{url}/api/method/frappe.auth.get_logged_user", timeout=30)
+    check(back.status_code == 200 and back.json().get("message") == "Administrator",
+          f"the school did not come back after resuming ({back.status_code})")
+    return "desk, API and signing in answer 503 Service suspended; after resuming the same session works again"
+
+
 # ----------------------------------------------------------------------------- cleanup
 def cleanup(frappe):
     """Drop the run's site and remove its records, and nothing else."""
@@ -297,6 +330,7 @@ def main():
         license_key(frappe)
         session, url, _ = school_login(frappe, url)
         visibility(frappe, url, session)
+        suspend_resume(frappe, url, session)
     except Exception:
         failed = True
         traceback.print_exc(limit=3)

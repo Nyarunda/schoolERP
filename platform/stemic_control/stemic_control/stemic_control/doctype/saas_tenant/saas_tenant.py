@@ -14,3 +14,7 @@ class SaaSTenant(Document):
         linked = self.flags.link_existing_site and before and before.status in ("Approved", "Failed") and self.status == "Active"
         if before and not linked and not can_move(TENANT_TRANSITIONS, before.status, self.status):
             frappe.throw(f"A {before.status} school cannot become {self.status}", frappe.ValidationError)
+        # suspending or resuming must also switch the school's site (api.set_tenant_status): never the status alone
+        if before and "Suspended" in (before.status, self.status) and before.status != self.status \
+                and not self.flags.via_status_switch:
+            frappe.throw("Use Suspend or Resume on the school: they also stop or restart its site", frappe.ValidationError)

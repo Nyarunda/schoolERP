@@ -32,7 +32,10 @@ def create(email, full_name=None):
 		user.save(ignore_permissions=True)
 	seconds = LINK_HOURS * 3600
 	if cint(frappe.get_system_settings("reset_password_link_expiry_duration")) < seconds:
+		from frappe.core.doctype.system_settings.system_settings import clear_system_settings_cache
+
 		frappe.db.set_single_value("System Settings", "reset_password_link_expiry_duration", seconds)
+		clear_system_settings_cache()  # or the old 20 minutes is still read, here and where the link is checked
 	link = user._reset_password(send_email=False)
 	frappe.db.commit()
 	return {"user": user.name, "link": link, "hours": LINK_HOURS}

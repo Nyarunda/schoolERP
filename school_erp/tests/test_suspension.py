@@ -65,3 +65,20 @@ class TestSuspension(unittest.TestCase):
 				json.dump({"stemic_suspended": 1}, f)
 			os.utime(path, ns=(1, 2))  # a different modified time, as any real write gives
 			self.assertTrue(suspension.suspended())
+
+	def test_the_page_shows_why_what_is_owed_how_to_pay_and_who_to_call(self):
+		info = {"school": "Greenfield Academy", "brand": "Stemic Schools", "email": "support@stemicschools.com",
+				"phone": "+254 711 000 111", "reason": "Unpaid invoice", "invoice": "SINV-2026-00012",
+				"amount_due": "KES 114,000.00", "due_date": "15-10-2026", "how_to_pay": "Paybill 123456, Account SINV-2026-00012"}
+		response = self.request("/app", stemic_suspension=info)
+		page = response.get_data(as_text=True)
+		for text in ("Greenfield Academy", "Service suspended", "Unpaid invoice", "KES 114,000.00", "SINV-2026-00012",
+					 "Paybill 123456", "mailto:support@stemicschools.com", "tel:+254711000111", "Check again"):
+			self.assertIn(text, page)
+		api = self.request("/api/method/x", stemic_suspension=info)
+		self.assertEqual(json.loads(api.get_data())["amount_due"], "KES 114,000.00")
+
+	def test_nothing_owed_shows_no_amount(self):
+		page = self.request("/app", stemic_suspension={"school": "Greenfield Academy", "reason": "Requested by the school"}).get_data(as_text=True)
+		self.assertNotIn("Amount due", page)
+		self.assertIn("Requested by the school", page)

@@ -196,7 +196,7 @@ def record_job_result(job, status, error=None):
 
 
 @frappe.whitelist(methods=["POST"])
-def set_tenant_status(tenant, status):
+def set_tenant_status(tenant, status, reason=None):
     """Operator switch: suspend or resume a school. Other changes go through provisioning jobs."""
     _admin()
     if status not in ("Suspended", "Active"):
@@ -212,7 +212,7 @@ def set_tenant_status(tenant, status):
 
         # the school's own site must really stop (or start): otherwise this status would be untrue
         try:
-            suspension.apply(doc.name, status == "Suspended")
+            suspension.apply(doc.name, status == "Suspended", reason)
         except Exception:
             frappe.db.rollback(save_point="tenant_status")  # the status change only
             try:

@@ -27,21 +27,47 @@ def _first_admin(site, email, full_name):
     raise provisioner.ProvisioningError(f"The school site did not return a set-password link for {email}")
 
 
+def _billing(tenant):
+    """The plan, what is paid and until when, and the latest invoice: for the welcome email's payment details."""
+    from frappe.utils import fmt_money, formatdate
+
+    sub = frappe.db.get_value("SaaS Subscription", tenant.subscription or {"tenant": tenant.name},
+                              ["name", "plan", "status", "ends_on"], as_dict=True) if (
+        tenant.subscription or frappe.db.exists("SaaS Subscription", {"tenant": tenant.name})) else None
+    if not sub:
+        return [], None
+    price = frappe.db.get_value("SaaS Plan", sub.plan, "monthly_price")
+    inv = frappe.get_all("SaaS Invoice", filters={"subscription": sub.name, "docstatus": 1},
+                         fields=["name", "total", "outstanding", "status", "due_date", "currency"], order_by="creation desc", limit=1)
+    inv = inv[0] if inv else None
+    cur = (inv.currency if inv else None) or "KES"
+    rows = [("Plan", f"{sub.plan}" + (f" ({fmt_money(price, currency=cur)} a month)" if price else "")),
+            ("Subscription", sub.status + (f", paid until {formatdate(sub.ends_on)}" if sub.ends_on else ""))]
+    if inv:
+        state = ("Paid" if inv.status == "Paid"
+                 else f"{fmt_money(inv.outstanding, currency=cur)} due {formatdate(inv.due_date)}")
+        rows.append(("Latest invoice", f"{inv.name}: {fmt_money(inv.total, currency=cur)}, {state}"))
+    return rows, (inv.name if inv and inv.status != "Paid" else None)
+
+
 def _message(tenant, site, user, link, hours):
+    from stemic_control.communications import email_html, how_to_pay, link as a
+
     url = f"https://{site}"
     school = escape_html(tenant.school_name or tenant.name)
-    return f"""<p>Hello,</p>
-<p><b>{school}</b> is ready on Stemic Schools.</p>
-<table cellpadding="4">
-  <tr><td>Your school's address</td><td><a href="{url}">{url}</a></td></tr>
-  <tr><td>Your username</td><td><b>{escape_html(user)}</b></td></tr>
-</table>
-<p><a href="{escape_html(link)}" style="display:inline-block;padding:10px 18px;background:#171717;color:#fff;
-text-decoration:none;border-radius:6px">Set your password</a></p>
-<p>This link works once and expires in {hours} hours. If it has expired, reply to this email and we will send a new
-one. Then sign in at <a href="{url}">{url}</a> with your username and the password you chose.</p>
-<p>After signing in, open <b>School Settings</b> to add your school's details and install your license key.</p>
-<p>Welcome aboard,<br>Stemic Schools</p>"""
+    billing_rows, unpaid = _billing(tenant)
+    pay_title, pay_body = how_to_pay(unpaid)
+    return email_html(
+        f"Welcome to Stemic Schools", f"<b>{school}</b> is ready. Here is everything you need to get started.",
+        [("Your school's address", a(url)), ("Your username", user), *billing_rows],
+        button=("Set your password", link),
+        blocks=[("Getting started", "<ol style=\"margin:0;padding-left:20px\"><li>Click <b>Set your password</b> above.</li>"
+                 f"<li>Sign in at {a(url)} with your username and new password.</li>"
+                 "<li>Open <b>School Settings</b> to add your school's details and install your license key, "
+                 "which we send separately.</li></ol>"),
+                (pay_title, pay_body if unpaid else (pay_body and f"For renewals and future invoices: {pay_body}"))],
+        note=f"The password link works once and expires in {hours} hours. If it has expired, reply to this email and "
+             "we will send a new one. Questions? Just reply: we are here to help.")
 
 
 def send(tenant_name):

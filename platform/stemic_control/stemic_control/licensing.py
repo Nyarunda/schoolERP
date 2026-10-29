@@ -99,4 +99,7 @@ def issue(subscription: str) -> str:
     lic.status = "Issued"
     lic.flags.from_issue = True
     lic.insert()
+    from stemic_control import communications
+
+    communications.queue("License Issued", license=lic.name)
     return lic.name

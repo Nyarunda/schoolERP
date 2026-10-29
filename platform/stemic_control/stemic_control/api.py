@@ -31,7 +31,7 @@ def _hostname(value):
 
 
 @frappe.whitelist(methods=["POST"])
-def register_tenant(school_name, slug, admin_email, agent=None):
+def register_tenant(school_name, slug, admin_email, agent=None, contact_phone=None):
     _admin()
     slug = (slug or "").strip().lower()
     if not SLUG.fullmatch(slug) or slug in RESERVED:
@@ -43,7 +43,8 @@ def register_tenant(school_name, slug, admin_email, agent=None):
     if agent and not frappe.db.exists("SaaS Agent", agent):
         frappe.throw("Unknown agent", frappe.ValidationError)
     return frappe.get_doc({"doctype": "SaaS Tenant", "school_name": school_name,
-        "slug": slug, "admin_email": admin_email, "agent": agent, "status": "Draft"}).insert().name
+        "slug": slug, "admin_email": admin_email, "agent": agent, "contact_phone": (contact_phone or "").strip() or None,
+        "status": "Draft"}).insert().name
 
 
 @frappe.whitelist(methods=["POST"])
@@ -197,8 +198,13 @@ def set_tenant_status(tenant, status):
     if status not in ("Suspended", "Active"):
         frappe.throw("Only Suspended or Active can be set by hand", frappe.ValidationError)
     doc = frappe.get_doc("SaaS Tenant", tenant)
+    changed = doc.status != status
     doc.status = status
     doc.save()  # SaasTenant.validate refuses moves the policy does not allow
+    if changed:
+        from stemic_control import communications
+
+        communications.queue("Suspended" if status == "Suspended" else "Resumed", tenant=doc.name)
     return {"tenant": doc.name, "status": doc.status}
 
 

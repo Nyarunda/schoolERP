@@ -129,6 +129,26 @@ then Stemic Settings > Accounting: enter the company's exact name, save, **Set U
 one income account and item per plan, the VAT template, the modes of payment and monthly deferred processing; safe to
 run again), and tick **Post to accounts**. Check the bank and M-Pesa accounts it created against your real ones.
 
+## What schools are told (email and SMS)
+
+`stemic_control/communications.py`. Every message goes to the school's contact email, and to its contact phone too
+when **Stemic Settings → Communications → SMS schools** is on and the gateway is filled in:
+
+| Event | Email | SMS |
+| --- | --- | --- |
+| Site ready | Address, username, one-time set-password link (`welcome.py`) | Address; "we emailed you a link" |
+| Invoice issued (renewals too) | Amount, period, due date, payment instructions | Invoice, amount, due date, how to pay |
+| Payment received | Amount, reference, balance, active until | Short receipt |
+| Invoice overdue | Reminder with how to pay (once per invoice) | Short reminder |
+| License issued | The key and how to install it | "The key is in your email" |
+| Suspended / resumed | Notice | Short notice |
+
+Links and license keys go by email only. Each event has its own switch on the Communications tab. Messages are sent
+in the background after the record that caused them is committed, and never block billing. Each message and channel
+is recorded as a **SaaS Communication** (Sent, Failed with the reason, Skipped with the reason), which also stops the
+same invoice or payment being announced twice. The SMS gateway is the same setup-based sender schools use (any HTTP
+provider, success rule, https to a public address only); **Send Test SMS** on Stemic Settings checks it.
+
 ## APIs
 
 Authenticated platform admin only:

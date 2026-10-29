@@ -311,6 +311,10 @@ def daily():
     for name in frappe.get_all("SaaS Invoice", filters={"docstatus": 1, "status": ("in", ["Unpaid", "Partly Paid"]),
                                                         "due_date": ("<", today)}, pluck="name"):
         inv = refresh_invoice(name)
+        if inv.status == "Overdue":
+            from stemic_control import communications
+
+            communications.queue("Invoice Overdue", invoice=inv.name)  # once per invoice (SaaS Communication)
         sub = frappe.get_doc("SaaS Subscription", inv.subscription)
         if sub.status == "Active" and sub.ends_on and getdate(sub.ends_on) < today:
             sub.status = "Past Due"

@@ -7,6 +7,13 @@ const STEMIC_SERVER_KEYS = {
 frappe.ui.form.on("Stemic Settings", {
     refresh(frm) {
         frm.add_custom_button(__("Re-check Setup"), () => render_setup(frm));
+        if (frm.doc.notify_schools_by_sms) frm.add_custom_button(__("Send Test SMS"), () =>
+            frappe.prompt({ fieldname: "number", fieldtype: "Data", label: __("Phone number"), reqd: 1, default: frm.doc.sms_test_number },
+                ({ number }) => frappe.call({ method: "stemic_control.communications.send_test_sms", args: { number },
+                    freeze: true, freeze_message: __("Sending...") }).then(({ message: r }) => r.sent
+                    ? frappe.msgprint({ title: __("Sent"), indicator: "green", message: __("The gateway accepted it. Check the phone.") })
+                    : frappe.msgprint({ title: __("Not sent"), indicator: "red", message: frappe.utils.escape_html(r.error || __("Refused")) })),
+                __("Send Test SMS"), __("Send")));
         render_setup(frm);
         render_accounting(frm);
     },

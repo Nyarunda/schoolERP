@@ -53,15 +53,27 @@ def send(tenant_name):
         frappe.throw("The school has no contact email", frappe.ValidationError)
     site = tenant.canonical_site
     data = _first_admin(site, tenant.admin_email, tenant.school_name and f"{tenant.school_name} Admin")
-    frappe.sendmail(recipients=[tenant.admin_email], subject=f"{tenant.school_name or tenant.name} is ready on Stemic Schools",
+    subject = f"{tenant.school_name or tenant.name} is ready on Stemic Schools"
+    frappe.sendmail(recipients=[tenant.admin_email], subject=subject,
                     message=_message(tenant, site, data["user"], data["link"], data.get("hours") or 24),
                     reference_doctype="SaaS Tenant", reference_name=tenant.name, now=True)
     frappe.db.set_value("SaaS Tenant", tenant.name, "welcome_sent_on", now_datetime(), update_modified=False)
+    from stemic_control import communications
+
+    communications._log(tenant.name, "Welcome", "Email", "Sent", tenant.admin_email, ("SaaS Tenant", tenant.name), subject)
+    # the link stays in the email; the SMS only says where to look
+    communications.deliver(tenant.name, "Welcome", ("SaaS Tenant", tenant.name), dedupe=False,
+                           sms=f"Stemic Schools: {tenant.school_name or tenant.name} is ready at https://{site}. "
+                               f"We emailed {tenant.admin_email} a link to set your password.")
     return {"to": tenant.admin_email, "user": data["user"], "site": site}
 
 
 def after_provisioning(tenant_name):
     """Called when a build succeeds. A failure to send never undoes the build: the platform admins are told instead."""
+    from stemic_control import communications
+
+    if not communications.wanted("Welcome"):
+        return {"skipped": "Site ready (welcome) is off in Stemic Settings > Communications"}
     try:
         result = send(tenant_name)
         frappe.db.commit()

@@ -56,6 +56,10 @@ doc_events = {dt: {"validate": _licensed, "before_submit": _licensed} for dt in 
 # Bursars and school admins get the ERPNext accounting roles behind Finance (school_erp.setup.finance)
 doc_events["User"] = {"validate": "school_erp.setup.finance.sync_user_roles"}
 doc_events["Customer"] = {"validate": "school_erp.setup.finance.keep_students_apart"}
+# Outbound webhook events (school_erp.api.webhooks): recorded with the document, sent after commit
+doc_events.setdefault("Student", {})["after_insert"] = "school_erp.api.webhooks.on_student_insert"
+doc_events.setdefault("Fee Payment", {})["on_submit"] = "school_erp.api.webhooks.on_fee_payment_submit"
+doc_events.setdefault("Sales Invoice", {})["on_submit"] = "school_erp.api.webhooks.on_sales_invoice_submit"
 
 # Staff see only their own leave, duty reports and driver logs (plus what they must approve)
 permission_query_conditions = {
@@ -100,7 +104,7 @@ scheduler_events = {
 	"cron": {
 		"*/15 4-10 * * 1-6": ["school_erp.api.transport_ops.alert_missing_checkins"],
 		"*/30 15-20 * * 1-5": ["school_erp.api.staff.alert_missing_duty_reports"],
-		"*/5 * * * *": ["school_erp.api.stk.query_stale_requests"],
+		"*/5 * * * *": ["school_erp.api.stk.query_stale_requests", "school_erp.api.webhooks.retry_due"],
 	},
 	"hourly": ["school_erp.api.paybill.retry_pending"],
 }

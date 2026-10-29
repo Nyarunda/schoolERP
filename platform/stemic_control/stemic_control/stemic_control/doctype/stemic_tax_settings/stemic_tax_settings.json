@@ -20,13 +20,15 @@
       "fieldname": "seller_name",
       "fieldtype": "Data",
       "label": "Seller Name",
-      "reqd": 1
+      "read_only": 1,
+      "description": "From Stemic Settings > Billing: change it there."
     },
     {
       "fieldname": "seller_pin",
       "fieldtype": "Data",
       "label": "Seller Pin",
-      "reqd": 1
+      "read_only": 1,
+      "description": "From Stemic Settings > Billing: change it there."
     },
     {
       "fieldname": "branch_id",

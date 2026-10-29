@@ -205,7 +205,8 @@ def tell_admins(event, title, description="", reference=(None, None), tenant=Non
 
 # ----------------------------------------------------------------------------- the messages
 def _money(amount, currency):
-    return fmt_money(amount, currency=currency or "KES")
+    """KES 114,000.00: the currency code, as on the invoice (Frappe's symbol for KES is "Sh")."""
+    return f"{currency or 'KES'} {fmt_money(amount or 0, precision=2)}"
 
 
 def _instructions(invoice):
@@ -214,8 +215,17 @@ def _instructions(invoice):
     return (settings().payment_instructions or "").replace("{invoice}", invoice)
 
 
-NAVY, GREEN, INK, MUTED, LINE = "#1b3a6b", "#43a047", "#14243d", "#5b6b82", "#e6ebf2"
+INK, MUTED, LINE = "#14243d", "#5b6b82", "#e6ebf2"
 FONT = "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
+
+
+def brand():
+    """Stemic Settings > Communications > Branding, with Stemic's own defaults."""
+    s = _settings()
+    email = s.get("support_email") or frappe.db.get_value("Email Account", {"default_outgoing": 1, "enable_outgoing": 1},
+                                                          "email_id") or "support@stemicschools.com"
+    return frappe._dict(name=(s.get("brand_name") or "Stemic Schools").strip(), color=s.get("brand_color") or "#1b3a6b",
+                        accent=s.get("accent_color") or "#43a047", email=email, phone=s.get("support_phone") or "")
 
 
 class Html(str):
@@ -223,12 +233,14 @@ class Html(str):
 
 
 def link(url, text=None):
-    return Html(f'<a href="{escape_html(url)}" style="color:{NAVY};font-weight:600">{escape_html(text or url)}</a>')
+    return Html(f'<a href="{escape_html(url)}" style="color:{brand().color};font-weight:600">{escape_html(text or url)}</a>')
 
 
 def email_html(heading, intro="", rows=(), button=None, blocks=(), note=""):
-    """Stemic's email layout: a navy band, the heading, a short intro (HTML), a details table, an optional button
-    (label, url), boxed sections (title, HTML), and a closing note. The Email Account footer follows it."""
+    """The email layout: a header band in the brand colour, the heading, a short intro (HTML), a details table, an
+    optional button (label, url), boxed sections (title, HTML), and a closing note. The Email Account footer follows."""
+    b = brand()
+
     def value(v):
         return v if isinstance(v, Html) else escape_html(str(v))
 
@@ -238,19 +250,20 @@ def email_html(heading, intro="", rows=(), button=None, blocks=(), note=""):
         f'{value(v)}</td></tr>' for k, v in rows if v not in (None, ""))
     table = (f'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid {LINE};'
              f'border-radius:8px;border-collapse:separate;margin:18px 0;font-size:14px">{table}</table>') if table else ""
-    cta = (f'<p style="margin:22px 0"><a href="{escape_html(button[1])}" style="display:inline-block;background:{GREEN};'
+    cta = (f'<p style="margin:22px 0"><a href="{escape_html(button[1])}" style="display:inline-block;background:{b.accent};'
            f'color:#ffffff;padding:13px 28px;border-radius:6px;font-weight:700;font-size:15px;text-decoration:none">'
            f'{escape_html(button[0])}</a></p>') if button else ""
     boxes = "".join(
-        f'<div style="background:#f4f8f4;border-left:4px solid {GREEN};border-radius:6px;padding:14px 16px;margin:16px 0">'
+        f'<div style="background:#f6f8fa;border-left:4px solid {b.accent};border-radius:6px;padding:14px 16px;margin:16px 0">'
         f'<div style="font-weight:700;color:{INK};margin-bottom:6px">{escape_html(title)}</div>'
         f'<div style="color:{INK};font-size:14px;line-height:1.55">{body}</div></div>' for title, body in blocks if body)
     closing = f'<p style="color:{MUTED};font-size:13px;line-height:1.55;margin:18px 0 0">{note}</p>' if note else ""
+    first, _, rest = b.name.partition(" ")
+    title = escape_html(first) + (f' <span style="opacity:.75">{escape_html(rest)}</span>' if rest else "")
     return (f'<div style="background:#f4f7fb;padding:24px 8px;{FONT}">'
             f'<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;'
             f'background:#ffffff;border:1px solid #e1e7f0;border-radius:10px;overflow:hidden">'
-            f'<tr><td style="background:{NAVY};padding:16px 28px;font-size:19px;font-weight:700;color:#ffffff">'
-            f'Stemic <span style="color:#8fd694">Schools</span></td></tr>'
+            f'<tr><td style="background:{b.color};padding:16px 28px;font-size:19px;font-weight:700;color:#ffffff">{title}</td></tr>'
             f'<tr><td style="padding:26px 28px 30px;color:{INK};font-size:15px;line-height:1.55">'
             f'<h1 style="font-size:22px;line-height:1.3;color:{INK};margin:0 0 10px">{escape_html(heading)}</h1>'
             f'{f"<p style=margin:0>{intro}</p>" if intro else ""}{table}{cta}{boxes}{closing}'
@@ -263,70 +276,113 @@ def how_to_pay(invoice=None):
     return ("How to pay", escape_html(text).replace("\n", "<br>")) if text.strip() else ("How to pay", "")
 
 
+def _contact():
+    b = brand()
+    return "Questions? Reply to this email" + (f" or call {escape_html(b.phone)}" if b.phone else "") + "."
+
+
+# ----------------------------------------------------------------------------- what each message says
+# Each builder takes plain values (records, or samples for the preview) and returns (subject, html, sms).
+def render_invoice(event, inv):
+    b = brand()
+    school = inv.school_name or inv.tenant
+    total = _money(inv.outstanding if event == "Invoice Overdue" else inv.total, inv.currency)
+    pay, due = _instructions(inv.name), formatdate(inv.due_date)
+    if event == "Invoice Issued":
+        subject = f"Invoice {inv.name} from {b.name}: {total} due {due}"
+        intro = f"Here is the invoice for <b>{escape_html(school)}</b>'s {escape_html(b.name)} subscription."
+        sms = f"{b.name}: invoice {inv.name} for {school}, {total}, due {due}. {pay}".strip()
+    else:
+        subject = f"Overdue: invoice {inv.name}, {total}"
+        intro = f"Invoice {inv.name} for <b>{escape_html(school)}</b> was due on {due} and is not fully paid yet."
+        sms = f"{b.name}: invoice {inv.name} ({total}) was due {due}. Please pay to keep {school} running. {pay}".strip()
+    html = email_html("Invoice " + inv.name if event == "Invoice Issued" else "Payment overdue", intro,
+                      [("Invoice", inv.name), ("School", school), ("Plan", inv.plan),
+                       ("Period", f"{formatdate(inv.period_start)} to {formatdate(inv.period_end)}"),
+                       ("Amount", _money(inv.total, inv.currency)),
+                       ("Discount", _money(inv.discount_amount, inv.currency) if inv.discount_amount else None),
+                       ("Amount due", total), ("Due date", due)],
+                      blocks=[how_to_pay(inv.name)],
+                      note="Use the invoice number as the payment reference, so your payment is matched at once. " + _contact())
+    return subject, html, sms
+
+
+def render_payment(pay, inv, ends_on):
+    b = brand()
+    amount, balance = _money(pay.amount, inv.currency), _money(inv.outstanding, inv.currency)
+    until = formatdate(ends_on) if ends_on else None
+    subject = f"Payment received: {amount} for {pay.invoice}"
+    html = email_html("Payment received", f"Thank you. We received your payment for <b>{escape_html(inv.school_name or pay.tenant)}</b>.",
+                      [("Amount", amount), ("Paid by", pay.mode), ("Reference", pay.reference),
+                       ("Date", formatdate(pay.payment_date)), ("Invoice", pay.invoice), ("Balance", balance),
+                       ("Subscription active until", until)],
+                      blocks=[how_to_pay(pay.invoice)] if inv.outstanding else [],
+                      note="Keep this email as your receipt. " + _contact())
+    sms = f"{b.name}: received {amount} ({pay.reference}) for {pay.invoice}. Balance {balance}." + (
+        f" Active until {until}." if until else "")
+    return subject, html, sms
+
+
+def render_license(lic):
+    b = brand()
+    school = lic.school_name or lic.tenant
+    subject = f"Your {b.name} license key for {school}"
+    html = email_html("Your license key", f"The license for <b>{escape_html(school)}</b> is ready.",
+                      [("School site", link(f"https://{lic.site}")), ("Plan", lic.plan),
+                       ("Modules", (lic.modules or "").replace("\n", ", ")),
+                       ("Valid until", formatdate(lic.expires_on) if lic.expires_on else "No end date")],
+                      button=("Open your school", f"https://{lic.site}"),
+                      blocks=[("Install it", "Sign in to your school, open <b>School Settings</b>, click <b>Install Key</b> "
+                               "and paste the key below.<pre style=\"white-space:pre-wrap;word-break:break-all;background:#ffffff;"
+                               f"border:1px solid {LINE};border-radius:6px;padding:10px;margin:10px 0 0;font-size:12px\">"
+                               f"{escape_html(lic.signed_key)}</pre>")],
+                      note="Keep this key private: it unlocks your plan's modules for your school's site only.")
+    sms = f"{b.name}: your license for {school} is ready. The key is in your email."
+    return subject, html, sms
+
+
+def render_status(event, school):
+    b = brand()
+    if event == "Suspended":
+        subject = f"{school} is suspended on {b.name}"
+        line = f"<b>{escape_html(school)}</b>'s {escape_html(b.name)} service is suspended."
+        sms = f"{b.name}: {school}'s service is suspended. Contact us to restore it."
+    else:
+        subject = f"{school} is active again on {b.name}"
+        line = f"<b>{escape_html(school)}</b>'s {escape_html(b.name)} service is active again."
+        sms = f"{b.name}: {school}'s service is active again."
+    html = email_html("Service suspended" if event == "Suspended" else "Service active again", line,
+                      blocks=[how_to_pay()] if event == "Suspended" else [],
+                      note=_contact() if event == "Suspended" else "Thank you for staying with us.")
+    return subject, html, sms
+
+
 def send_event(event, **kw):
     """Background job: build the event's messages from the records as committed now, and deliver them."""
     if event in ("Invoice Issued", "Invoice Overdue"):
         inv = frappe.get_doc("SaaS Invoice", kw["invoice"])
-        school, total = inv.school_name or inv.tenant, _money(inv.outstanding if event == "Invoice Overdue" else inv.total, inv.currency)
-        pay = _instructions(inv.name)
-        due = formatdate(inv.due_date)
-        if event == "Invoice Issued":
-            subject = f"Invoice {inv.name} from Stemic Schools: {total} due {due}"
-            title = f"Here is the invoice for <b>{escape_html(school)}</b>'s Stemic Schools subscription."
-            sms = f"Stemic Schools: invoice {inv.name} for {school}, {total}, due {due}. {pay}".strip()
-        else:
-            subject = f"Overdue: invoice {inv.name}, {total}"
-            title = f"Invoice {inv.name} for <b>{escape_html(school)}</b> was due on {due} and is not fully paid yet."
-            sms = f"Stemic Schools: invoice {inv.name} ({total}) was due {due}. Please pay to keep {school} running. {pay}".strip()
-        html = email_html("Invoice " + inv.name if event == "Invoice Issued" else "Payment overdue", title,
-                          [("Invoice", inv.name), ("School", school), ("Plan", inv.plan),
-                           ("Period", f"{formatdate(inv.period_start)} to {formatdate(inv.period_end)}"),
-                           ("Amount", _money(inv.total, inv.currency)),
-                           ("Discount", _money(inv.discount_amount, inv.currency) if inv.discount_amount else None),
-                           ("Amount due", total), ("Due date", due)],
-                          blocks=[how_to_pay(inv.name)],
-                          note="Use the invoice number as the payment reference, so your payment is matched at once. "
-                               "Questions about this invoice? Reply to this email.")
+        subject, html, sms = render_invoice(event, inv)
         out = deliver(inv.tenant, event, ("SaaS Invoice", inv.name), (subject, html), sms)
+        total = _money(inv.outstanding if event == "Invoice Overdue" else inv.total, inv.currency)
         what = "issued to" if event == "Invoice Issued" else "overdue for"
-        tell_admins(event, f"Invoice {inv.name} {what} {school}: {total}, due {due}", "", ("SaaS Invoice", inv.name), inv.tenant)
+        tell_admins(event, f"Invoice {inv.name} {what} {inv.school_name or inv.tenant}: {total}, due {formatdate(inv.due_date)}",
+                    "", ("SaaS Invoice", inv.name), inv.tenant)
         return out
 
     if event == "Payment Received":
         pay = frappe.get_doc("SaaS Payment", kw["payment"])
         inv = frappe.db.get_value("SaaS Invoice", pay.invoice, ["outstanding", "currency", "school_name", "subscription"], as_dict=True)
         ends = frappe.db.get_value("SaaS Subscription", inv.subscription, "ends_on")
-        amount, balance = _money(pay.amount, inv.currency), _money(inv.outstanding, inv.currency)
-        until = formatdate(ends) if ends else None
-        subject = f"Payment received: {amount} for {pay.invoice}"
-        html = email_html("Payment received", f"Thank you. We received your payment for "
-                                              f"<b>{escape_html(inv.school_name or pay.tenant)}</b>.",
-                          [("Amount", amount), ("Paid by", pay.mode), ("Reference", pay.reference),
-                           ("Date", formatdate(pay.payment_date)), ("Invoice", pay.invoice), ("Balance", balance),
-                           ("Subscription active until", until)],
-                          blocks=[how_to_pay(pay.invoice)] if inv.outstanding else [],
-                          note="Keep this email as your receipt.")
-        sms = f"Stemic Schools: received {amount} ({pay.reference}) for {pay.invoice}. Balance {balance}." + (
-            f" Active until {until}." if until else "")
+        subject, html, sms = render_payment(pay, inv, ends)
         out = deliver(pay.tenant, event, ("SaaS Payment", pay.name), (subject, html), sms)
-        tell_admins(event, f"Payment {amount} received from {inv.school_name or pay.tenant} for {pay.invoice} ({pay.mode} "
-                           f"{pay.reference}); balance {balance}", "", ("SaaS Payment", pay.name), pay.tenant)
+        tell_admins(event, f"Payment {_money(pay.amount, inv.currency)} received from {inv.school_name or pay.tenant} for "
+                           f"{pay.invoice} ({pay.mode} {pay.reference}); balance {_money(inv.outstanding, inv.currency)}",
+                    "", ("SaaS Payment", pay.name), pay.tenant)
         return out
 
     if event == "License Issued":
         lic = frappe.get_doc("SaaS License", kw["license"])
-        subject = f"Your Stemic Schools license key for {lic.school_name or lic.tenant}"
-        html = email_html("Your license key", f"The license for <b>{escape_html(lic.school_name or lic.tenant)}</b> is ready.",
-                          [("School site", link(f"https://{lic.site}")), ("Plan", lic.plan),
-                           ("Modules", (lic.modules or "").replace("\n", ", ")),
-                           ("Valid until", formatdate(lic.expires_on) if lic.expires_on else "No end date")],
-                          button=("Open your school", f"https://{lic.site}"),
-                          blocks=[("Install it", "Sign in to your school, open <b>School Settings</b>, click <b>Install Key</b> "
-                                   "and paste the key below.<pre style=\"white-space:pre-wrap;word-break:break-all;background:#ffffff;"
-                                   f"border:1px solid #e6ebf2;border-radius:6px;padding:10px;margin:10px 0 0;font-size:12px\">"
-                                   f"{escape_html(lic.signed_key)}</pre>")],
-                          note="Keep this key private: it unlocks your plan's modules for your school's site only.")
-        sms = f"Stemic Schools: your license for {lic.school_name or lic.tenant} is ready. The key is in your email."
+        subject, html, sms = render_license(lic)
         out = deliver(lic.tenant, event, ("SaaS License", lic.name), (subject, html), sms)
         tell_admins(event, f"License {lic.name} issued to {lic.school_name or lic.tenant} ({lic.plan})", "",
                     ("SaaS License", lic.name), lic.tenant)
@@ -335,16 +391,8 @@ def send_event(event, **kw):
     if event in ("Suspended", "Resumed"):
         tenant = kw["tenant"]
         school = frappe.db.get_value("SaaS Tenant", tenant, "school_name") or tenant
-        if event == "Suspended":
-            subject, line = f"{school} is suspended on Stemic Schools", f"<b>{escape_html(school)}</b>'s Stemic Schools service is suspended."
-            sms = f"Stemic Schools: {school}'s service is suspended. Contact us to restore it."
-        else:
-            subject, line = f"{school} is active again on Stemic Schools", f"<b>{escape_html(school)}</b>'s Stemic Schools service is active again."
-            sms = f"Stemic Schools: {school}'s service is active again."
+        subject, html, sms = render_status(event, school)
         # a school can be suspended and resumed more than once: each change is its own message
-        html = email_html("Service suspended" if event == "Suspended" else "Service active again", line,
-                          blocks=[how_to_pay()] if event == "Suspended" else [],
-                          note="Questions? Reply to this email." if event == "Suspended" else "Thank you for staying with us.")
         out = deliver(tenant, event, ("SaaS Tenant", tenant), (subject, html), sms, dedupe=False)
         tell_admins(event, f"{school} was {event.lower()}", "", ("SaaS Tenant", tenant), tenant, dedupe=False)
         return out
@@ -355,3 +403,48 @@ def send_event(event, **kw):
         return tell_admins(event, f"New school registered: {t.school_name} ({kw['tenant']})" + (f", {extra}" if extra else ""),
                            "", ("SaaS Tenant", kw["tenant"]), kw["tenant"])
     frappe.throw(f"Unknown school communication {event}")
+
+
+# ----------------------------------------------------------------------------- preview (Stemic Settings)
+PREVIEWS = ["Welcome", "Invoice Issued", "Payment Received", "Invoice Overdue", "License Issued", "Suspended"]
+
+
+@frappe.whitelist(methods=["GET"])
+def preview(event="Welcome"):
+    """One email and its SMS with sample data, laid out as sent: the current branding, payment instructions and the
+    default Email Account's footer. Nothing is sent."""
+    from frappe.utils import add_days, add_months, nowdate
+
+    from stemic_control.billing import _admin
+
+    _admin()
+    if event not in PREVIEWS:
+        frappe.throw(f"No preview for {event}", frappe.ValidationError)
+    today, number = nowdate(), "SINV-2026-00012"
+    inv = frappe._dict(name=number, tenant="greenfield", school_name="Greenfield Academy", plan="Standard",
+                       period_start=today, period_end=add_days(add_months(today, 12), -1), total=114000, discount_amount=0,
+                       outstanding=114000, currency="KES", due_date=add_days(today, 14))
+    if event == "Welcome":
+        from stemic_control import welcome
+
+        rows = [("Plan", "Standard (KES 9,500.00 a month)"), ("Subscription", "Active, paid until " + formatdate(inv.period_end)),
+                ("Latest invoice", f"{number}: KES 114,000.00, KES 114,000.00 due {formatdate(inv.due_date)}")]
+        site = f"greenfield.{frappe.conf.get('stemic_site_domain') or 'stemicschools.com'}"
+        html = welcome.render(inv.school_name, site, "head@greenfield.ac.ke", f"https://{site}/update-password?key=sample",
+                              24, rows, number)
+        subject = f"{inv.school_name} is ready on {brand().name}"
+        sms = welcome.sms_text(inv.school_name, site, "head@greenfield.ac.ke")
+    elif event in ("Invoice Issued", "Invoice Overdue"):
+        subject, html, sms = render_invoice(event, inv)
+    elif event == "Payment Received":
+        pay = frappe._dict(amount=114000, mode="M-Pesa", reference="QAB12CD34E", payment_date=today, invoice=number, tenant="greenfield")
+        subject, html, sms = render_payment(pay, frappe._dict(inv, outstanding=0), inv.period_end)
+    elif event == "License Issued":
+        lic = frappe._dict(tenant="greenfield", school_name=inv.school_name, plan="Standard", site="greenfield.stemicschools.com",
+                           modules="Fees\nMessaging\nM-Pesa\nTimetable\nStaff\nTransport", expires_on=inv.period_end,
+                           signed_key="SAMPLE.eyJzY2hvb2wiOiJHcmVlbmZpZWxkIEFjYWRlbXkifQ.SIGNATURE")
+        subject, html, sms = render_license(lic)
+    else:
+        subject, html, sms = render_status(event, inv.school_name)
+    footer = frappe.db.get_value("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}, "footer") or ""
+    return {"subject": subject, "html": html + footer, "sms": sms, "events": PREVIEWS}

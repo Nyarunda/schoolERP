@@ -9,14 +9,6 @@
   "field_order": [
     "setup_tab",
     "setup_html",
-    "platform_tab",
-    "platform_domain",
-    "dns_over_https",
-    "cb_platform",
-    "local_provisioner",
-    "site_domain",
-    "site_apps",
-    "bench_path",
     "billing_tab",
     "seller_name",
     "seller_pin",
@@ -27,22 +19,31 @@
     "payment_terms_days",
     "renewal_notice_days",
     "payment_instructions",
-    "commission_tab",
-    "commission_basis",
     "communications_tab",
+    "channels_section",
     "notify_schools_by_email",
     "notify_schools_by_sms",
     "cb_comms",
+    "preview_html",
+    "events_section",
     "notify_welcome",
     "notify_invoice",
     "notify_payment",
     "notify_overdue",
+    "cb_events",
     "notify_license",
     "notify_status",
     "notify_registered",
     "admins_section",
     "notify_admins_copy",
     "notify_admins_by_sms",
+    "branding_section",
+    "brand_name",
+    "support_email",
+    "support_phone",
+    "cb_branding",
+    "brand_color",
+    "accent_color",
     "sms_gateway_section",
     "sms_url",
     "sms_http_method",
@@ -68,7 +69,17 @@
     "accounting_tab",
     "post_to_accounts",
     "accounting_company",
-    "accounting_html"
+    "accounting_html",
+    "platform_tab",
+    "platform_domain",
+    "dns_over_https",
+    "cb_platform",
+    "local_provisioner",
+    "site_domain",
+    "site_apps",
+    "bench_path",
+    "commission_tab",
+    "commission_basis"
   ],
   "fields": [
     {
@@ -81,51 +92,6 @@
       "fieldtype": "HTML"
     },
     {
-      "fieldname": "platform_tab",
-      "fieldtype": "Tab Break",
-      "label": "Platform"
-    },
-    {
-      "fieldname": "platform_domain",
-      "fieldtype": "Data",
-      "label": "Platform Domain",
-      "description": "Schools' default addresses are <school>.<this domain>, e.g. stemicschools.com."
-    },
-    {
-      "fieldname": "dns_over_https",
-      "fieldtype": "Data",
-      "label": "DNS Lookup Service",
-      "description": "Used to check custom-domain ownership (DNS-over-HTTPS JSON). Default: Cloudflare."
-    },
-    {
-      "fieldname": "cb_platform",
-      "fieldtype": "Column Break"
-    },
-    {
-      "fieldname": "local_provisioner",
-      "fieldtype": "Check",
-      "label": "Create school sites on this server",
-      "description": "Turns queued sites into real ones on this bench. Builds them as the limited database account (stemic_provisioner) whose password is in the server's secrets file, /etc/stemic/secrets.env (README: Secrets)."
-    },
-    {
-      "fieldname": "site_domain",
-      "fieldtype": "Data",
-      "label": "Local Site Suffix",
-      "description": "Sites created here are named <school>.<this>, e.g. localhost on a development machine."
-    },
-    {
-      "fieldname": "site_apps",
-      "fieldtype": "Small Text",
-      "label": "Apps on Each School Site",
-      "description": "One per line, in install order."
-    },
-    {
-      "fieldname": "bench_path",
-      "fieldtype": "Data",
-      "label": "Bench Path",
-      "description": "Leave blank to use this bench."
-    },
-    {
       "fieldname": "billing_tab",
       "fieldtype": "Tab Break",
       "label": "Billing"
@@ -134,12 +100,13 @@
       "fieldname": "seller_name",
       "fieldtype": "Data",
       "label": "Billing Name",
-      "description": "Shown as the seller on invoices and receipts."
+      "description": "The legal name on invoices. Also used for eTIMS."
     },
     {
       "fieldname": "seller_pin",
       "fieldtype": "Data",
-      "label": "KRA PIN"
+      "label": "KRA PIN",
+      "description": "Stemic's KRA PIN, e.g. P051234567X. Also used for eTIMS (Stemic Tax Settings follows it)."
     },
     {
       "fieldname": "seller_address",
@@ -173,33 +140,25 @@
     {
       "fieldname": "renewal_notice_days",
       "fieldtype": "Int",
-      "label": "Invoice Renewals This Many Days Early",
+      "label": "Send Renewal Invoices This Many Days Before the End",
       "default": "30",
-      "description": "A renewal invoice is raised automatically this long before a subscription ends. 0 = never automatically."
+      "description": "0 turns automatic renewal invoices off."
     },
     {
       "fieldname": "payment_instructions",
       "fieldtype": "Small Text",
       "label": "Payment Instructions",
-      "description": "Printed on invoices. {invoice} and {amount} are filled in, e.g. 'Pay via M-Pesa Paybill 123456, Account {invoice}'."
-    },
-    {
-      "fieldname": "commission_tab",
-      "fieldtype": "Tab Break",
-      "label": "Commissions"
-    },
-    {
-      "fieldname": "commission_basis",
-      "fieldtype": "Select",
-      "label": "Agents Earn Commission On",
-      "options": "Every payment\nFirst payment only",
-      "default": "Every payment",
-      "description": "Each agent's rate is on their agent record."
+      "description": "Shown on every invoice, reminder and welcome email, and in invoice SMS. Write {invoice} where the invoice number goes, e.g. Pay via M-Pesa Paybill 123456, Account {invoice}."
     },
     {
       "fieldname": "communications_tab",
       "fieldtype": "Tab Break",
       "label": "Communications"
+    },
+    {
+      "fieldname": "channels_section",
+      "fieldtype": "Section Break",
+      "label": "Channels"
     },
     {
       "fieldname": "notify_schools_by_email",
@@ -218,6 +177,17 @@
     {
       "fieldname": "cb_comms",
       "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "preview_html",
+      "fieldtype": "HTML",
+      "label": "Preview"
+    },
+    {
+      "fieldname": "events_section",
+      "fieldtype": "Section Break",
+      "label": "What Schools Are Told",
+      "description": "Each switch covers both email and SMS. Platform admins get a summary of the same events (below)."
     },
     {
       "fieldname": "notify_welcome",
@@ -242,6 +212,10 @@
       "fieldtype": "Check",
       "label": "Invoice overdue",
       "default": "1"
+    },
+    {
+      "fieldname": "cb_events",
+      "fieldtype": "Column Break"
     },
     {
       "fieldname": "notify_license",
@@ -279,6 +253,49 @@
       "label": "Also by SMS to platform admins",
       "default": "1",
       "description": "To each admin's mobile number (User > Mobile No), when SMS schools is on. Problem alerts (a failed build, a failed operation, invoices that disagree with payments) go by SMS too."
+    },
+    {
+      "fieldname": "branding_section",
+      "fieldtype": "Section Break",
+      "label": "Branding",
+      "description": "How Stemic appears in every email and SMS to schools, and on a suspended school's page."
+    },
+    {
+      "fieldname": "brand_name",
+      "fieldtype": "Data",
+      "label": "Name in Emails and SMS",
+      "default": "Stemic Schools"
+    },
+    {
+      "fieldname": "support_email",
+      "fieldtype": "Data",
+      "label": "Support Email",
+      "options": "Email",
+      "description": "Where schools are told to write. Blank: the default outgoing email address."
+    },
+    {
+      "fieldname": "support_phone",
+      "fieldtype": "Data",
+      "label": "Support Phone",
+      "options": "Phone"
+    },
+    {
+      "fieldname": "cb_branding",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "brand_color",
+      "fieldtype": "Color",
+      "label": "Main Colour",
+      "default": "#1b3a6b",
+      "description": "The email header band and links."
+    },
+    {
+      "fieldname": "accent_color",
+      "fieldtype": "Color",
+      "label": "Accent Colour",
+      "default": "#43a047",
+      "description": "Buttons and highlights."
     },
     {
       "fieldname": "sms_gateway_section",
@@ -424,16 +441,74 @@
     },
     {
       "fieldname": "accounting_company",
-      "fieldtype": "Data",
+      "fieldtype": "Autocomplete",
       "label": "Company",
       "depends_on": "post_to_accounts",
       "mandatory_depends_on": "post_to_accounts",
-      "description": "The ERPNext company that keeps Stemic's books, e.g. Stemic Schools Ltd."
+      "description": "The ERPNext company that keeps Stemic's books. Pick it from the list."
     },
     {
       "fieldname": "accounting_html",
       "fieldtype": "HTML",
       "label": "Accounts used"
+    },
+    {
+      "fieldname": "platform_tab",
+      "fieldtype": "Tab Break",
+      "label": "Platform"
+    },
+    {
+      "fieldname": "platform_domain",
+      "fieldtype": "Data",
+      "label": "Platform Domain",
+      "description": "Schools' default addresses are <school>.<this domain>, e.g. stemicschools.com."
+    },
+    {
+      "fieldname": "dns_over_https",
+      "fieldtype": "Data",
+      "label": "DNS Lookup Service",
+      "description": "Used to check custom-domain ownership (DNS-over-HTTPS JSON). Default: Cloudflare."
+    },
+    {
+      "fieldname": "cb_platform",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "local_provisioner",
+      "fieldtype": "Check",
+      "label": "Create school sites on this server",
+      "description": "Turns queued sites into real ones on this bench. Builds them as the limited database account (stemic_provisioner) whose password is in the server's secrets file, /etc/stemic/secrets.env (README: Secrets)."
+    },
+    {
+      "fieldname": "site_domain",
+      "fieldtype": "Data",
+      "label": "School Site Domain",
+      "description": "New school sites are named <school>.<this domain>, e.g. stemicschools.com. localhost on a development bench."
+    },
+    {
+      "fieldname": "site_apps",
+      "fieldtype": "Small Text",
+      "label": "Apps on Each School Site",
+      "description": "One per line, in install order."
+    },
+    {
+      "fieldname": "bench_path",
+      "fieldtype": "Data",
+      "label": "Bench Path",
+      "description": "Leave blank to use this bench."
+    },
+    {
+      "fieldname": "commission_tab",
+      "fieldtype": "Tab Break",
+      "label": "Commissions"
+    },
+    {
+      "fieldname": "commission_basis",
+      "fieldtype": "Select",
+      "label": "Agents Earn Commission On",
+      "options": "Every payment\nFirst payment only",
+      "default": "Every payment",
+      "description": "Each agent's rate is on their agent record."
     }
   ],
   "permissions": [

@@ -29,7 +29,9 @@ def _first_admin(site, email, full_name):
 
 def _billing(tenant):
     """The plan, what is paid and until when, and the latest invoice: for the welcome email's payment details."""
-    from frappe.utils import fmt_money, formatdate
+    from frappe.utils import formatdate
+
+    from stemic_control.communications import _money
 
     sub = frappe.db.get_value("SaaS Subscription", tenant.subscription or {"tenant": tenant.name},
                               ["name", "plan", "status", "ends_on"], as_dict=True) if (
@@ -41,24 +43,23 @@ def _billing(tenant):
                          fields=["name", "total", "outstanding", "status", "due_date", "currency"], order_by="creation desc", limit=1)
     inv = inv[0] if inv else None
     cur = (inv.currency if inv else None) or "KES"
-    rows = [("Plan", f"{sub.plan}" + (f" ({fmt_money(price, currency=cur)} a month)" if price else "")),
+    rows = [("Plan", f"{sub.plan}" + (f" ({_money(price, cur)} a month)" if price else "")),
             ("Subscription", sub.status + (f", paid until {formatdate(sub.ends_on)}" if sub.ends_on else ""))]
     if inv:
         state = ("Paid" if inv.status == "Paid"
-                 else f"{fmt_money(inv.outstanding, currency=cur)} due {formatdate(inv.due_date)}")
-        rows.append(("Latest invoice", f"{inv.name}: {fmt_money(inv.total, currency=cur)}, {state}"))
+                 else f"{_money(inv.outstanding, cur)} due {formatdate(inv.due_date)}")
+        rows.append(("Latest invoice", f"{inv.name}: {_money(inv.total, cur)}, {state}"))
     return rows, (inv.name if inv and inv.status != "Paid" else None)
 
 
-def _message(tenant, site, user, link, hours):
-    from stemic_control.communications import email_html, how_to_pay, link as a
+def render(school_name, site, user, link, hours, billing_rows=(), unpaid=None):
+    """The welcome email's HTML (also used by the preview on Stemic Settings)."""
+    from stemic_control.communications import _contact, brand, email_html, how_to_pay, link as a
 
     url = f"https://{site}"
-    school = escape_html(tenant.school_name or tenant.name)
-    billing_rows, unpaid = _billing(tenant)
     pay_title, pay_body = how_to_pay(unpaid)
     return email_html(
-        f"Welcome to Stemic Schools", f"<b>{school}</b> is ready. Here is everything you need to get started.",
+        f"Welcome to {brand().name}", f"<b>{escape_html(school_name)}</b> is ready. Here is everything you need to get started.",
         [("Your school's address", a(url)), ("Your username", user), *billing_rows],
         button=("Set your password", link),
         blocks=[("Getting started", "<ol style=\"margin:0;padding-left:20px\"><li>Click <b>Set your password</b> above.</li>"
@@ -67,7 +68,18 @@ def _message(tenant, site, user, link, hours):
                  "which we send separately.</li></ol>"),
                 (pay_title, pay_body if unpaid else (pay_body and f"For renewals and future invoices: {pay_body}"))],
         note=f"The password link works once and expires in {hours} hours. If it has expired, reply to this email and "
-             "we will send a new one. Questions? Just reply: we are here to help.")
+             "we will send a new one. " + _contact())
+
+
+def sms_text(school_name, site, email):
+    from stemic_control.communications import brand
+
+    return f"{brand().name}: {school_name} is ready at https://{site}. We emailed {email} a link to set your password."
+
+
+def _message(tenant, site, user, link, hours):
+    billing_rows, unpaid = _billing(tenant)
+    return render(tenant.school_name or tenant.name, site, user, link, hours, billing_rows, unpaid)
 
 
 def send(tenant_name):
@@ -79,18 +91,17 @@ def send(tenant_name):
         frappe.throw("The school has no contact email", frappe.ValidationError)
     site = tenant.canonical_site
     data = _first_admin(site, tenant.admin_email, tenant.school_name and f"{tenant.school_name} Admin")
-    subject = f"{tenant.school_name or tenant.name} is ready on Stemic Schools"
+    from stemic_control import communications
+
+    subject = f"{tenant.school_name or tenant.name} is ready on {communications.brand().name}"
     frappe.sendmail(recipients=[tenant.admin_email], subject=subject,
                     message=_message(tenant, site, data["user"], data["link"], data.get("hours") or 24),
                     reference_doctype="SaaS Tenant", reference_name=tenant.name, now=True)
     frappe.db.set_value("SaaS Tenant", tenant.name, "welcome_sent_on", now_datetime(), update_modified=False)
-    from stemic_control import communications
-
     communications._log(tenant.name, "Welcome", "Email", "Sent", tenant.admin_email, ("SaaS Tenant", tenant.name), subject)
     # the link stays in the email; the SMS only says where to look
     communications.deliver(tenant.name, "Welcome", ("SaaS Tenant", tenant.name), dedupe=False,
-                           sms=f"Stemic Schools: {tenant.school_name or tenant.name} is ready at https://{site}. "
-                               f"We emailed {tenant.admin_email} a link to set your password.")
+                           sms=sms_text(tenant.school_name or tenant.name, site, tenant.admin_email))
     communications.tell_admins("Welcome", f"{tenant.school_name or tenant.name} is ready at https://{site}; welcome sent to "
                                           f"{tenant.admin_email}", "", ("SaaS Tenant", tenant.name), tenant.name, dedupe=False)
     return {"to": tenant.admin_email, "user": data["user"], "site": site}

@@ -47,6 +47,7 @@
   "show_fee_breakdown",
   "messaging_tab",
   "sms_provider",
+  "sms_gateway",
   "country_code",
   "at_username",
   "at_api_key",
@@ -430,12 +431,20 @@
   },
   {
    "default": "Frappe SMS Settings",
-   "description": "Frappe SMS Settings works with any HTTP SMS gateway. Custom Hook calls the function named in hooks 'school_sms_sender'.",
+   "description": "SMS Gateway: any HTTP SMS provider, set up on a School SMS Gateway record (URL, parameters, credentials and how to tell a message was accepted). Frappe SMS Settings works with simple HTTP gateways. Custom Hook calls the function named in hooks 'school_sms_sender'.",
    "fieldname": "sms_provider",
    "fieldtype": "Select",
    "idx": 42,
    "label": "Sms Provider",
-   "options": "Frappe SMS Settings\nAfrica's Talking\nCustom Hook"
+   "options": "Frappe SMS Settings\nAfrica's Talking\nSMS Gateway\nCustom Hook"
+  },
+  {
+   "fieldname": "sms_gateway",
+   "fieldtype": "Link",
+   "label": "SMS Gateway",
+   "options": "School SMS Gateway",
+   "depends_on": "eval:doc.sms_provider==\"SMS Gateway\"",
+   "mandatory_depends_on": "eval:doc.sms_provider==\"SMS Gateway\""
   },
   {
    "default": "254",

@@ -1,0 +1,258 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-29 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "gateway_name",
+  "enabled",
+  "request_section",
+  "url",
+  "http_method",
+  "body_format",
+  "cb_request",
+  "recipient_param",
+  "message_param",
+  "number_format",
+  "recipients_mode",
+  "recipient_separator",
+  "credentials_section",
+  "sender_param",
+  "sender_id",
+  "cb_credentials",
+  "api_key_param",
+  "api_key_in",
+  "api_key_prefix",
+  "api_key",
+  "parameters_section",
+  "parameters",
+  "success_section",
+  "success_field",
+  "success_values",
+  "cb_success",
+  "success_text",
+  "timeout",
+  "test_section",
+  "test_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "gateway_name",
+   "fieldtype": "Data",
+   "label": "Gateway Name",
+   "reqd": 1,
+   "unique": 1,
+   "description": "e.g. the provider's name: Advanta, Onfon, Celcom Africa"
+  },
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "default": "1"
+  },
+  {
+   "fieldname": "request_section",
+   "fieldtype": "Section Break",
+   "label": "Request",
+   "description": "From the provider's API documentation: where to send, and what to call the number and the text."
+  },
+  {
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "Send URL",
+   "reqd": 1,
+   "options": "URL",
+   "description": "The provider's send-SMS endpoint. Must be https://."
+  },
+  {
+   "fieldname": "http_method",
+   "fieldtype": "Select",
+   "label": "Method",
+   "options": "POST\nGET",
+   "default": "POST"
+  },
+  {
+   "fieldname": "body_format",
+   "fieldtype": "Select",
+   "label": "Body Format",
+   "options": "JSON\nForm",
+   "default": "JSON",
+   "depends_on": "eval:doc.http_method==\"POST\""
+  },
+  {
+   "fieldname": "cb_request",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recipient_param",
+   "fieldtype": "Data",
+   "label": "Phone Number Parameter",
+   "reqd": 1,
+   "description": "e.g. mobile, to, msisdn"
+  },
+  {
+   "fieldname": "message_param",
+   "fieldtype": "Data",
+   "label": "Message Parameter",
+   "reqd": 1,
+   "description": "e.g. message, text, sms"
+  },
+  {
+   "fieldname": "number_format",
+   "fieldtype": "Select",
+   "label": "Number Format",
+   "options": "2547XXXXXXXX\n+2547XXXXXXXX\n07XXXXXXXX",
+   "default": "2547XXXXXXXX"
+  },
+  {
+   "fieldname": "recipients_mode",
+   "fieldtype": "Select",
+   "label": "Recipients",
+   "options": "One request per number\nAll numbers in one request",
+   "default": "One request per number"
+  },
+  {
+   "fieldname": "recipient_separator",
+   "fieldtype": "Data",
+   "label": "Number Separator",
+   "default": ",",
+   "depends_on": "eval:doc.recipients_mode==\"All numbers in one request\""
+  },
+  {
+   "fieldname": "credentials_section",
+   "fieldtype": "Section Break",
+   "label": "Sender and Credentials"
+  },
+  {
+   "fieldname": "sender_param",
+   "fieldtype": "Data",
+   "label": "Sender ID Parameter",
+   "description": "e.g. shortcode, from, sender. Leave blank if the provider sets it."
+  },
+  {
+   "fieldname": "sender_id",
+   "fieldtype": "Data",
+   "label": "Sender ID",
+   "description": "Your approved sender name, e.g. GREENFIELD"
+  },
+  {
+   "fieldname": "cb_credentials",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "api_key_param",
+   "fieldtype": "Data",
+   "label": "API Key Parameter",
+   "description": "e.g. apikey, api_key, Authorization"
+  },
+  {
+   "fieldname": "api_key_in",
+   "fieldtype": "Select",
+   "label": "Send API Key In",
+   "options": "Body\nHeader",
+   "default": "Body"
+  },
+  {
+   "fieldname": "api_key_prefix",
+   "fieldtype": "Data",
+   "label": "API Key Prefix",
+   "description": "Text before the key, e.g. \"Bearer \" for an Authorization header. Usually blank."
+  },
+  {
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "API Key",
+   "length": 255
+  },
+  {
+   "fieldname": "parameters_section",
+   "fieldtype": "Section Break",
+   "label": "Other Fixed Parameters",
+   "description": "Anything else every request needs, e.g. partnerID. Tick Header for HTTP headers."
+  },
+  {
+   "fieldname": "parameters",
+   "fieldtype": "Table",
+   "label": "Parameters",
+   "options": "School SMS Gateway Parameter"
+  },
+  {
+   "fieldname": "success_section",
+   "fieldtype": "Section Break",
+   "label": "How to Tell It Worked",
+   "description": "Many gateways answer HTTP 200 even when the message failed. Say what a successful reply contains, so a failure is recorded as failed."
+  },
+  {
+   "fieldname": "success_field",
+   "fieldtype": "Data",
+   "label": "Success Field",
+   "description": "Where the status is in the JSON reply, dotted, e.g. status or responses.0.response-code"
+  },
+  {
+   "fieldname": "success_values",
+   "fieldtype": "Data",
+   "label": "Success Values",
+   "description": "What that field holds on success, comma-separated, e.g. 200 or success,Sent"
+  },
+  {
+   "fieldname": "cb_success",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "success_text",
+   "fieldtype": "Data",
+   "label": "Or: Reply Contains",
+   "description": "For gateways that reply in plain text: text a successful reply contains."
+  },
+  {
+   "fieldname": "timeout",
+   "fieldtype": "Int",
+   "label": "Timeout (seconds)",
+   "default": "20"
+  },
+  {
+   "fieldname": "test_section",
+   "fieldtype": "Section Break",
+   "label": "Test"
+  },
+  {
+   "fieldname": "test_number",
+   "fieldtype": "Data",
+   "label": "Test Phone Number",
+   "description": "Save, then use Send Test SMS."
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-29 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "School SMS Gateway",
+ "owner": "Administrator",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:gateway_name",
+ "naming_rule": "By fieldname",
+ "track_changes": 1,
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  },
+  {
+   "role": "School Admin",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "report": 1,
+   "export": 1
+  }
+ ]
+}

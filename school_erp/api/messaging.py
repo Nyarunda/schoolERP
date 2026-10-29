@@ -22,6 +22,14 @@ def send_sms(numbers: list[str], message: str) -> dict:
 	provider = settings.sms_provider or "Frappe SMS Settings"
 	if provider == "Africa's Talking":
 		return _send_africastalking(settings, clean, message)
+	if provider == "SMS Gateway":
+		if not settings.sms_gateway:
+			frappe.throw(_("Choose the SMS Gateway in School Settings"))
+		from school_erp.api.sms_gateway import send
+
+		result = send(settings.sms_gateway, clean, message)
+		_log_sms(result["sent"], message)
+		return {"sent": result["sent"], "failed": result["failed"]}
 	if provider == "Custom Hook":
 		hooks = frappe.get_hooks("school_sms_sender")
 		if not hooks:

@@ -44,6 +44,7 @@ DOCTYPE_MODULE = {
 	"Subject": "timetable",
 	"Period": "timetable",
 	"School Message": "messaging",
+	"School SMS Gateway": "messaging",
 	"Staff Member": "staff",
 	"Leave Type": "staff",
 	"Leave Application": "staff",

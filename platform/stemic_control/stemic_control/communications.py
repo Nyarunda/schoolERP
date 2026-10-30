@@ -324,14 +324,17 @@ def render_payment(pay, inv, ends_on):
 
 
 def render_license(lic):
+    from stemic_control.domains import public_host
+
     b = brand()
     school = lic.school_name or lic.tenant
+    url = f"https://{(lic.tenant and public_host(lic.tenant)) or lic.site}"
     subject = f"Your {b.name} license key for {school}"
     html = email_html("Your license key", f"The license for <b>{escape_html(school)}</b> is ready.",
-                      [("School site", link(f"https://{lic.site}")), ("Plan", lic.plan),
+                      [("School site", link(url)), ("Plan", lic.plan),
                        ("Modules", (lic.modules or "").replace("\n", ", ")),
                        ("Valid until", formatdate(lic.expires_on) if lic.expires_on else "No end date")],
-                      button=("Open your school", f"https://{lic.site}"),
+                      button=("Open your school", url),
                       blocks=[("Install it", "Sign in to your school, open <b>School Settings</b>, click <b>Install Key</b> "
                                "and paste the key below.<pre style=\"white-space:pre-wrap;word-break:break-all;background:#ffffff;"
                                f"border:1px solid {LINE};border-radius:6px;padding:10px;margin:10px 0 0;font-size:12px\">"

@@ -76,6 +76,11 @@ Three things cover that:
 Keep each school's `encryption_key` (in its `site_config.json`) somewhere other than its server: the backup does not
 contain it, and without it a restored school's stored passwords and secrets are unreadable.
 
+## Schools' own domains (production)
+
+A verified custom domain is set up on the server by `stemic-domains-sync` (no hand-edited nginx), checked live from
+the Control Center, and can become the school's main address. One-time install and certificates: `server/README.md`.
+
 ## Secrets (production)
 
 Two secrets let the control plane act on the server: the password of the MariaDB account that creates school

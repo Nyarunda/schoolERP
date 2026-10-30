@@ -77,9 +77,9 @@ def sms_text(school_name, site, email):
     return f"{brand().name}: {school_name} is ready at https://{site}. We emailed {email} a link to set your password."
 
 
-def _message(tenant, site, user, link, hours):
+def _message(tenant, host, user, link, hours):
     billing_rows, unpaid = _billing(tenant)
-    return render(tenant.school_name or tenant.name, site, user, link, hours, billing_rows, unpaid)
+    return render(tenant.school_name or tenant.name, host, user, link, hours, billing_rows, unpaid)
 
 
 def send(tenant_name):
@@ -91,18 +91,20 @@ def send(tenant_name):
         frappe.throw("The school has no contact email", frappe.ValidationError)
     site = tenant.canonical_site
     data = _first_admin(site, tenant.admin_email, tenant.school_name and f"{tenant.school_name} Admin")
-    from stemic_control import communications
+    from stemic_control import communications, domains
+
+    host = domains.public_host(tenant.name) or site  # the school's main custom domain once it is live
 
     subject = f"{tenant.school_name or tenant.name} is ready on {communications.brand().name}"
     frappe.sendmail(recipients=[tenant.admin_email], subject=subject,
-                    message=_message(tenant, site, data["user"], data["link"], data.get("hours") or 24),
+                    message=_message(tenant, host, data["user"], data["link"], data.get("hours") or 24),
                     reference_doctype="SaaS Tenant", reference_name=tenant.name, now=True)
     frappe.db.set_value("SaaS Tenant", tenant.name, "welcome_sent_on", now_datetime(), update_modified=False)
     communications._log(tenant.name, "Welcome", "Email", "Sent", tenant.admin_email, ("SaaS Tenant", tenant.name), subject)
     # the link stays in the email; the SMS only says where to look
     communications.deliver(tenant.name, "Welcome", ("SaaS Tenant", tenant.name), dedupe=False,
-                           sms=sms_text(tenant.school_name or tenant.name, site, tenant.admin_email))
-    communications.tell_admins("Welcome", f"{tenant.school_name or tenant.name} is ready at https://{site}; welcome sent to "
+                           sms=sms_text(tenant.school_name or tenant.name, host, tenant.admin_email))
+    communications.tell_admins("Welcome", f"{tenant.school_name or tenant.name} is ready at https://{host}; welcome sent to "
                                           f"{tenant.admin_email}", "", ("SaaS Tenant", tenant.name), tenant.name, dedupe=False)
     return {"to": tenant.admin_email, "user": data["user"], "site": site}
 

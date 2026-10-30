@@ -107,6 +107,9 @@ def verify_domain(domain):
     if not any(secrets.compare_digest(value, doc.verification_token or "") for value in found):
         frappe.throw(f"TXT record {record} with the verification value was not found yet", frappe.ValidationError)
     doc.db_set({"status": "Verified", "verified_on": now_datetime()})
+    from stemic_control import domains
+
+    domains.publish()  # the server sets it up (stemic_control.domains); activate once it serves the school
     return {"domain": doc.name, "status": "Verified"}
 
 
@@ -500,6 +503,9 @@ def operations_queue(per_group=3):
          lambda r: (school(r.tenant), f"{r.name} · {r.currency or ''} {r.outstanding:,.0f} owed".replace("  ", " "))),
         ("dns", "Domains waiting for DNS", "warning", "SaaS Domain", {"status": "Pending Verification"},
          ["name", "tenant", "modified"], lambda r: (school(r.tenant), r.name)),
+        ("domain_live", "Domains verified but not live yet", "warning", "SaaS Domain",
+         {"status": "Verified", "domain_type": "Custom Domain"}, ["name", "tenant", "modified"],
+         lambda r: (school(r.tenant), r.name)),
         ("approval", "Schools waiting for approval", "warning", "SaaS Tenant", {"status": "Pending Approval"},
          ["name", "school_name", "modified"], lambda r: (r.school_name, r.name)),
         ("creating", "Sites being created", "info", "SaaS Tenant", {"status": ["in", ["Pending", "Provisioning"]]},

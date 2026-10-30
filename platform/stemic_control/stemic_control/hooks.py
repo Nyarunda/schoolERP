@@ -45,6 +45,8 @@ scheduler_events = {
     "cron": {"*/5 * * * *": ["stemic_control.provisioner.process_queue"]},
     # Billing: overdue invoices and Past Due subscriptions; renewal invoices ahead of the end date
     "daily": ["stemic_control.billing.daily", "stemic_control.billing.check_ledger"],
+    # Custom domains: keep the server's routes current; activate verified domains once they serve their school
+    "hourly": ["stemic_control.domains.hourly"],
 }
 
 # Finance operators review tax records through controlled service actions.

@@ -109,7 +109,7 @@ def verify_domain(domain):
     doc.db_set({"status": "Verified", "verified_on": now_datetime()})
     from stemic_control import domains
 
-    domains.publish()  # the server sets it up (stemic_control.domains); activate once it serves the school
+    domains.refresh()  # the server sets it up (stemic_control.domains); activate once it serves the school
     return {"domain": doc.name, "status": "Verified"}
 
 

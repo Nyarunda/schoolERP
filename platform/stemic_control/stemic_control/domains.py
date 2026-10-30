@@ -18,7 +18,7 @@ import secrets
 import frappe
 from frappe.utils import now_datetime
 
-from stemic_control import config, provisioner
+from stemic_control import provisioner
 
 STATUS_FILE = "/var/lib/stemic/domains-status.json"
 SERVING = ("Verified", "Active")  # routed; only Active ones are used in links
@@ -38,7 +38,7 @@ def _admin():
 
 # ----------------------------------------------------------------------------- 1. route
 def routes_file() -> str:
-    return config.get("stemic_domains_file") or os.path.join(provisioner._bench(), "config", "stemic-domains.json")
+    return frappe.conf.get("stemic_domains_file") or os.path.join(provisioner._bench(), "config", "stemic-domains.json")
 
 
 def routes() -> dict:
@@ -53,7 +53,7 @@ def routes() -> dict:
 def publish():
     """Write the routes for the server's sync (atomically: it watches the file). Only rewritten when they change."""
     path, data = routes_file(), routes()
-    if frappe.flags.in_test and not config.get("stemic_domains_file"):
+    if frappe.flags.in_test and not frappe.conf.get("stemic_domains_file"):
         return data  # a test must not change the routes the real server serves
     try:
         with open(path) as f:
@@ -70,10 +70,19 @@ def publish():
     return data
 
 
+def refresh():
+    """publish() where the routes are only a side effect: a failure here must not undo or stop the caller's work.
+    The hourly job writes them again."""
+    try:
+        publish()
+    except Exception:
+        frappe.log_error(title="Could not write the custom domain routes")
+
+
 def server_status() -> dict:
     """What the server's sync last did ({} where it is not installed, e.g. development)."""
     try:
-        with open(config.get("stemic_domains_status_file") or STATUS_FILE) as f:
+        with open(frappe.conf.get("stemic_domains_status_file") or STATUS_FILE) as f:
             return json.load(f)
     except (OSError, ValueError):
         return {}

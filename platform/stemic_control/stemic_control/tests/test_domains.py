@@ -154,6 +154,19 @@ class TestCustomDomains(TestCase):
         self.assertEqual(frappe.db.get_value("SaaS Domain", domain, "status"), "Active")
         notify.assert_called_once()
 
+    def test_works_with_nothing_in_site_config(self):
+        """Production sets neither file in site_config.json: the defaults must work."""
+        conf = {k: v for k, v in frappe.local.conf.items() if k not in ("stemic_domains_file", "stemic_domains_status_file")}
+        with patch.dict(frappe.local.conf, conf, clear=True):
+            self.assertEqual(domains.routes_file(), os.path.join(self.bench, "config", "stemic-domains.json"))
+            self.assertIsInstance(domains.server_status(), dict)
+            self.assertIsInstance(domains.publish(), dict)
+
+    def test_a_routes_failure_does_not_stop_verifying_or_a_build(self):
+        with patch.object(domains, "publish", side_effect=OSError("disk full")), patch.object(frappe, "log_error") as log:
+            domains.refresh()
+        log.assert_called_once()
+
     def test_only_platform_admins(self):
         domain = self.claim()
         frappe.set_user("Guest")

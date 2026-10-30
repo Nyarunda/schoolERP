@@ -253,7 +253,7 @@ def run(job: str) -> str:
     frappe.db.commit()
     from stemic_control import domains
 
-    domains.publish()  # a custom domain verified before the site existed is routed now
+    domains.refresh()  # a custom domain verified before the site existed is routed now
     from stemic_control import welcome
 
     welcome.after_provisioning(tenant.name)  # the school's contact gets the address and a set-password link

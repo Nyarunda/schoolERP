@@ -53,10 +53,11 @@ class SchoolSettings(Document):
 
 	def on_update(self):
 		licensing.clear_cache()
-		if self.has_value_changed("expense_first_approver_role") or self.has_value_changed("expense_final_approver_role"):
+		if (self.has_value_changed("expense_first_approver_role") or self.has_value_changed("expense_final_approver_role")
+				or self.has_value_changed("marks_need_approval")):
 			from school_erp.setup.workflows import make_workflows
 
-			make_workflows()  # approver roles are part of the expense workflow
+			make_workflows()  # approver roles are part of the expense workflow; the marks switch turns its workflow on/off
 		if self.has_value_changed("head_teacher_user") and self.head_teacher_user:
 			from school_erp.setup.workflows import sync_leave_approvers
 

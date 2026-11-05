@@ -133,6 +133,11 @@
 	.pp-grade { width: 48px; height: 48px; border-radius: 12px; background: var(--pp-a); color: #fff; font-weight: 800; font-size: 18px; display: flex; align-items: center; justify-content: center; flex: none; }
 	.pp-rc:not(:first-child) .pp-grade { background: var(--pp-a-soft); color: var(--pp-a-deep); }
 	.pp-rc-name { font-weight: 700; font-size: 14px; line-height: 1.25; }
+	.pp-att { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+	.pp-att-pct { font-size: 28px; font-weight: 800; color: var(--pp-a); } .pp-att-pct.low { color: #c2410c; }
+	.pp-att-n { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; color: var(--pp-muted); } .pp-att-n b { color: inherit; filter: brightness(.6); }
+	.pp-att-list { margin-top: 12px; display: grid; gap: 6px; font-size: 14px; }
+	.pp-att-list div { display: flex; justify-content: space-between; gap: 10px; padding-top: 6px; border-top: 1px dashed var(--pp-line); }
 	.pp-bar { height: 6px; border-radius: 99px; background: var(--pp-bg); margin-top: 12px; overflow: hidden; }
 	.pp-bar i { display: block; height: 100%; border-radius: 99px; background: var(--pp-a); }
 	.pp-rc-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--pp-muted); font-weight: 600; }
@@ -297,6 +302,20 @@
 				</a>
 				{% endfor %}
 			</div>
+		</div>
+		{% endif %}
+
+		{% if c.attendance %}{% set a = c.attendance %}
+		<div class="pp-sec pp-card" id="att-{{ loop.index0 }}">
+			<div class="pp-h"><h3>{{ icon("check") }}{{ _("Attendance this term") }}</h3><span class="pp-count">{{ a.marked }} {{ _("school days") }}</span></div>
+			<div class="pp-att">
+				<div class="pp-att-pct {{ 'low' if (a.percent or 0) < 90 }}">{{ a.percent }}%</div>
+				<div class="pp-att-n"><span><b>{{ a.present }}</b> {{ _("present") }}</span><span><b>{{ a.late }}</b> {{ _("late") }}</span><span><b>{{ a.absent }}</b> {{ _("absent") }}</span>{% if a.excused %}<span><b>{{ a.excused }}</b> {{ _("excused") }}</span>{% endif %}</div>
+			</div>
+			<div class="pp-bar"><i style="width: {{ [[a.percent or 0, 0]|max, 100]|min }}%"></i></div>
+			{% if a.recent_absences %}
+			<div class="pp-att-list">{% for r in a.recent_absences %}<div><span>{{ r.date }}</span><span class="pp-sub">{{ _(r.status) }}{% if r.note %} · {{ r.note }}{% endif %}</span></div>{% endfor %}</div>
+			{% endif %}
 		</div>
 		{% endif %}
 

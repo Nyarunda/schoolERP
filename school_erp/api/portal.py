@@ -150,7 +150,13 @@ def child_summary(student):
 							   order_by="published_on desc", limit=6)
 		for r in cards:
 			r["exam_name"] = frappe.db.get_value("Exam", r.exam, "exam_name")
+	from school_erp.api.attendance import student_attendance
+	from school_erp.school.doctype.school_term.school_term import get_current_term
+
+	term = get_current_term()
+	attendance = student_attendance(student, term.start_date, term.end_date) if term else student_attendance(student)
 	return {
+		"attendance": attendance if attendance["marked"] else None, "term": term.name if term else None,
 		"id": stu.name, "name": stu.student_name, "first_name": stu.first_name, "stream": stu.stream or stu.school_class,
 		"photo": stu.photo, "balance": balance, "due": formatdate(due, "d MMM yyyy") if due else None,
 		"payments": payments, "report_cards": cards, "payer_phone": payer_phone(student),

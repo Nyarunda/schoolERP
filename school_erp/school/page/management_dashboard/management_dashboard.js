@@ -68,6 +68,13 @@ class ManagementDashboard {
 			label: __("Students"), value: format_number(d.students.total, null, 0), route: ["List", "Student", { status: "Active" }],
 			foot: __("{0} girls · {1} boys", [d.students.girls, d.students.boys]) + (d.students.new_this_term ? ` · +${d.students.new_this_term} ${__("new")}` : ""),
 		}));
+		if (d.attendance) {
+			const a = d.attendance;
+			k.push(S.kpi({
+				label: __("Attendance today"), value: a.percent != null ? `${a.percent}%` : "–", route: ["query-report", "Daily Attendance"],
+				foot: __("{0} absent · {1} of {2} registers taken", [a.absent, a.taken, a.total]), bar: a.percent,
+			}));
+		}
 		if (d.fees) {
 			const f = d.fees;
 			k.push(S.kpi({

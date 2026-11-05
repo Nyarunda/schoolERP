@@ -1,0 +1,77 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-05 18:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "status",
+  "note",
+  "parent_notified"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "idx": 1,
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "columns": 3,
+   "fetch_from": "student.student_name",
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "idx": 2,
+   "in_list_view": 1,
+   "label": "Student Name",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "default": "Present",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "idx": 3,
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Present\nAbsent\nLate\nExcused",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "description": "e.g. sick, came at 9:10",
+   "fieldname": "note",
+   "fieldtype": "Data",
+   "idx": 4,
+   "in_list_view": 1,
+   "label": "Note"
+  },
+  {
+   "fieldname": "parent_notified",
+   "fieldtype": "Check",
+   "idx": 5,
+   "label": "Parent Notified",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-05 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Class Attendance Student",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

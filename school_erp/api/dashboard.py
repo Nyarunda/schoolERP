@@ -58,6 +58,7 @@ def management(term=None):
 		"attention": [],
 	}
 	out["students"] = _students(t)
+	out["attendance"] = _attendance_today(today)
 	if "fees" in mods:
 		out["fees"] = _fees(t, today)
 	if "staff" in mods:
@@ -229,8 +230,29 @@ def _cashflow(today):
 	return {"labels": months, "collected": [col.get(k, 0) for k in keys], "expenses": [exp.get(k, 0) for k in keys]}
 
 
+def _attendance_today(today):
+	from school_erp.api.attendance import day_summary, is_school_day
+
+	s = day_summary(today)
+	if not s["taken"] and not is_school_day(today):
+		return None  # weekend or holiday: no tile
+	return {"percent": s["percent"], "absent": s["absent"], "taken": s["taken"], "total": s["total"],
+			"missing": [r["stream"] for r in s["streams"] if not r["taken"]]}
+
+
 def _management_attention(mods, today):
 	items = []
+	from school_erp.api.attendance import is_school_day
+
+	if is_school_day(today) and now_datetime().hour >= 9:  # give class teachers the first hour
+		att = _attendance_today(today) or {}
+		if att.get("missing"):
+			items.append(_attention(_("Class registers not taken today"), len(att["missing"]), ["query-report", "Daily Attendance"],
+									hint=", ".join(att["missing"][:6])))
+	if "exams" in mods:
+		n = frappe.db.count("Exam Mark Sheet", {"docstatus": 0, "approval_status": "Pending Approval"})
+		if n:
+			items.append(_attention(_("Mark sheets waiting for approval"), n, ["List", "Exam Mark Sheet", {"approval_status": "Pending Approval"}]))
 	if "staff" in mods:
 		n = frappe.db.count("Leave Application", {"docstatus": 0, "status": "Pending Approval"})
 		if n:
@@ -343,6 +365,18 @@ def staff_room():
 			where ts.teacher=%s and tt.school_term=%s""", (teacher, t.name))[0][0]
 	if teacher:
 		out["my_classes"] = _my_classes(teacher, t, mods)
+	if frappe.has_permission("Class Attendance", "create"):
+		from school_erp.api.attendance import is_school_day
+
+		out["can_take_register"] = True
+		out["school_day"] = is_school_day(today)
+		taken = set(frappe.get_all("Class Attendance", filters={"attendance_date": today}, pluck="stream"))
+		for c in out.get("my_classes") or []:
+			c["register_taken"] = c["stream"] in taken
+	if "exams" in mods and set(frappe.get_roles(user)) & {"Head of Department", "Head Teacher", "School Admin"}:
+		from school_erp.api.exams import approval_queue_names
+
+		out["marks_to_approve"] = len(approval_queue_names(user=user))
 	if "staff" in mods and staff:
 		out["duty"] = _my_duty(staff, today)
 		from school_erp.api.staff import leave_balances
@@ -436,6 +470,9 @@ def _my_duty(staff, today):
 
 def _actions(out, mods):
 	a = []
+	if out.get("can_take_register") and (out.get("my_classes") or out.get("staff_type") == "Teaching"):
+		mine = (out.get("my_classes") or [{}])[0].get("stream")
+		a.append({"label": _("Take register"), "icon": "check", "route": ["class-register", {"stream": mine} if mine else {}]})
 	if "staff" in mods and out.get("staff"):
 		a.append({"label": _("Apply for leave"), "icon": "calendar", "route": ["Form", "Leave Application", "new"]})
 		if (out.get("duty") or {}).get("on_duty_now"):

@@ -55,19 +55,92 @@ def exam_progress(exam):
 	doc = frappe.get_doc("Exam", exam)
 	frappe.has_permission("Exam", "read", doc, throw=True)
 	sheets = {(r.stream, r.subject): r for r in frappe.get_all(
-		"Exam Mark Sheet", filters={"exam": exam, "docstatus": ("<", 2)}, fields=["name", "stream", "subject", "docstatus", "entered"])}
+		"Exam Mark Sheet", filters={"exam": exam, "docstatus": ("<", 2)},
+		fields=["name", "stream", "subject", "docstatus", "entered", "approval_status"])}
 	subjects = exam_subjects(doc)
 	rows = []
 	for st in exam_streams(doc):
 		cells = []
 		for sub in subjects:
 			r = sheets.get((st, sub))
-			cells.append({"subject": sub, "sheet": r.name if r else None,
-						  "state": "done" if r and r.docstatus == 1 else "draft" if r else "missing"})
+			state = "missing"
+			if r:
+				state = "done" if r.docstatus == 1 else {"Pending Approval": "pending", "Returned": "returned"}.get(r.approval_status, "draft")
+			cells.append({"subject": sub, "sheet": r.name if r else None, "state": state})
 		rows.append({"stream": st, "cells": cells})
 	done = sum(1 for r in rows for c in r["cells"] if c["state"] == "done")
 	total = sum(len(r["cells"]) for r in rows)
-	return {"subjects": subjects, "rows": rows, "done": done, "total": total}
+	pending = sum(1 for r in rows for c in r["cells"] if c["state"] == "pending")
+	return {"subjects": subjects, "rows": rows, "done": done, "total": total, "pending": pending,
+			"approval": _approval_on(), "to_approve": len(approval_queue_names(exam)) if pending else 0}
+
+
+# ----------------------------------------------------------------------------- marks approval
+def _approval_on():
+	from school_erp.school.doctype.exam_mark_sheet.exam_mark_sheet import approval_required
+
+	return approval_required()
+
+
+def _decides_all(user=None):
+	return bool(set(frappe.get_roles(user or frappe.session.user)) & {"Head Teacher", "School Admin", "System Manager"})
+
+
+def approval_queue_names(exam=None, user=None):
+	"""Mark sheets waiting for this user's approval (everything pending for the Head Teacher)."""
+	user = user or frappe.session.user
+	filters = {"docstatus": 0, "approval_status": "Pending Approval"}
+	if exam:
+		filters["exam"] = exam
+	if not _decides_all(user):
+		if "Head of Department" not in frappe.get_roles(user):
+			return []
+		filters["reviewer"] = user
+		filters["owner"] = ("!=", user)  # nobody approves the marks they entered themselves
+	return frappe.get_all("Exam Mark Sheet", filters=filters, pluck="name")
+
+
+@frappe.whitelist()
+def approval_queue(exam):
+	"""Pending sheets grouped by class, with the numbers an approver checks at a glance."""
+	licensing.require("exams")
+	names = approval_queue_names(exam)
+	if not names:
+		return []
+	teacher_names = dict(frappe.get_all("Teacher", fields=["name", "teacher_name"], as_list=True))
+	rows = frappe.get_all("Exam Mark Sheet", filters={"name": ("in", names)},
+						  fields=["name", "school_class", "stream", "subject", "teacher", "entered", "average", "highest",
+								  "lowest", "max_marks", "owner", "modified"], order_by="school_class, stream, subject")
+	groups = {}
+	for r in rows:
+		r["teacher_name"] = teacher_names.get(r.teacher) or frappe.utils.get_fullname(r.owner)
+		r["absent"] = frappe.db.count("Exam Mark", {"parent": r.name, "absent": 1})
+		groups.setdefault(r.school_class, []).append(r)
+	return [{"school_class": c, "sheets": s} for c, s in groups.items()]
+
+
+@frappe.whitelist(methods=["POST"])
+def approve_sheets(names):
+	"""Approve several mark sheets at once (e.g. a whole class). Each goes through the Workflow's own checks."""
+	from frappe.model.workflow import apply_workflow
+
+	licensing.require("exams")
+	names = frappe.parse_json(names) if isinstance(names, str) else names
+	allowed = set(approval_queue_names())
+	done, failed = [], []
+	for name in names:
+		if name not in allowed:
+			failed.append({"name": name, "error": _("Not waiting for your approval")})
+			continue
+		frappe.db.savepoint("approve_sheet")
+		try:
+			apply_workflow(frappe.get_doc("Exam Mark Sheet", name), "Approve")
+			done.append(name)
+		except Exception as e:
+			frappe.db.rollback(save_point="approve_sheet")
+			frappe.clear_messages()
+			failed.append({"name": name, "error": frappe.utils.strip_html(str(e))})
+	return {"approved": len(done), "failed": failed}
 
 
 # ----------------------------------------------------------------------------- report cards
@@ -141,7 +214,8 @@ def generate_report_cards(exam):
 		rc.save()
 		created += 1
 	doc.db_set("status", "Results Ready" if doc.status != "Published" else "Published")
-	return {"report_cards": created}
+	waiting = frappe.db.count("Exam Mark Sheet", {"exam": exam, "docstatus": 0})
+	return {"report_cards": created, "not_included": waiting}
 
 
 def _previous_means(exam, students):

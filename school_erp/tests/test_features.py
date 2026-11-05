@@ -101,7 +101,9 @@ class TestFeatures(TestCase):
 			if sub == "Mathematics":
 				self.assertEqual(ms.average, round((80 + 60 + 60) / 3, 1))
 				self.assertEqual({m.student: m.grade for m in ms.marks}, {a: "A", b: "B-", c: "B-"})
-			ms.submit()
+			from school_erp.demo import _approve_marks
+
+			_approve_marks(ms)  # sent for approval, then approved (marks approval is on by default)
 		with self.assertRaises(frappe.ValidationError):  # duplicate sheet
 			frappe.get_doc({"doctype": "Exam Mark Sheet", "exam": exam.name, "stream": stream, "subject": "English",
 							"marks": [{"student": a, "marks": "1"}]}).insert()

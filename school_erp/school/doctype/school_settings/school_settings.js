@@ -69,7 +69,7 @@ function setup_mpesa(frm) {
 				frappe.msgprint({
 					title: __("Test payment {0}", [m.name]),
 					indicator: m.status === "Posted" ? "green" : "orange",
-					message: `${__("Status")}: <b>${m.status}</b>${m.student ? `<br>${__("Student")}: ${m.student}` : ""}${m.fee_payment ? `<br>${__("Fee Payment")}: <a href="/app/fee-payment/${m.fee_payment}">${m.fee_payment}</a>` : ""}${m.error ? `<br>${frappe.utils.escape_html(m.error)}` : ""}`,
+					message: `${__("Status")}: <b>${m.status}</b>${m.student ? `<br>${__("Student")}: ${m.student}` : ""}${m.fee_payment ? `<br>${__("Fee Payment")}: <a href="${frappe.utils.get_form_link("Fee Payment", m.fee_payment)}">${m.fee_payment}</a>` : ""}${m.error ? `<br>${frappe.utils.escape_html(m.error)}` : ""}`,
 				});
 			}),
 			till ? __("Simulate a parent paying the Till (no Safaricom involved)") : __("Simulate a parent paying the Paybill (no Safaricom involved)"),

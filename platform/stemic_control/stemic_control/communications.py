@@ -159,8 +159,14 @@ def queue(event, **kwargs):
         return
     if frappe.flags.in_test and not frappe.flags.stemic_comms_in_tests:
         return  # a test that commits must not leave real messages queued for the worker
-    frappe.enqueue("stemic_control.communications.send_event", queue="short", enqueue_after_commit=True,
-                   event=event, **kwargs)
+    # not `event=`: frappe.enqueue has a parameter of that name and would keep it, so the job would start without it
+    frappe.enqueue("stemic_control.communications.deliver_event", queue="short", enqueue_after_commit=True,
+                   school_event=event, **kwargs)
+
+
+def deliver_event(school_event, **kw):
+    """Background job behind queue()."""
+    return send_event(school_event, **kw)
 
 
 # ----------------------------------------------------------------------------- platform admins

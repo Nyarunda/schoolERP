@@ -119,7 +119,9 @@ def seed():
         if plan and sub_status:
             starts = add_days(registered, 3)
             subscription = frappe.get_doc({"doctype": "SaaS Subscription", "tenant": tenant.name, "plan": plan, "agent": agent,
-                                           "starts_on": starts, "ends_on": add_months(starts, 12)}).insert()
+                                           "starts_on": starts,
+                                           # a trial ends within the month, so renewals and trial reminders have something to show
+                                           "ends_on": add_days(today, 4 + i) if sub_status == "Trial" else add_months(starts, 12)}).insert()
             _set("SaaS Subscription", subscription.name, {"status": sub_status, "creation": f"{starts} 11:00:00",
                                                           "external_payment_ref": f"DEMO{1000 + i}" if sub_status == "Active" else None})
             _set("SaaS Tenant", slug, {"subscription": subscription.name})
@@ -130,15 +132,47 @@ def seed():
                                                 "expires_on": add_months(starts, 12), "signed_key": "DEMO-UNSIGNED-" + slug.upper(),
                                                 "plan": plan, "site": f"{slug}.{base}", "issued_on": starts, "max_students": plan_row[2],
                                                 "modules": "\n".join(MODULES[m] for m in MODULES if m in plan_row[3])})
+    _seed_billing()
     frappe.db.commit()
     frappe.flags.in_demo = False
     return {"schools": frappe.db.count("SaaS Tenant", {"notes": DEMO_NOTE}), "plans": len(PLANS), "agents": len(agents)}
+
+
+def _seed_billing():
+    """Quarterly invoices and their payments for the demo schools that pay, so the money charts have a year to show.
+    The latest invoice of a Past Due school is left unpaid and overdue."""
+    today = getdate(nowdate())
+    for sub in frappe.get_all("SaaS Subscription", fields=["name", "tenant", "status", "starts_on", "plan"],
+                              filters={"tenant": ("in", frappe.get_all("SaaS Tenant", filters={"notes": DEMO_NOTE}, pluck="name")),
+                                       "status": ("in", ["Active", "Past Due", "Grace"])}):
+        if frappe.db.exists("SaaS Invoice", {"subscription": sub.name}):
+            continue
+        start, n = getdate(sub.starts_on), 0
+        while start <= today:
+            n += 1
+            inv = frappe.get_doc({"doctype": "SaaS Invoice", "tenant": sub.tenant, "subscription": sub.name, "issue_date": start,
+                                  "due_date": add_days(start, 14), "period_start": start, "months": 3})
+            inv.insert(ignore_permissions=True)
+            inv.submit()
+            last = add_months(start, 3) > today
+            if last and sub.status != "Active":
+                _set("SaaS Invoice", inv.name, {"status": "Overdue"})
+                break
+            pay = frappe.get_doc({"doctype": "SaaS Payment", "invoice": inv.name, "amount": inv.total, "mode": "M-Pesa",
+                                  "reference": f"DEMO{sub.tenant[:4].upper()}{n:03d}", "payment_date": add_days(start, 5 + (n % 7))})
+            pay.insert(ignore_permissions=True)
+            pay.submit()
+            start = add_months(start, 3)
+        _set("SaaS Subscription", sub.name, {"status": sub.status})  # payments made it Active; keep the demo's status
 
 
 def clear():
     """Remove everything seed() created."""
     _require_dev()
     slugs = frappe.get_all("SaaS Tenant", filters={"notes": DEMO_NOTE}, pluck="name")
+    for doctype in ("SaaS Commission", "SaaS Payment", "SaaS Invoice"):
+        for name in frappe.get_all(doctype, filters={"tenant": ("in", slugs or [""])}, pluck="name"):
+            frappe.db.delete(doctype, {"name": name})  # demo records only: skip the cancel dance
     for doctype in ("SaaS License", "SaaS Provisioning Job", "SaaS Domain"):
         for name in frappe.get_all(doctype, filters={"tenant": ("in", slugs or [""])}, pluck="name"):
             frappe.delete_doc(doctype, name, force=True, ignore_permissions=True)

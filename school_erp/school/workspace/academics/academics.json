@@ -1,7 +1,16 @@
 {
  "app": "school_erp",
- "charts": [],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Academics</b></span>\", \"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Enter Marks\", \"col\": 4}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exams\", \"col\": 4}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Report Cards\", \"col\": 4}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Timetable\", \"col\": 4}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Teacher Workload\", \"col\": 4}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Exams\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Timetable\", \"col\": 4}}, {\"id\": \"cd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Activities\", \"col\": 4}}]",
+ "charts": [
+  {
+   "chart_name": "Mark Sheets by Status",
+   "label": "Mark Sheets by Status"
+  },
+  {
+   "chart_name": "Daily Attendance",
+   "label": "Daily Attendance"
+  }
+ ],
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Academics</b></span>\", \"col\": 12}}, {\"id\": \"ncmarksheetsaw\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Mark Sheets Awaiting Approval\", \"col\": 3}}, {\"id\": \"ncmarksheetsre\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Mark Sheets Returned\", \"col\": 3}}, {\"id\": \"ncreportcardsp\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Report Cards Published\", \"col\": 3}}, {\"id\": \"ncregisterstak\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Registers Taken Today\", \"col\": 3}}, {\"id\": \"chmarksheetsby\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Mark Sheets by Status\", \"col\": 6}}, {\"id\": \"chdailyattenda\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Daily Attendance\", \"col\": 6}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Enter Marks\", \"col\": 4}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Exams\", \"col\": 4}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Report Cards\", \"col\": 4}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Timetable\", \"col\": 4}}, {\"id\": \"sc4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Teacher Workload\", \"col\": 4}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Exams\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Timetable\", \"col\": 4}}, {\"id\": \"cd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Activities\", \"col\": 4}}]",
  "creation": "2026-10-22 16:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -153,11 +162,28 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-22 16:00:00.000000",
+ "modified": "2026-11-06 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Academics",
- "number_cards": [],
+ "number_cards": [
+  {
+   "label": "Mark Sheets Awaiting Approval",
+   "number_card_name": "Mark Sheets Awaiting Approval"
+  },
+  {
+   "label": "Mark Sheets Returned",
+   "number_card_name": "Mark Sheets Returned"
+  },
+  {
+   "label": "Report Cards Published",
+   "number_card_name": "Report Cards Published"
+  },
+  {
+   "label": "Registers Taken Today",
+   "number_card_name": "Registers Taken Today"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,

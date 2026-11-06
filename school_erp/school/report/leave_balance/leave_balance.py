@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import col, date_range, bar_chart, card
 from school_erp import licensing
 
 
@@ -31,4 +31,10 @@ def execute(filters=None):
 				row[f"{b['leave_type']}|taken"] = b["taken"]
 				row[f"{b['leave_type']}|balance"] = b["balance"]
 		data.append(row)
-	return columns, data
+	taken = {t: sum(flt(r.get(f"{t}|taken")) for r in data) for t in types}
+	summary = [card("Staff", len(data)), card("Leave days taken", sum(taken.values()), "Float")]
+	if types:
+		low_type = types[0]
+		summary.append(card(f"No {low_type} days left", sum(1 for r in data if flt(r.get(f"{low_type}|balance")) <= 0), indicator="Orange"))
+	chart = bar_chart(list(taken), [(_("Days taken {0}").format(year), list(taken.values()))]) if any(taken.values()) else None
+	return columns, data, None, chart, summary

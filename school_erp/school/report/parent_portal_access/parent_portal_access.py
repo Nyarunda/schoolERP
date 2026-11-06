@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 
-from school_erp.api.report_utils import col
+from school_erp.api.report_utils import col, bar_chart
 
 PARENT_ROLE = "Parent"
 
@@ -58,7 +58,10 @@ def execute(filters=None):
 		col("user", "Login", "Link", 190, "User"), col("last_login", "Last Login", "Datetime", 150),
 		col("student", "Student", "Link", 130, "Student"),
 	]
-	return columns, out, None, None, _summary(out)
+	order = ["Active", "Never Logged In", "No Login", "Login Disabled", "Missing Parent Role", "No Contact"]
+	counts = {s: sum(1 for r in out if r.status == s) for s in order}
+	chart = bar_chart([_(s) for s in order if counts[s]], [(_("Parents"), [counts[s] for s in order if counts[s]])]) if out else None
+	return columns, out, None, chart, _summary(out)
 
 
 def _status(p):

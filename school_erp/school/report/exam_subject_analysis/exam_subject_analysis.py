@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from school_erp.api.report_utils import col
+from school_erp.api.report_utils import col, bar_chart, card, top
 from school_erp import licensing
 
 
@@ -35,6 +35,14 @@ def execute(filters=None):
 	by_subject = {}
 	for d in data:
 		by_subject.setdefault(d["subject"], []).append(d["mean_pct"])
-	chart = {"data": {"labels": list(by_subject), "datasets": [{"name": _("Mean %"), "values": [round(sum(v) / len(v), 1) for v in by_subject.values()]}]},
-			 "type": "bar"} if by_subject else None
-	return columns, data, None, chart
+	means = {s: round(sum(v) / len(v), 1) for s, v in by_subject.items()}
+	ranked = sorted(means.items(), key=lambda x: -x[1])
+	chart = bar_chart([s for s, _m in ranked], [(_("Mean %"), [m for _s, m in ranked])]) if ranked else None
+	if chart:
+		chart["fieldtype"] = "Percent"
+	allm = [d["mean_pct"] for d in data]
+	summary = [card("Mark sheets", len(data)), card("Overall mean %", round(sum(allm) / len(allm), 1) if allm else 0, "Percent", indicator="Blue")]
+	if ranked:
+		summary += [card(f"Best: {ranked[0][0]}", ranked[0][1], "Percent", indicator="Green"),
+					card(f"Weakest: {ranked[-1][0]}", ranked[-1][1], "Percent", indicator="Orange")]
+	return columns, data, None, chart, summary

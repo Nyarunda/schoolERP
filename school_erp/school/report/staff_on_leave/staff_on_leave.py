@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import col, date_range, bar_chart, card
 from school_erp import licensing
 
 
@@ -27,4 +27,11 @@ def execute(filters=None):
 		col("reliever_name", "Reliever", "Data", 160), col("reliever_phone", "Reliever Phone", "Data", 120),
 		col("name", "Application", "Link", 140, "Leave Application"),
 	]
-	return columns, rows
+	by_type = {}
+	for r in rows:
+		by_type[r.leave_type] = by_type.get(r.leave_type, 0) + 1
+	summary = [card("Away", len(rows), indicator="Orange" if rows else "Green"),
+			   card("Without a reliever", sum(1 for r in rows if not r.reliever), indicator="Red" if any(not r.reliever for r in rows) else "Green"),
+			   card("Teaching staff away", sum(1 for r in rows if r.staff_type == "Teaching"))]
+	chart = bar_chart(list(by_type), list(by_type.values())) if len(by_type) > 1 else None
+	return columns, rows, None, chart, summary

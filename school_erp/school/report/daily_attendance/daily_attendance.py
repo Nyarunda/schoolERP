@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 
 from school_erp.api.attendance import day_summary
-from school_erp.api.report_utils import col
+from school_erp.api.report_utils import bar_chart, col
 
 
 def execute(filters=None):
@@ -32,4 +32,8 @@ def execute(filters=None):
 		{"label": _("Attendance"), "value": s["percent"] or 0, "datatype": "Percent"},
 		{"label": _("Absent"), "value": s["absent"], "datatype": "Int", "indicator": "Red" if s["absent"] else "Green"},
 	]
-	return columns, data, None, None, summary
+	taken = [r for r in data if r["taken"]]
+	chart = bar_chart([r["stream"] for r in taken], [(_("Attendance %"), [r["percent"] or 0 for r in taken])]) if taken else None
+	if chart:
+		chart["fieldtype"] = "Percent"
+	return columns, data, None, chart, summary

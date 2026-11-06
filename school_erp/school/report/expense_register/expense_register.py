@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import bar_chart, card, col, date_range, top
 from school_erp import licensing
 
 
@@ -34,8 +34,13 @@ def execute(filters=None):
 	for r in rows:
 		if r.status == "Approved":
 			by_cat[r.expense_category] = by_cat.get(r.expense_category, 0) + flt(r.amount)
-	chart = {"data": {"labels": list(by_cat), "datasets": [{"name": _("Approved"), "values": list(by_cat.values())}]},
-			 "type": "donut", "fieldtype": "Currency"} if by_cat else None
-	summary = [{"label": _("Approved & posted"), "value": approved, "datatype": "Currency", "indicator": "Green"},
-			   {"label": _("Awaiting approval"), "value": pending, "datatype": "Currency", "indicator": "Orange"}]
+	labels, values = top([{"k": k, "v": v} for k, v in by_cat.items()], "k", "v", n=10)
+	chart = bar_chart(labels, [(_("Approved"), values)], money=True) if by_cat else None
+	rejected = sum(1 for r in rows if r.status == "Rejected")
+	biggest = max(by_cat.items(), key=lambda kv: kv[1]) if by_cat else None
+	summary = [card("Approved & posted", approved, "Currency", indicator="Green"),
+			   card("Awaiting approval", pending, "Currency", indicator="Orange" if pending else "Green"),
+			   card("Expenses", len(rows)), card("Rejected", rejected, indicator="Red" if rejected else None)]
+	if biggest:
+		summary.append({"label": _("Biggest category: {0}").format(biggest[0]), "value": biggest[1], "datatype": "Currency"})
 	return columns, rows, None, chart, summary

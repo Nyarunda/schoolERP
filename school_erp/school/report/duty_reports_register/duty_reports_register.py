@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import col, date_range, bar_chart
 from school_erp import licensing
 
 
@@ -44,7 +44,14 @@ def execute(filters=None):
 	missing = sum(1 for r in data if r["status"] == "Missing")
 	summary = [{"label": _("Reports submitted"), "value": sum(1 for r in data if r["status"] == "Submitted"), "datatype": "Int", "indicator": "Green"},
 			   {"label": _("Missing"), "value": missing, "datatype": "Int", "indicator": "Red" if missing else "Green"}]
-	return columns, data, None, None, summary
+	ratings = {}
+	for r in data:
+		if r.get("overall_rating"):
+			ratings[r["overall_rating"]] = ratings.get(r["overall_rating"], 0) + 1
+	summary.append({"label": _("Days with flags"), "value": sum(1 for r in data if r.get("issues")), "datatype": "Int", "indicator": "Orange"})
+	order = [x for x in ("Excellent", "Good", "Fair", "Poor") if x in ratings] + [x for x in ratings if x not in ("Excellent", "Good", "Fair", "Poor")]
+	chart = bar_chart([_(x) for x in order], [(_("Days"), [ratings[x] for x in order])]) if ratings else None
+	return columns, data, None, chart, summary
 
 
 def _row(d, staff, r):

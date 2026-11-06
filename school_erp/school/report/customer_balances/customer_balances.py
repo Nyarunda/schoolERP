@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import date_diff, flt, getdate
 
-from school_erp.api.report_utils import col
+from school_erp.api.report_utils import bar_chart, col
 
 BUCKETS = (("current", "Not Yet Due", None), ("d30", "1-30 Days", 30), ("d60", "31-60 Days", 60), ("d90", "61-90 Days", 90), ("older", "Over 90 Days", None))
 
@@ -42,4 +42,6 @@ def execute(filters=None):
 	summary = [{"label": _("Owed by customers"), "value": sum(r.outstanding for r in data), "datatype": "Currency", "indicator": "Orange"},
 			   {"label": _("Over 90 days"), "value": sum(r.older for r in data), "datatype": "Currency", "indicator": "Red"},
 			   {"label": _("Customers owing"), "value": len(data), "datatype": "Int"}]
-	return columns, data, None, None, summary
+	totals = [sum(r[k] for r in data) for k, _l, _d in BUCKETS]
+	chart = bar_chart([_(l) for _k, l, _d in BUCKETS], [(_("Outstanding"), totals)], money=True) if data else None
+	return columns, data, None, chart, summary

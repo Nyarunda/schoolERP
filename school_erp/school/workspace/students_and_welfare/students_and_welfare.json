@@ -16,9 +16,17 @@
   {
    "chart_name": "Incidents by Category",
    "label": "Incidents by Category"
+  },
+  {
+   "chart_name": "Daily Attendance",
+   "label": "Daily Attendance"
+  },
+  {
+   "chart_name": "Absences per Day",
+   "label": "Absences per Day"
   }
  ],
- "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Students & Welfare</b></span>\", \"col\": 12}}, {\"id\": \"dashnc0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active Students\", \"col\": 3}}, {\"id\": \"dashnc1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Boarders\", \"col\": 3}}, {\"id\": \"dashnc2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Open Discipline Cases\", \"col\": 3}}, {\"id\": \"dashnc3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Open Complaints\", \"col\": 3}}, {\"id\": \"dashch0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Discipline Incidents\", \"col\": 12}}, {\"id\": \"dashch1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Students by Class\", \"col\": 12}}, {\"id\": \"dashch2\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Students by Gender\", \"col\": 12}}, {\"id\": \"dashch3\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Incidents by Category\", \"col\": 12}}, {\"id\": \"dashsp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Students\", \"col\": 4}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Discipline Incident\", \"col\": 4}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Complaints\", \"col\": 4}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Class Enrolment\", \"col\": 4}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Students\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Welfare\", \"col\": 4}}, {\"id\": \"cd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 4}}]",
+ "content": "[{\"id\": \"hdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Students & Welfare</b></span>\", \"col\": 12}}, {\"id\": \"dashnc0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active Students\", \"col\": 3}}, {\"id\": \"ncattendanceto\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Attendance Today\", \"col\": 3}}, {\"id\": \"ncabsenttoday\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Absent Today\", \"col\": 3}}, {\"id\": \"ncregisterstak\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Registers Taken Today\", \"col\": 3}}, {\"id\": \"dashnc1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Boarders\", \"col\": 4}}, {\"id\": \"dashnc2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Open Discipline Cases\", \"col\": 4}}, {\"id\": \"dashnc3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Open Complaints\", \"col\": 4}}, {\"id\": \"chdailyattenda\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Daily Attendance\", \"col\": 6}}, {\"id\": \"chabsencesperd\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Absences per Day\", \"col\": 6}}, {\"id\": \"dashch1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Students by Class\", \"col\": 6}}, {\"id\": \"dashch2\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Students by Gender\", \"col\": 6}}, {\"id\": \"dashch0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Discipline Incidents\", \"col\": 6}}, {\"id\": \"dashch3\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Incidents by Category\", \"col\": 6}}, {\"id\": \"dashsp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"sc0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Students\", \"col\": 4}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Discipline Incident\", \"col\": 4}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Complaints\", \"col\": 4}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Class Enrolment\", \"col\": 4}}, {\"id\": \"sp\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"cd0\", \"type\": \"card\", \"data\": {\"card_name\": \"Students\", \"col\": 4}}, {\"id\": \"cd1\", \"type\": \"card\", \"data\": {\"card_name\": \"Welfare\", \"col\": 4}}, {\"id\": \"cd2\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 4}}]",
  "creation": "2026-10-22 16:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -170,7 +178,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-25 18:30:00.000000",
+ "modified": "2026-11-06 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Students and Welfare",
@@ -190,6 +198,18 @@
   {
    "label": "Open Complaints",
    "number_card_name": "Open Complaints"
+  },
+  {
+   "label": "Attendance Today",
+   "number_card_name": "Attendance Today"
+  },
+  {
+   "label": "Absent Today",
+   "number_card_name": "Absent Today"
+  },
+  {
+   "label": "Registers Taken Today",
+   "number_card_name": "Registers Taken Today"
   }
  ],
  "owner": "Administrator",

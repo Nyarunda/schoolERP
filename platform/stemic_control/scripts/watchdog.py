@@ -35,6 +35,14 @@ def send(frappe, subject, lines):
         print("  (not emailed: no platform admin with an email address, or no default outgoing email account)")
         return
     try:
+        import logging
+
+        import cssutils  # Frappe inlines the email's CSS with it; its complaints about modern CSS are noise in this log
+
+        cssutils.log.setLevel(logging.CRITICAL)
+    except Exception:
+        pass
+    try:
         frappe.sendmail(recipients=to, subject=subject, message="<br>".join(frappe.utils.escape_html(l) for l in lines),
                         now=True)  # straight to the mail server: the job queue may be what is down
     except Exception as e:

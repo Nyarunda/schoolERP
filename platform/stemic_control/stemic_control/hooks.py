@@ -5,6 +5,10 @@ app_description = "Separate multi-tenant SaaS control plane for Stemic Schools"
 app_email = "support@stemicschools.com"
 app_license = "mit"
 
+# The admin site's login and web pages: Stemic's footer and icons. update_website_context runs after every app's
+# website_context, so this holds even though ERPNext (installed after this app) sets its own favicon and splash image.
+update_website_context = ["stemic_control.branding.website_context"]
+
 add_to_apps_screen = [
     {
         "name": "stemic_control",

@@ -12,256 +12,285 @@
 	{%- elif name == "pin" -%}<path d="M12 17v5M9 3h6l-1 6 3 4H7l3-4z"/>
 	{%- elif name == "copy" -%}<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>
 	{%- elif name == "check" -%}<path d="M20 6 9 17l-5-5"/>
-	{%- elif name == "arrow" -%}<path d="M7 17 17 7M8 7h9v9"/>
 	{%- elif name == "card" -%}<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/>
 	{%- elif name == "help" -%}<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>
 	{%- elif name == "clock" -%}<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
 	{%- elif name == "chat" -%}<path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/>
 	{%- elif name == "out" -%}<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+	{%- elif name == "home" -%}<path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>
+	{%- elif name == "wallet" -%}<path d="M20 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-4a2 2 0 0 0 0 4h4v4a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5"/>
+	{%- elif name == "calendar" -%}<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
+	{%- elif name == "chev" -%}<path d="m9 18 6-6-6-6"/>
 	{%- endif -%}
 </svg>
 {%- endmacro %}
+
+{% macro money(v) -%}{{ frappe.utils.fmt_money(v, currency=currency) }}{%- endmacro %}
 
 {% block page_content %}
 {%- set a = school.accent or "#1f6f5c" -%}
 {%- set ns = namespace(due=0, n_due=0) -%}
 {%- for c in children %}{% if c.balance > 0.5 %}{% set ns.due = ns.due + c.balance %}{% set ns.n_due = ns.n_due + 1 %}{% endif %}{% endfor -%}
 <style>
+	/* the portal is the whole page: no site navbar, wide content */
+	body[data-path="parent"] .navbar { display: none; }
+	body[data-path="parent"] { background: #f3f5f8; }
+	body[data-path="parent"] .page-content-wrapper main { max-width: 1240px; }
+	body[data-path="parent"] .page_content { padding-top: 0; }
 	.pp, .pp-sheet {
 		--pp-a: {{ a }};
-		--pp-a-soft: color-mix(in srgb, var(--pp-a) 10%, #fff);
+		--pp-a-soft: color-mix(in srgb, var(--pp-a) 9%, #fff);
 		--pp-a-mid: color-mix(in srgb, var(--pp-a) 22%, #fff);
-		--pp-a-deep: color-mix(in srgb, var(--pp-a) 70%, #000);
-		--pp-ink: #141a26; --pp-muted: #667085; --pp-line: #e8ebf0; --pp-bg: #f6f7f9; --pp-card: #fff;
+		--pp-a-deep: color-mix(in srgb, var(--pp-a) 72%, #000);
+		--pp-ink: #101828; --pp-ink-2: #344054; --pp-muted: #667085; --pp-line: #e4e7ec; --pp-bg: #f3f5f8; --pp-card: #fff;
 		--pp-red: #c8372d; --pp-amber: #a86a00; --pp-green: #16794a;
-		--pp-r: 18px; --pp-shadow: 0 1px 2px rgba(16,24,40,.04), 0 6px 20px -8px rgba(16,24,40,.12);
-		color: var(--pp-ink); font-feature-settings: "tnum" 1;
+		--pp-r: 18px; --pp-shadow: 0 1px 2px rgba(16,24,40,.05), 0 8px 24px -12px rgba(16,24,40,.14);
+		color: var(--pp-ink); font-feature-settings: "tnum" 1; font-size: 15px;
 	}
 	.pp *, .pp-sheet * { box-sizing: border-box; }
-	.pp { max-width: 820px; margin: 4px auto 64px; }
+	.pp { margin: 18px auto 72px; }
 	.pp-ic { width: 18px; height: 18px; flex: none; }
-	.pp-sub { color: var(--pp-muted); font-size: 13px; }
-	.pp-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+	.pp-sub { color: var(--pp-muted); font-size: 13.5px; }
+	.pp-lbl { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--pp-muted); }
 
-	/* hero */
-	.pp-hero { position: relative; overflow: hidden; border-radius: 24px; padding: 26px 26px 22px; color: #fff;
-		background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--pp-a) 60%, #fff) 0%, transparent 55%),
-			linear-gradient(135deg, var(--pp-a) 0%, var(--pp-a-deep) 100%); box-shadow: var(--pp-shadow); }
-	.pp-hero::after { content: ""; position: absolute; width: 260px; height: 260px; right: -80px; bottom: -120px; border-radius: 50%;
-		border: 40px solid rgba(255,255,255,.07); }
-	.pp-hero-top { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
-	.pp-logo { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,.95); padding: 5px; display: flex; align-items: center; justify-content: center; flex: none; }
+	/* ---------- header band ---------- */
+	.pp-hero { position: relative; overflow: hidden; border-radius: 26px; padding: 26px 30px; color: #fff;
+		background: radial-gradient(90% 160% at 100% 0%, color-mix(in srgb, var(--pp-a) 55%, #fff) 0%, transparent 55%),
+			linear-gradient(130deg, var(--pp-a) 0%, var(--pp-a-deep) 100%); box-shadow: 0 20px 50px -24px color-mix(in srgb, var(--pp-a) 70%, #000); }
+	.pp-hero::after { content: ""; position: absolute; width: 420px; height: 420px; right: -140px; bottom: -260px; border-radius: 50%; border: 60px solid rgba(255,255,255,.06); }
+	.pp-hero-top { display: flex; align-items: center; gap: 14px; position: relative; z-index: 1; }
+	.pp-logo { width: 48px; height: 48px; border-radius: 14px; background: rgba(255,255,255,.96); padding: 6px; display: flex; align-items: center; justify-content: center; flex: none; }
 	.pp-logo img { max-width: 100%; max-height: 100%; }
-	.pp-school { font-weight: 700; font-size: 15px; line-height: 1.2; }
-	.pp-school small { display: block; font-weight: 500; opacity: .8; font-size: 12px; }
-	.pp-greet { position: relative; z-index: 1; margin: 22px 0 18px; }
-	.pp-greet h1 { color: #fff; font-size: 26px; font-weight: 750; margin: 0; letter-spacing: -.01em; }
-	.pp-greet p { margin: 4px 0 0; opacity: .85; font-size: 14px; }
-	.pp-stats { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-	.pp-stat { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16); border-radius: 14px; padding: 12px 14px; backdrop-filter: blur(4px); }
-	.pp-stat .pp-lbl { opacity: .8; font-size: 10px; }
-	.pp-stat b { display: block; font-size: 18px; margin-top: 3px; font-weight: 750; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.pp-school { font-weight: 750; font-size: 17px; line-height: 1.2; }
+	.pp-school small { display: block; font-weight: 500; opacity: .8; font-size: 12.5px; margin-top: 2px; }
+	.pp-out { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; color: #fff !important; font-size: 13.5px; font-weight: 650;
+		padding: 8px 14px; border-radius: 12px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); text-decoration: none !important; }
+	.pp-out:hover { background: rgba(255,255,255,.2); }
+	.pp-out .pp-ic { width: 16px; height: 16px; }
+	.pp-hero-body { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-top: 26px; flex-wrap: wrap; }
+	.pp-greet h1 { color: #fff; font-size: 32px; font-weight: 780; margin: 0; letter-spacing: -.02em; }
+	.pp-greet p { margin: 6px 0 0; opacity: .88; font-size: 15px; }
+	.pp-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+	.pp-stat { min-width: 150px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); border-radius: 16px; padding: 12px 16px; backdrop-filter: blur(6px); }
+	.pp-stat .pp-lbl { color: rgba(255,255,255,.78); font-size: 10.5px; }
+	.pp-stat b { display: block; font-size: 22px; margin-top: 3px; font-weight: 780; white-space: nowrap; letter-spacing: -.01em; }
 
-	/* child switcher */
-	.pp-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 18px 2px 4px; scrollbar-width: none; }
-	.pp-tabs::-webkit-scrollbar { display: none; }
-	.pp-tab { display: flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px; border-radius: 999px; border: 1px solid var(--pp-line);
-		background: var(--pp-card); font-weight: 600; font-size: 14px; color: var(--pp-ink); cursor: pointer; white-space: nowrap; transition: .15s; }
-	.pp-tab .pp-av { width: 28px; height: 28px; font-size: 12px; }
-	.pp-tab.on { background: var(--pp-ink); color: #fff; border-color: var(--pp-ink); }
-	.pp-tab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pp-red); }
-
-	/* sections */
-	.pp-sec { margin-top: 18px; }
-	.pp-card { background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: var(--pp-r); padding: 20px; box-shadow: var(--pp-shadow); }
-	.pp-card + .pp-card { margin-top: 14px; }
-	.pp-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-	.pp-h h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; margin: 0; }
-	.pp-h h3 .pp-ic { color: var(--pp-a); }
-	.pp-count { font-size: 12px; color: var(--pp-muted); font-weight: 600; }
-
-	/* profile */
-	.pp-profile { display: flex; align-items: center; gap: 14px; }
-	.pp-av { width: 58px; height: 58px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; overflow: hidden;
-		background: var(--pp-a-mid); color: var(--pp-a-deep); font-weight: 800; font-size: 22px; }
+	/* ---------- child switcher ---------- */
+	.pp-kids { display: flex; gap: 10px; overflow-x: auto; padding: 18px 2px 2px; scrollbar-width: none; }
+	.pp-kids::-webkit-scrollbar { display: none; }
+	.pp-kid { display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 7px; border-radius: 999px; border: 1px solid var(--pp-line);
+		background: var(--pp-card); font-weight: 650; font-size: 14.5px; color: var(--pp-ink); cursor: pointer; white-space: nowrap; transition: .15s; box-shadow: var(--pp-shadow); }
+	.pp-kid small { display: block; font-weight: 500; font-size: 11.5px; color: var(--pp-muted); text-align: left; }
+	.pp-kid.on { background: var(--pp-ink); color: #fff; border-color: var(--pp-ink); } .pp-kid.on small { color: rgba(255,255,255,.7); }
+	.pp-kid .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pp-red); }
+	.pp-av { width: 34px; height: 34px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; overflow: hidden;
+		background: var(--pp-a-mid); color: var(--pp-a-deep); font-weight: 800; font-size: 14px; }
 	.pp-av img { width: 100%; height: 100%; object-fit: cover; }
-	.pp-profile .pp-av { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--pp-a-mid); }
-	.pp-name { font-size: 20px; font-weight: 750; letter-spacing: -.01em; }
-	.pp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
-	.pp-chip { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--pp-bg); color: var(--pp-muted); }
+
+	/* ---------- child header + tabs ---------- */
+	.pp-child { display: none; } .pp-child.on { display: block; animation: pp-in .25s ease; }
+	@keyframes pp-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+	.pp-head { margin-top: 16px; background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: var(--pp-r); box-shadow: var(--pp-shadow);
+		padding: 20px 24px 0; position: sticky; top: 0; z-index: 20; }
+	.pp-who { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+	.pp-who .pp-av { width: 60px; height: 60px; font-size: 24px; box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--pp-a-mid); }
+	.pp-name { font-size: 22px; font-weight: 780; letter-spacing: -.015em; }
+	.pp-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+	.pp-chip { font-size: 12.5px; font-weight: 650; padding: 3px 10px; border-radius: 999px; background: var(--pp-bg); color: var(--pp-ink-2); white-space: nowrap; }
 	.pp-chip.a { background: var(--pp-a-soft); color: var(--pp-a-deep); }
+	.pp-chip.red { background: #fdecea; color: var(--pp-red); } .pp-chip.green { background: #e7f6ee; color: var(--pp-green); }
+	.pp-who-act { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+	.pp-tabs { display: flex; gap: 4px; margin-top: 16px; overflow-x: auto; scrollbar-width: none; }
+	.pp-tabs::-webkit-scrollbar { display: none; }
+	.pp-tab { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 13px 14px 15px; border: 0; background: none; cursor: pointer;
+		font-weight: 650; font-size: 14.5px; color: var(--pp-muted); white-space: nowrap; transition: color .15s; }
+	.pp-tab .pp-ic { width: 17px; height: 17px; }
+	.pp-tab::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: transparent; }
+	.pp-tab:hover { color: var(--pp-ink); }
+	.pp-tab.on { color: var(--pp-ink); } .pp-tab.on::after { background: var(--pp-a); } .pp-tab.on .pp-ic { color: var(--pp-a); }
+	.pp-tab .n { font-size: 11px; font-weight: 800; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+		background: var(--pp-bg); color: var(--pp-ink-2); } .pp-tab .n.red { background: var(--pp-red); color: #fff; }
+	.pp-panel { display: none; margin-top: 16px; } .pp-panel.on { display: block; animation: pp-in .2s ease; }
+
+	/* ---------- cards & grids ---------- */
+	.pp-card { background: var(--pp-card); border: 1px solid var(--pp-line); border-radius: var(--pp-r); padding: 22px 24px; box-shadow: var(--pp-shadow); min-width: 0; }
+	.pp-grid { display: grid; gap: 16px; }
+	.pp-g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.pp-g32 { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+	.pp-g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+	.pp-panel > * + * { margin-top: 16px; }
+	.pp-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+	.pp-h h3 { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 750; margin: 0; letter-spacing: -.005em; }
+	.pp-h h3 .pp-ic { color: var(--pp-a); }
+	.pp-link { font-size: 13px; font-weight: 700; color: var(--pp-a) !important; background: none; border: 0; padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; }
+	.pp-link .pp-ic { width: 15px; height: 15px; }
+
+	/* overview tiles */
+	.pp-tile { position: relative; display: flex; flex-direction: column; gap: 6px; text-align: left; cursor: pointer; color: var(--pp-ink); font: inherit;
+		transition: transform .15s, box-shadow .15s, border-color .15s; }
+	.pp-tile:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--pp-a-mid); box-shadow: 0 14px 34px -18px rgba(16,24,40,.35); }
+	.pp-tile:disabled { cursor: default; }
+	.pp-tile .ib { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--pp-a-soft); color: var(--pp-a); margin-bottom: 6px; }
+	.pp-tile .v { font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+	.pp-tile .v small { font-size: 15px; font-weight: 700; color: var(--pp-muted); }
+	.pp-tile.due .ib { background: #fdecea; color: var(--pp-red); } .pp-tile.due .v { color: var(--pp-red); }
+	.pp-tile.ok .ib { background: #e7f6ee; color: var(--pp-green); }
+	.pp-tile .pp-ext { position: absolute; top: 20px; right: 18px; color: var(--pp-muted); }
 
 	/* balance */
-	.pp-bal { margin-top: 18px; border-radius: 16px; padding: 18px; display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; flex-wrap: wrap;
-		background: var(--pp-bg); border: 1px solid var(--pp-line); }
-	.pp-bal.due { background: linear-gradient(135deg, #fff5f3, #fff); border-color: #f6d4cf; }
-	.pp-bal.paid { background: linear-gradient(135deg, #ecf8f1, #fff); border-color: #cdebd9; }
-	.pp-bal .pp-lbl { color: var(--pp-muted); }
+	.pp-bal { border-radius: 16px; padding: 20px; background: var(--pp-bg); border: 1px solid var(--pp-line); }
+	.pp-bal.due { background: linear-gradient(135deg, #fff4f2, #fff); border-color: #f6d4cf; } .pp-bal.paid { background: linear-gradient(135deg, #ecf8f1, #fff); border-color: #cdebd9; }
 	.pp-bal.due .pp-lbl { color: var(--pp-red); } .pp-bal.paid .pp-lbl { color: var(--pp-green); }
-	.pp-amt { font-size: 32px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-top: 4px; }
-	.pp-due { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--pp-red); }
-	.pp-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+	.pp-amt { font-size: 38px; font-weight: 820; letter-spacing: -.025em; line-height: 1.1; margin-top: 6px; }
+	.pp-due { display: inline-flex; margin-top: 6px; font-size: 13.5px; font-weight: 650; color: var(--pp-red); }
+	.pp-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 	.pp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border-radius: 12px; white-space: nowrap;
-		border: 1px solid var(--pp-line); background: #fff; color: var(--pp-ink) !important; font-weight: 650; font-size: 14px; cursor: pointer;
+		border: 1px solid var(--pp-line); background: #fff; color: var(--pp-ink) !important; font-weight: 680; font-size: 14px; cursor: pointer;
 		text-decoration: none !important; transition: transform .1s, box-shadow .15s, border-color .15s; }
-	.pp-btn:hover { border-color: var(--pp-a); box-shadow: 0 4px 14px -6px var(--pp-a); }
+	.pp-btn:hover { border-color: var(--pp-a); box-shadow: 0 6px 16px -8px var(--pp-a); }
 	.pp-btn:active { transform: scale(.98); }
 	.pp-btn.primary { background: var(--pp-a); border-color: var(--pp-a); color: #fff !important; }
 	.pp-btn.mpesa { background: #2f9e44; border-color: #2f9e44; color: #fff !important; }
 	.pp-btn:disabled { opacity: .55; cursor: default; transform: none; }
-
-	/* paybill */
-	.pp-paybill { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-	.pp-pb { border: 1px dashed var(--pp-line); border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-	.pp-pb .pp-lbl { color: var(--pp-muted); font-size: 10px; }
-	.pp-pb b { font-size: 16px; letter-spacing: .02em; }
-	.pp-copy { border: 0; background: var(--pp-bg); color: var(--pp-muted); width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+	.pp-paybill { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+	.pp-pb { border: 1px dashed #d0d5dd; border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #fff; }
+	.pp-pb .pp-lbl { font-size: 10px; }
+	.pp-pb b { font-size: 17px; letter-spacing: .02em; }
+	.pp-copy { border: 0; background: var(--pp-bg); color: var(--pp-muted); width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 	.pp-copy:hover { color: var(--pp-a); } .pp-copy.done { color: var(--pp-green); }
-	.pp-till { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: center; }
-	.pp-till-note { font-size: 12.5px; color: var(--pp-muted); line-height: 1.45; }
+	.pp-till-note { font-size: 12.5px; color: var(--pp-muted); line-height: 1.45; margin-top: 10px; }
 
-	/* quick actions */
-	.pp-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
-	.pp-q { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; border: 1px solid var(--pp-line); background: #fff;
-		color: var(--pp-ink) !important; text-decoration: none !important; font-weight: 650; font-size: 14px; transition: .15s; }
-	.pp-q:hover { border-color: var(--pp-a); transform: translateY(-1px); }
-	.pp-q span.ib { width: 36px; height: 36px; border-radius: 10px; background: var(--pp-a-soft); color: var(--pp-a); display: flex; align-items: center; justify-content: center; }
-	.pp-q small { display: block; font-weight: 500; color: var(--pp-muted); font-size: 12px; margin-top: 2px; }
-
-	/* report cards */
-	.pp-rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-	.pp-rc { position: relative; border: 1px solid var(--pp-line); border-radius: 14px; padding: 14px; text-decoration: none !important; color: var(--pp-ink) !important; transition: .15s; display: block; }
-	.pp-rc:hover { border-color: var(--pp-a); box-shadow: var(--pp-shadow); }
-	.pp-rc-top { display: flex; align-items: center; gap: 12px; }
-	.pp-grade { width: 48px; height: 48px; border-radius: 12px; background: var(--pp-a); color: #fff; font-weight: 800; font-size: 18px; display: flex; align-items: center; justify-content: center; flex: none; }
-	.pp-rc:not(:first-child) .pp-grade { background: var(--pp-a-soft); color: var(--pp-a-deep); }
-	.pp-rc-name { font-weight: 700; font-size: 14px; line-height: 1.25; }
-	.pp-att { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-	.pp-att-pct { font-size: 28px; font-weight: 800; color: var(--pp-a); } .pp-att-pct.low { color: #c2410c; }
-	.pp-att-n { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; color: var(--pp-muted); } .pp-att-n b { color: inherit; filter: brightness(.6); }
-	.pp-att-list { margin-top: 12px; display: grid; gap: 6px; font-size: 14px; }
-	.pp-att-list div { display: flex; justify-content: space-between; gap: 10px; padding-top: 6px; border-top: 1px dashed var(--pp-line); }
-	.pp-bar { height: 6px; border-radius: 99px; background: var(--pp-bg); margin-top: 12px; overflow: hidden; }
+	/* term fees */
+	.pp-bar { height: 8px; border-radius: 99px; background: var(--pp-bg); overflow: hidden; }
 	.pp-bar i { display: block; height: 100%; border-radius: 99px; background: var(--pp-a); }
-	.pp-rc-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--pp-muted); font-weight: 600; }
-	.pp-trend { font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 6px; margin-left: auto; align-self: flex-start; }
-	.pp-trend.up { color: var(--pp-green); background: #e7f6ee; } .pp-trend.down { color: var(--pp-red); background: #fdecea; }
-	.pp-rc .pp-ext { position: absolute; top: 12px; right: 12px; color: var(--pp-muted); opacity: 0; transition: .15s; }
-	.pp-rc:hover .pp-ext { opacity: 1; }
+	.pp-fee-total { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+	.pp-fee-total b { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+	.pp-fee-items { margin-top: 14px; }
+	.pp-fee-items div { display: flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-top: 1px solid var(--pp-line); font-size: 14.5px; }
+	.pp-fee-items span { color: var(--pp-ink-2); }
 
 	/* payments */
 	.pp-pay { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--pp-line); }
-	.pp-pay:first-child { border-top: 0; padding-top: 2px; }
-	.pp-pay .ib { width: 38px; height: 38px; border-radius: 50%; background: #e7f6ee; color: var(--pp-green); display: flex; align-items: center; justify-content: center; flex: none; }
-	.pp-pay .amt { font-weight: 750; font-size: 15px; }
-	.pp-pay a { margin-left: auto; font-size: 13px; font-weight: 650; color: var(--pp-a) !important; padding: 6px 10px; border-radius: 8px; white-space: nowrap; }
+	.pp-h + .pp-pay { border-top: 0; padding-top: 0; }
+	.pp-pay .ib { width: 40px; height: 40px; border-radius: 50%; background: #e7f6ee; color: var(--pp-green); display: flex; align-items: center; justify-content: center; flex: none; }
+	.pp-pay .amt { font-weight: 760; font-size: 15.5px; }
+	.pp-pay a { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--pp-a) !important; padding: 7px 11px; border-radius: 9px; white-space: nowrap; border: 1px solid var(--pp-line); }
 	.pp-pay a:hover { background: var(--pp-a-soft); text-decoration: none; }
-	.pp-empty { text-align: center; padding: 22px 10px; color: var(--pp-muted); font-size: 14px; }
-	.pp-empty .pp-ic { width: 28px; height: 28px; opacity: .5; margin-bottom: 6px; }
+	.pp-empty { text-align: center; padding: 26px 10px; color: var(--pp-muted); font-size: 14px; }
+	.pp-empty .pp-ic { width: 30px; height: 30px; opacity: .45; margin-bottom: 8px; }
 
-	/* notices */
-	.pp-notice { display: flex; gap: 12px; padding: 14px; border-radius: 14px; background: var(--pp-bg); }
-	.pp-notice + .pp-notice { margin-top: 8px; }
-	.pp-notice .ib { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--pp-a); display: flex; align-items: center; justify-content: center; flex: none; }
+	/* report cards */
+	.pp-rc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+	.pp-rc { position: relative; border: 1px solid var(--pp-line); border-radius: 16px; padding: 16px; text-decoration: none !important; color: var(--pp-ink) !important; transition: .15s; display: block; background: #fff; }
+	.pp-rc:hover { border-color: var(--pp-a); box-shadow: var(--pp-shadow); }
+	.pp-rc-top { display: flex; align-items: center; gap: 12px; }
+	.pp-grade { width: 50px; height: 50px; border-radius: 14px; background: var(--pp-a); color: #fff; font-weight: 820; font-size: 18px; display: flex; align-items: center; justify-content: center; flex: none; }
+	.pp-rc:not(:first-child) .pp-grade { background: var(--pp-a-soft); color: var(--pp-a-deep); }
+	.pp-rc-name { font-weight: 720; font-size: 14.5px; line-height: 1.25; }
+	.pp-rc .pp-bar { margin-top: 14px; }
+	.pp-rc-meta { display: flex; justify-content: space-between; margin-top: 9px; font-size: 12.5px; color: var(--pp-muted); font-weight: 650; }
+	.pp-trend { font-size: 12px; font-weight: 750; padding: 2px 8px; border-radius: 7px; margin-left: auto; align-self: flex-start; }
+	.pp-trend.up { color: var(--pp-green); background: #e7f6ee; } .pp-trend.down { color: var(--pp-red); background: #fdecea; }
+	.pp-subj-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(80px, 2fr) 56px 40px; gap: 14px; align-items: center; padding: 11px 0; font-size: 14.5px; border-top: 1px solid var(--pp-line); }
+	.pp-h + .pp-subj-row { border-top: 0; padding-top: 0; }
+	.pp-subj-row b { text-align: right; }
+	.pp-subj-row .g { font-weight: 820; font-size: 12px; text-align: center; border-radius: 8px; padding: 4px 0; background: var(--pp-a-soft); color: var(--pp-a-deep); }
+	.pp-subj-row small { grid-column: 1 / -1; color: var(--pp-muted); font-size: 12.5px; margin-top: -6px; }
+	.pp-remark { padding: 14px 16px; border-radius: 14px; background: var(--pp-bg); font-size: 14px; line-height: 1.55; }
+	.pp-remark + .pp-remark { margin-top: 10px; }
+	.pp-remark .pp-lbl { display: block; margin-bottom: 3px; }
+
+	/* attendance */
+	.pp-att-big { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+	.pp-att-pct { font-size: 46px; font-weight: 830; color: var(--pp-a); letter-spacing: -.03em; line-height: 1; } .pp-att-pct.low { color: #c2410c; }
+	.pp-att-n { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+	.pp-att-n div { background: var(--pp-bg); border-radius: 12px; padding: 10px 12px; } .pp-att-n b { display: block; font-size: 20px; font-weight: 800; }
+	.pp-days { display: flex; gap: 6px; margin-top: 18px; }
+	.pp-day { flex: 1 1 0; min-width: 0; max-width: 46px; text-align: center; font-size: 11px; color: var(--pp-muted); font-weight: 650; }
+	.pp-day i { display: block; height: 38px; border-radius: 9px; margin-bottom: 4px; background: #d5eedf; }
+	.pp-day.Late i { background: #fde3bd; } .pp-day.Absent i { background: #f6c7c1; } .pp-day.Excused i { background: #d5e3fb; }
+	.pp-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: var(--pp-muted); }
+	.pp-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+	.pp-abs div { display: flex; justify-content: space-between; gap: 10px; padding: 11px 0; border-top: 1px solid var(--pp-line); font-size: 14.5px; }
+	.pp-abs div:first-child { border-top: 0; padding-top: 0; }
+
+	/* lessons */
+	.pp-lesson { display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 12px; font-size: 14.5px; }
+	.pp-lesson + .pp-lesson { border-top: 1px solid var(--pp-line); }
+	.pp-lesson .t { color: var(--pp-muted); font-variant-numeric: tabular-nums; font-size: 13.5px; font-weight: 600; }
+	.pp-lesson b { font-weight: 700; } .pp-lesson small { display: block; color: var(--pp-muted); font-size: 12.5px; }
+	.pp-lesson .now-tag { display: none; font-size: 11px; font-weight: 800; color: #fff; background: var(--pp-a); padding: 3px 8px; border-radius: 999px; }
+	.pp-lesson.now { background: var(--pp-a-soft); border-color: transparent; } .pp-lesson.now .t { color: var(--pp-a-deep); } .pp-lesson.now .now-tag { display: inline-block; }
+	.pp-lesson.now + .pp-lesson { border-color: transparent; }
+	.pp-lesson.done { opacity: .5; }
+
+	/* notices & concerns */
+	.pp-notice { display: flex; gap: 12px; padding: 15px 16px; border-radius: 14px; background: var(--pp-bg); }
+	.pp-notice + .pp-notice { margin-top: 10px; }
+	.pp-notice .ib { width: 36px; height: 36px; border-radius: 11px; background: #fff; color: var(--pp-a); display: flex; align-items: center; justify-content: center; flex: none; }
 	.pp-notice.Urgent { background: #fdf0ee; } .pp-notice.Urgent .ib { color: var(--pp-red); }
 	.pp-notice.Important { background: #fdf6e7; } .pp-notice.Important .ib { color: var(--pp-amber); }
-	.pp-notice-t { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-	.pp-notice-t b { font-size: 14px; }
-	.pp-badge { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 6px; background: #fff; }
-	.pp-notice.Urgent .pp-badge { color: var(--pp-red); } .pp-notice.Important .pp-badge { color: var(--pp-amber); }
-	.pp-notice p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: #3b4352; white-space: pre-line; }
+	.pp-notice-t { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; } .pp-notice-t b { font-size: 14.5px; }
+	.pp-badge { font-size: 10px; font-weight: 820; text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 6px; background: #fff; }
+	.pp-notice.Urgent .pp-badge.p { color: var(--pp-red); } .pp-notice.Important .pp-badge.p { color: var(--pp-amber); } .pp-badge.new { color: var(--pp-a); }
+	.pp-notice p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--pp-ink-2); white-space: pre-line; }
 	.pp-notice.clamp p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-	.pp-more { border: 0; background: none; padding: 0; margin-top: 4px; font-size: 12px; font-weight: 700; color: var(--pp-a); cursor: pointer; }
-
-	/* term fees */
-	.pp-fees { margin-top: 14px; border: 1px solid var(--pp-line); border-radius: 14px; padding: 14px 16px; }
-	.pp-fees-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-	.pp-fees-h .pp-lbl { color: var(--pp-muted); }
-	.pp-fees .pp-bar { margin-top: 10px; }
-	.pp-fee-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 18px; margin-top: 12px; font-size: 13.5px; }
-	.pp-fee-items div { display: flex; justify-content: space-between; gap: 8px; border-top: 1px dashed var(--pp-line); padding-top: 6px; }
-	.pp-fee-items span { color: var(--pp-muted); }
-
-	/* subjects of the latest report card */
-	.pp-subj { margin-top: 16px; border-top: 1px solid var(--pp-line); padding-top: 14px; }
-	.pp-subj-h { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
-	.pp-subj-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(60px, 1fr) 52px 34px; gap: 10px; align-items: center; padding: 7px 0; font-size: 14px; }
-	.pp-subj-row + .pp-subj-row { border-top: 1px dashed var(--pp-line); }
-	.pp-subj-row .pp-bar { margin: 0; height: 7px; }
-	.pp-subj-row b { text-align: right; }
-	.pp-subj-row .g { font-weight: 800; font-size: 12px; text-align: center; border-radius: 7px; padding: 3px 0; background: var(--pp-a-soft); color: var(--pp-a-deep); }
-	.pp-subj-row small { grid-column: 1 / -1; color: var(--pp-muted); font-size: 12.5px; margin-top: -4px; }
-	.pp-remark { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--pp-bg); font-size: 13.5px; line-height: 1.5; }
-	.pp-remark b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--pp-muted); margin-bottom: 2px; }
-
-	/* last school days */
-	.pp-days { display: flex; gap: 5px; margin-top: 14px; }
-	.pp-day { flex: 1 1 0; min-width: 0; max-width: 34px; text-align: center; font-size: 10.5px; color: var(--pp-muted); font-weight: 600; }
-	.pp-day i { display: block; height: 30px; border-radius: 8px; margin-bottom: 3px; background: #dcefe4; }
-	.pp-day.Late i { background: #fde7c7; } .pp-day.Absent i { background: #f6cdc8; } .pp-day.Excused i { background: #dbe7fb; }
-	.pp-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--pp-muted); }
-	.pp-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; background: var(--c); }
-
-	/* today's lessons */
-	.pp-lesson { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; padding: 9px 10px; border-radius: 10px; font-size: 14px; }
-	.pp-lesson + .pp-lesson { margin-top: 2px; }
-	.pp-lesson .t { color: var(--pp-muted); font-variant-numeric: tabular-nums; font-size: 13px; }
-	.pp-lesson b { font-weight: 650; } .pp-lesson small { display: block; color: var(--pp-muted); font-size: 12.5px; }
-	.pp-lesson.now { background: var(--pp-a-soft); } .pp-lesson.now .t { color: var(--pp-a-deep); font-weight: 700; }
-	.pp-lesson.done { opacity: .55; }
-
-	/* concerns */
-	.pp-concern { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--pp-line); }
-	.pp-concern:first-of-type { border-top: 0; padding-top: 0; }
-	.pp-concern b { font-size: 14px; } .pp-concern p { margin: 4px 0 0; font-size: 13px; color: #3b4352; }
-	.pp-st { margin-left: auto; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: #fff6e5; color: #7a4b00; }
+	.pp-more { border: 0; background: none; padding: 0; margin-top: 5px; font-size: 12.5px; font-weight: 750; color: var(--pp-a); cursor: pointer; }
+	.pp-concern { display: flex; gap: 12px; align-items: flex-start; padding: 13px 0; border-top: 1px solid var(--pp-line); }
+	.pp-h + .pp-concern { border-top: 0; padding-top: 0; }
+	.pp-concern b { font-size: 14.5px; } .pp-concern p { margin: 5px 0 0; font-size: 13.5px; color: var(--pp-ink-2); }
+	.pp-st { margin-left: auto; font-size: 11.5px; font-weight: 750; padding: 3px 10px; border-radius: 999px; white-space: nowrap; background: #fff6e5; color: #7a4b00; }
 	.pp-st.Resolved, .pp-st.Closed { background: #e7f6ee; color: #17633b; } .pp-st.In.Progress { background: #e8f0fe; color: #1d4ed8; }
-	.pp-field select, .pp-field textarea { width: 100%; padding: 12px 14px; border: 1px solid #d0d5dd; border-radius: 12px; font-size: 15px; outline: none; background: #fff; font-family: inherit; }
-	.pp-field textarea { min-height: 110px; resize: vertical; }
-	.pp-field select:focus, .pp-field textarea:focus { border-color: var(--pp-a); box-shadow: 0 0 0 3px var(--pp-a-mid); }
+	.pp-talk-cta { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: 14px; background: var(--pp-a-soft); color: var(--pp-a-deep); font-size: 14px; line-height: 1.5; }
+	.pp-talk-cta .pp-ic { width: 26px; height: 26px; }
+	.pp-help { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 16px 20px; border-radius: var(--pp-r); background: var(--pp-card); border: 1px solid var(--pp-line); color: var(--pp-ink-2); font-size: 14px; }
+	.pp-help .pp-ic { color: var(--pp-a); } .pp-help a { color: var(--pp-a) !important; font-weight: 750; }
 
-	.pp-out { position: relative; z-index: 1; margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: #fff !important; opacity: .85;
-		font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 10px; text-decoration: none !important; }
-	.pp-out:hover { opacity: 1; background: rgba(255,255,255,.12); }
-	.pp-out .pp-ic { width: 16px; height: 16px; }
-
-	.pp-help { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 16px 18px; border-radius: var(--pp-r); background: var(--pp-a-soft); color: var(--pp-a-deep); font-size: 14px; }
-	.pp-help a { color: inherit !important; font-weight: 700; }
-
-	.pp-child { display: none; } .pp-child.on { display: block; animation: pp-in .25s ease; }
-	@keyframes pp-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-	/* pay sheet */
+	/* sheets */
 	.pp-sheet { position: fixed; inset: 0; background: rgba(12, 17, 28, .5); backdrop-filter: blur(3px); display: none; align-items: flex-end; justify-content: center; z-index: 1050; }
 	.pp-sheet.open { display: flex; }
-	.pp-sheet-in { background: #fff; width: 100%; max-width: 460px; border-radius: 22px 22px 0 0; padding: 24px; animation: pp-up .25s ease; }
+	.pp-sheet-in { background: #fff; width: 100%; max-width: 480px; border-radius: 24px 24px 0 0; padding: 26px; animation: pp-up .25s ease; }
 	@keyframes pp-up { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
-	@media (min-width: 600px) { .pp-sheet { align-items: center; } .pp-sheet-in { border-radius: 22px; } }
-	.pp-sheet-h { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
-	.pp-sheet-h .ib { width: 42px; height: 42px; border-radius: 12px; background: #e7f6ee; color: #2f9e44; display: flex; align-items: center; justify-content: center; }
+	@media (min-width: 600px) { .pp-sheet { align-items: center; } .pp-sheet-in { border-radius: 24px; } }
+	.pp-sheet-h { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+	.pp-sheet-h .ib { width: 44px; height: 44px; border-radius: 13px; background: #e7f6ee; color: #2f9e44; display: flex; align-items: center; justify-content: center; }
 	.pp-sheet-h b { font-size: 18px; }
 	.pp-field { margin-top: 14px; }
-	.pp-field label { font-size: 13px; font-weight: 650; display: block; margin-bottom: 6px; }
-	.pp-field input { width: 100%; padding: 13px 14px; border: 1px solid #d0d5dd; border-radius: 12px; font-size: 17px; font-weight: 600; outline: none; }
-	.pp-field input:focus { border-color: var(--pp-a); box-shadow: 0 0 0 3px var(--pp-a-mid); }
+	.pp-field label { font-size: 13px; font-weight: 680; display: block; margin-bottom: 6px; }
+	.pp-field input, .pp-field select, .pp-field textarea { width: 100%; padding: 13px 14px; border: 1px solid #d0d5dd; border-radius: 12px; font-size: 16px; outline: none; background: #fff; font-family: inherit; }
+	.pp-field #pp-amount, .pp-field #pp-phone { font-size: 18px; font-weight: 650; }
+	.pp-field textarea { min-height: 110px; resize: vertical; }
+	.pp-field input:focus, .pp-field select:focus, .pp-field textarea:focus { border-color: var(--pp-a); box-shadow: 0 0 0 3px var(--pp-a-mid); }
 	.pp-presets { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-	.pp-preset { border: 1px solid var(--pp-line); background: #fff; border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+	.pp-preset { border: 1px solid var(--pp-line); background: #fff; border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 650; cursor: pointer; }
 	.pp-preset:hover { border-color: var(--pp-a); color: var(--pp-a); }
 	.pp-status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--pp-bg); font-size: 14px; display: none; }
 	.pp-status.ok { background: #e7f6ee; color: #17633b; } .pp-status.bad { background: #fdecea; color: #a12a2a; }
-	.pp-sheet .pp-btns { margin-top: 18px; } .pp-sheet .pp-btn { flex: 1; }
+	.pp-sheet .pp-btns .pp-btn { flex: 1; }
 
-	@media (max-width: 600px) {
-		.pp-hero { border-radius: 20px; padding: 20px 18px 18px; }
-		.pp-greet h1 { font-size: 22px; }
-		.pp-stats { grid-template-columns: 1fr 1fr; } .pp-stat:last-child { grid-column: span 2; }
-		.pp-card { padding: 16px; }
-		.pp-amt { font-size: 28px; }
-		.pp-bal .pp-btns { width: 100%; } .pp-bal .pp-btn { flex: 1; }
+	@media (max-width: 991px) {
+		.pp-g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.pp-g32 { grid-template-columns: 1fr; }
+	}
+	@media (max-width: 640px) {
+		.pp { margin-top: 8px; }
+		.pp-hero { border-radius: 20px; padding: 20px; }
+		.pp-greet h1 { font-size: 24px; }
+		.pp-stats { width: 100%; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 8px; } .pp-stat { min-width: 0; padding: 10px 12px; } .pp-stat b { font-size: 16px; }
+		.pp-head { padding: 16px 16px 0; border-radius: 16px; position: static; }
+		.pp-stat .pp-lbl { letter-spacing: .03em; font-size: 10px; }
+		.pp-who .pp-av { width: 48px; height: 48px; font-size: 20px; } .pp-name { font-size: 19px; }
+		.pp-who-act { width: 100%; margin-left: 0; } .pp-who-act .pp-btn { flex: 1; }
+		.pp-tab { padding: 12px 10px 14px; font-size: 14px; } .pp-tab .pp-ic { display: none; }
+		.pp-g2 { grid-template-columns: 1fr; }
+		.pp-g4 { gap: 10px; }
+		.pp-card { padding: 18px; border-radius: 16px; }
+		.pp-tile { padding: 16px; } .pp-tile .v { font-size: 21px; } .pp-tile .ib { width: 34px; height: 34px; } .pp-tile .pp-ext { display: none; }
+		.pp-amt { font-size: 32px; }
 		.pp-paybill { grid-template-columns: 1fr; }
-		.pp-quick { grid-template-columns: 1fr 1fr; gap: 8px; } .pp-q { padding: 12px 10px; font-size: 13px; } .pp-q small { display: none; }
-		.pp-subj-row { grid-template-columns: minmax(0, 1.4fr) minmax(40px, 1fr) 48px 32px; gap: 8px; }
-		.pp-lesson { grid-template-columns: 84px minmax(0, 1fr); }
+		.pp-att-n { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.pp-subj-row { grid-template-columns: minmax(0, 1.4fr) minmax(40px, 1fr) 46px 34px; gap: 8px; font-size: 14px; }
+		.pp-lesson { grid-template-columns: 92px minmax(0, 1fr) auto; gap: 10px; padding: 11px 8px; }
 	}
 </style>
 
@@ -272,196 +301,281 @@
 			<div class="pp-school">{{ school.name or _("School") }}<small>{{ _("Parent Portal") }}</small></div>
 			<a class="pp-out" href="/logout">{{ icon("out") }}{{ _("Log out") }}</a>
 		</div>
-		<div class="pp-greet">
-			<h1><span id="pp-hello">{{ _("Welcome") }}</span>, {{ (parent_name or "").split(" ")[0] }}</h1>
-			<p>{% if ns.n_due %}{{ _("You have fees due for {0} of {1} children.").format(ns.n_due, children|length) if children|length > 1 else _("There is a fee balance due.") }}{% elif children %}{{ _("All fees are up to date. Thank you!") }}{% else %}{{ _("Here's everything about your children at school.") }}{% endif %}</p>
+		<div class="pp-hero-body">
+			<div class="pp-greet">
+				<h1><span id="pp-hello">{{ _("Welcome") }}</span>, {{ ((parent_name or "").split(" ")[0])|e }}</h1>
+				<p>{% if ns.n_due %}{{ _("You have fees due for {0} of {1} children.").format(ns.n_due, children|length) if children|length > 1 else _("There is a fee balance due.") }}{% elif children %}{{ _("All fees are up to date. Thank you!") }}{% else %}{{ _("Here's everything about your children at school.") }}{% endif %}</p>
+			</div>
+			{% if children %}
+			<div class="pp-stats">
+				<div class="pp-stat"><div class="pp-lbl">{{ _("Children") }}</div><b>{{ children|length }}</b></div>
+				<div class="pp-stat"><div class="pp-lbl">{{ _("Total due") }}</div><b>{{ money(ns.due) }}</b></div>
+				<div class="pp-stat"><div class="pp-lbl">{{ _("Notices") }}</div><b>{{ notices|length }}</b></div>
+			</div>
+			{% endif %}
 		</div>
-		{% if children %}
-		<div class="pp-stats">
-			<div class="pp-stat"><div class="pp-lbl">{{ _("Children") }}</div><b>{{ children|length }}</b></div>
-			<div class="pp-stat"><div class="pp-lbl">{{ _("Total due") }}</div><b>{{ frappe.utils.fmt_money(ns.due, currency=currency) }}</b></div>
-			<div class="pp-stat"><div class="pp-lbl">{{ _("Notices") }}</div><b>{{ notices|length }}</b></div>
-		</div>
-		{% endif %}
 	</header>
 
 	{% if children|length > 1 %}
-	<nav class="pp-tabs" role="tablist">
+	<nav class="pp-kids" aria-label="{{ _('Your children') }}">
 		{% for c in children %}
-		<button class="pp-tab {{ 'on' if loop.first }}" data-tab="{{ loop.index0 }}" role="tab">
+		<button class="pp-kid {{ 'on' if loop.first }}" data-kid="{{ loop.index0 }}">
 			<span class="pp-av">{% if c.photo %}<img src="{{ c.photo }}" alt="">{% else %}{{ c.first_name[:1] }}{% endif %}</span>
-			{{ c.first_name }}{% if c.balance > 0.5 %}<span class="dot" title="{{ _('Fees due') }}"></span>{% endif %}
+			<span>{{ c.first_name }}<small>{{ c.stream or "" }}</small></span>
+			{% if c.balance > 0.5 %}<span class="dot" title="{{ _('Fees due') }}"></span>{% endif %}
 		</button>
 		{% endfor %}
 	</nav>
 	{% endif %}
 
 	{% for c in children %}
+	{%- set k = loop.index0 -%}
 	{%- set stmt = "/api/method/school_erp.api.portal.statement?student=" ~ (c.id|urlencode) -%}
-	<section class="pp-child {{ 'on' if loop.first }}" data-child="{{ loop.index0 }}">
-		<div class="pp-sec pp-card">
-			<div class="pp-profile">
+	{%- set due = c.balance > 0.5 -%}
+	{%- set att = c.attendance -%}
+	{%- set lr = c.latest_results -%}
+	<section class="pp-child {{ 'on' if loop.first }}" data-child="{{ k }}">
+		<div class="pp-head">
+			<div class="pp-who">
 				<div class="pp-av">{% if c.photo %}<img src="{{ c.photo }}" alt="">{% else %}{{ c.first_name[:1] }}{% endif %}</div>
 				<div>
 					<div class="pp-name">{{ c.name }}</div>
-					<div class="pp-chips">{% if c.stream %}<span class="pp-chip a">{{ c.stream }}</span>{% endif %}<span class="pp-chip">{{ _("Adm.") }} {{ c.id }}</span></div>
+					<div class="pp-chips">{% if c.stream %}<span class="pp-chip a">{{ c.stream }}</span>{% endif %}<span class="pp-chip">{{ _("Adm.") }} {{ c.id }}</span>
+						{% if due %}<span class="pp-chip red">{{ _("Fees due") }}</span>{% else %}<span class="pp-chip green">{{ _("Fees paid") }}</span>{% endif %}</div>
 				</div>
-			</div>
-
-			<div class="pp-bal {{ 'due' if c.balance > 0.5 else ('paid' if c.balance <= 0.5 else '') }}">
-				<div>
-					<div class="pp-lbl">{{ _("Fee balance") if c.balance > 0.5 else (_("Credit on account") if c.balance < -0.5 else _("Fully paid")) }}</div>
-					<div class="pp-amt">{{ frappe.utils.fmt_money(c.balance if c.balance >= 0 else -c.balance, currency=currency) }}</div>
-					{% if c.balance > 0.5 and c.due %}<div class="pp-due">{{ _("Due by") }} {{ c.due }}</div>{% endif %}
-				</div>
-				<div class="pp-btns">
-					{% if can_pay and c.balance > 0.5 %}<button class="pp-btn mpesa" data-pay="{{ c.id }}" data-name="{{ c.first_name }}" data-amount="{{ c.balance|round|int }}" data-phone="{{ c.payer_phone or phone }}">{{ icon("phone") }}{{ _("Pay with M-Pesa") }}</button>{% endif %}
+				<div class="pp-who-act">
+					{% if can_pay and due %}<button class="pp-btn mpesa" data-pay="{{ c.id }}" data-name="{{ c.first_name }}" data-amount="{{ c.balance|round|int }}" data-phone="{{ c.payer_phone or phone }}">{{ icon("phone") }}{{ _("Pay with M-Pesa") }}</button>{% endif %}
 					<a class="pp-btn" href="{{ stmt }}" target="_blank">{{ icon("doc") }}{{ _("Statement") }}</a>
 				</div>
 			</div>
+			<nav class="pp-tabs" role="tablist">
+				<button class="pp-tab on" data-tab="overview" role="tab">{{ icon("home") }}{{ _("Overview") }}</button>
+				<button class="pp-tab" data-tab="fees" role="tab">{{ icon("wallet") }}{{ _("Fees") }}{% if due %}<span class="n red">!</span>{% endif %}</button>
+				{% if c.report_cards %}<button class="pp-tab" data-tab="results" role="tab">{{ icon("award") }}{{ _("Results") }}<span class="n">{{ c.report_cards|length }}</span></button>{% endif %}
+				{% if att %}<button class="pp-tab" data-tab="attendance" role="tab">{{ icon("check") }}{{ _("Attendance") }}</button>{% endif %}
+				{% if c.lessons %}<button class="pp-tab" data-tab="timetable" role="tab">{{ icon("calendar") }}{{ _("Timetable") }}</button>{% endif %}
+				<button class="pp-tab" data-tab="messages" role="tab">{{ icon("chat") }}{{ _("Messages") }}{% if notices %}<span class="n">{{ notices|length }}</span>{% endif %}</button>
+			</nav>
+		</div>
 
-			{% if school.paybill and school.till %}
-			<div class="pp-paybill pp-till">
-				<div class="pp-pb"><div><div class="pp-lbl">{{ _("Buy Goods Till No.") }}</div><b>{{ school.paybill }}</b></div><button class="pp-copy" data-copy="{{ school.paybill }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
-				<div class="pp-till-note">{% if can_pay %}{{ _("Till payments carry no student number. Use Pay with M-Pesa above so the payment goes straight to {0}.").format(c.first_name) }}{% else %}{{ _("Till payments carry no student number: send the M-Pesa message to the school office so it is credited to {0}.").format(c.first_name) }}{% endif %}</div>
+		{# ---------------------------------------------------------------- Overview #}
+		<div class="pp-panel on" data-panel="overview">
+			<div class="pp-grid pp-g4">
+				<button class="pp-card pp-tile {{ 'due' if due else 'ok' }}" data-go="fees">
+					<span class="ib">{{ icon("wallet") }}</span><span class="pp-lbl">{{ _("Fee balance") if due else _("Fees") }}</span>
+					<span class="v">{{ money(c.balance) if due else _("Paid") }}</span>
+					<span class="pp-sub">{% if due and c.due %}{{ _("Due by") }} {{ c.due }}{% elif c.term_fees %}{{ c.term_fees.percent }}% {{ _("of {0} paid").format(c.term_fees.term) }}{% else %}{{ _("Nothing owed") }}{% endif %}</span>
+					<span class="pp-ext">{{ icon("chev") }}</span>
+				</button>
+				<button class="pp-card pp-tile" data-go="attendance" {% if not att %}disabled{% endif %}>
+					<span class="ib">{{ icon("check") }}</span><span class="pp-lbl">{{ _("Attendance") }}</span>
+					<span class="v">{% if att %}{{ att.percent }}%{% else %}–{% endif %}</span>
+					<span class="pp-sub">{% if att %}{{ att.absent }} {{ _("absent") }} · {{ att.late }} {{ _("late") }} · {{ att.marked }} {{ _("days") }}{% else %}{{ _("No registers yet this term") }}{% endif %}</span>
+					{% if att %}<span class="pp-ext">{{ icon("chev") }}</span>{% endif %}
+				</button>
+				<button class="pp-card pp-tile" data-go="results" {% if not c.report_cards %}disabled{% endif %}>
+					<span class="ib">{{ icon("award") }}</span><span class="pp-lbl">{{ _("Latest results") }}</span>
+					{% if c.report_cards %}{% set r0 = c.report_cards[0] %}
+					<span class="v">{{ r0.mean_grade or "–" }} <small>{{ "%.1f"|format((r0.mean_percent or 0)|float) }}%</small></span>
+					<span class="pp-sub">{{ r0.exam_name or r0.exam }} · {{ _("Position") }} {{ r0.stream_position or "–" }}/{{ r0.stream_size or "–" }}</span>
+					<span class="pp-ext">{{ icon("chev") }}</span>
+					{% else %}<span class="v">–</span><span class="pp-sub">{{ _("No report cards yet") }}</span>{% endif %}
+				</button>
+				<button class="pp-card pp-tile" data-go="timetable" {% if not c.lessons %}disabled{% endif %}>
+					<span class="ib">{{ icon("clock") }}</span><span class="pp-lbl">{{ _("{0}'s lessons").format(c.lessons.label) if c.lessons else _("Lessons") }}</span>
+					{% if c.lessons %}<span class="v">{{ c.lessons.slots|length }} <small>{{ _("lessons") }}</small></span>
+					<span class="pp-sub" data-next-lesson>{{ c.lessons.slots[0].subject_name|e }} {{ _("first") }}</span><span class="pp-ext">{{ icon("chev") }}</span>
+					{% else %}<span class="v">–</span><span class="pp-sub">{{ _("No timetable published") }}</span>{% endif %}
+				</button>
 			</div>
-			{% elif school.paybill %}
-			<div class="pp-paybill">
-				<div class="pp-pb"><div><div class="pp-lbl">{{ _("Paybill No.") }}</div><b>{{ school.paybill }}</b></div><button class="pp-copy" data-copy="{{ school.paybill }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
-				<div class="pp-pb"><div><div class="pp-lbl">{{ _("Account No.") }}</div><b>{{ c.id }}</b></div><button class="pp-copy" data-copy="{{ c.id }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
-			</div>
-			{% endif %}
 
-			{% if c.term_fees %}{% set f = c.term_fees %}
-			<div class="pp-fees">
-				<div class="pp-fees-h"><span class="pp-lbl">{{ _("{0} fees").format(f.term) }}</span>
-					<span class="pp-sub"><b style="color:var(--pp-ink)">{{ frappe.utils.fmt_money(f.paid, currency=currency) }}</b> {{ _("of") }} {{ frappe.utils.fmt_money(f.billed, currency=currency) }} {{ _("paid") }} · {{ f.percent }}%</span></div>
-				<div class="pp-bar"><i style="width: {{ [[f.percent, 0]|max, 100]|min }}%"></i></div>
-				<div class="pp-fee-items">{% for i in f["items"] %}<div><span>{{ i.fee|e }}</span><b>{{ frappe.utils.fmt_money(i.amount, currency=currency) }}</b></div>{% endfor %}</div>
-			</div>
-			{% endif %}
-
-			<div class="pp-quick">
-				<a class="pp-q" href="{{ stmt }}" target="_blank"><span class="ib">{{ icon("doc") }}</span><div>{{ _("Statement") }}<small>{{ _("Full fee history") }}</small></div></a>
-				<a class="pp-q" href="#rc-{{ loop.index0 }}"><span class="ib">{{ icon("award") }}</span><div>{{ _("Results") }}<small>{{ c.report_cards|length }} {{ _("report cards") }}</small></div></a>
-				<a class="pp-q" href="#pay-{{ loop.index0 }}"><span class="ib">{{ icon("receipt") }}</span><div>{{ _("Receipts") }}<small>{{ c.payments|length }} {{ _("recent") }}</small></div></a>
-				{% if c.concerns is not none %}<a class="pp-q" href="#talk-{{ loop.index0 }}"><span class="ib">{{ icon("chat") }}</span><div>{{ _("Contact school") }}<small>{{ _("Raise a concern") }}</small></div></a>{% endif %}
+			<div class="pp-grid pp-g32">
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("receipt") }}{{ _("Recent payments") }}</h3>{% if c.payments %}<button class="pp-link" data-go="fees">{{ _("All fees") }}{{ icon("chev") }}</button>{% endif %}</div>
+					{% for p in c.payments[:3] %}
+					<div class="pp-pay"><span class="ib">{{ icon("check") }}</span>
+						<div><div class="amt">{{ money(p.amount) }}</div><div class="pp-sub">{{ p.date }} · {{ p.mode_of_payment }}{% if p.reference_no %} · {{ p.reference_no }}{% endif %}</div></div>
+						<a href="/api/method/school_erp.api.portal.receipt?payment={{ p.name|urlencode }}" target="_blank">{{ _("Receipt") }}</a></div>
+					{% else %}<div class="pp-empty">{{ icon("card") }}<div>{{ _("No payments yet") }}</div></div>{% endfor %}
+				</div>
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("bell") }}{{ _("From the school") }}</h3><button class="pp-link" data-go="messages">{{ _("Messages") }}{{ icon("chev") }}</button></div>
+					{% for n in notices[:2] %}
+					<div class="pp-notice {{ n.priority }} clamp"><span class="ib">{{ icon("pin" if n.pinned else "bell") }}</span>
+						<div><div class="pp-notice-t"><b>{{ n.title|e }}</b>{% if n.new %}<span class="pp-badge new">{{ _("New") }}</span>{% endif %}<span class="pp-sub">{{ n.date }}</span></div><p>{{ n.text|e }}</p></div></div>
+					{% else %}<div class="pp-empty">{{ icon("bell") }}<div>{{ _("No notices right now") }}</div></div>{% endfor %}
+				</div>
 			</div>
 		</div>
 
-		{% if c.lessons %}
-		<div class="pp-sec pp-card">
-			<div class="pp-h"><h3>{{ icon("clock") }}{{ _("{0}'s lessons").format(c.lessons.label) }}</h3><span class="pp-count">{{ c.stream }}</span></div>
-			{% for l in c.lessons.slots %}
-			<div class="pp-lesson" data-time="{{ l.time or '' }}"><span class="t">{{ l.time or l.period }}</span>
-				<div><b>{{ l.subject_name|e }}</b>{% if l.teacher_name or l.room %}<small>{{ (l.teacher_name or "")|e }}{% if l.teacher_name and l.room %} · {% endif %}{{ (l.room or "")|e }}</small>{% endif %}</div></div>
-			{% endfor %}
-		</div>
-		{% endif %}
-
-		{% if c.report_cards %}
-		<div class="pp-sec pp-card" id="rc-{{ loop.index0 }}">
-			<div class="pp-h"><h3>{{ icon("award") }}{{ _("Report cards") }}</h3><span class="pp-count">{{ c.report_cards|length }}</span></div>
-			<div class="pp-rc-grid">
-				{% for r in c.report_cards %}
-				{%- set pct = (r.mean_percent or 0)|float -%}
-				{%- set prev = c.report_cards[loop.index] if not loop.last else None -%}
-				<a class="pp-rc" href="/api/method/school_erp.api.portal.report_card?name={{ r.name|urlencode }}" target="_blank">
-					<span class="pp-ext">{{ icon("arrow") }}</span>
-					<div class="pp-rc-top">
-						<div class="pp-grade">{{ r.mean_grade or "–" }}</div>
-						<div class="pp-rc-name">{{ r.exam_name or r.exam }}<div class="pp-sub">{{ "%.1f"|format(pct) }}%</div></div>
-						{% if prev and prev.mean_percent is not none %}{% set d = pct - (prev.mean_percent|float) %}
-						{% if d >= 0.05 %}<span class="pp-trend up">▲ {{ "%.1f"|format(d) }}</span>{% elif d <= -0.05 %}<span class="pp-trend down">▼ {{ "%.1f"|format(-d) }}</span>{% endif %}
-						{% endif %}
+		{# ---------------------------------------------------------------- Fees #}
+		<div class="pp-panel" data-panel="fees">
+			<div class="pp-grid pp-g2">
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("wallet") }}{{ _("Balance") }}</h3></div>
+					<div class="pp-bal {{ 'due' if due else 'paid' }}">
+						<div class="pp-lbl">{{ _("Fee balance") if due else (_("Credit on account") if c.balance < -0.5 else _("Fully paid")) }}</div>
+						<div class="pp-amt">{{ money(c.balance if c.balance >= 0 else -c.balance) }}</div>
+						{% if due and c.due %}<div class="pp-due">{{ _("Due by") }} {{ c.due }}</div>{% endif %}
+						<div class="pp-btns">
+							{% if can_pay and due %}<button class="pp-btn mpesa" data-pay="{{ c.id }}" data-name="{{ c.first_name }}" data-amount="{{ c.balance|round|int }}" data-phone="{{ c.payer_phone or phone }}">{{ icon("phone") }}{{ _("Pay with M-Pesa") }}</button>{% endif %}
+							<a class="pp-btn" href="{{ stmt }}" target="_blank">{{ icon("doc") }}{{ _("Download statement") }}</a>
+						</div>
 					</div>
-					<div class="pp-bar"><i style="width: {{ [[pct, 0]|max, 100]|min }}%"></i></div>
-					<div class="pp-rc-meta"><span>{{ _("Position") }} {{ r.stream_position or "–" }} / {{ r.stream_size or "–" }}</span><span>{{ _("View PDF") }}</span></div>
-				</a>
+					{% if school.paybill and school.till %}
+					<div class="pp-paybill" style="grid-template-columns:1fr"><div class="pp-pb"><div><div class="pp-lbl">{{ _("Buy Goods Till No.") }}</div><b>{{ school.paybill }}</b></div><button class="pp-copy" data-copy="{{ school.paybill }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div></div>
+					<div class="pp-till-note">{% if can_pay %}{{ _("Till payments carry no student number. Use Pay with M-Pesa above so the payment goes straight to {0}.").format(c.first_name) }}{% else %}{{ _("Till payments carry no student number: send the M-Pesa message to the school office so it is credited to {0}.").format(c.first_name) }}{% endif %}</div>
+					{% elif school.paybill %}
+					<div class="pp-paybill">
+						<div class="pp-pb"><div><div class="pp-lbl">{{ _("Paybill No.") }}</div><b>{{ school.paybill }}</b></div><button class="pp-copy" data-copy="{{ school.paybill }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
+						<div class="pp-pb"><div><div class="pp-lbl">{{ _("Account No.") }}</div><b>{{ c.id }}</b></div><button class="pp-copy" data-copy="{{ c.id }}" title="{{ _('Copy') }}">{{ icon("copy") }}</button></div>
+					</div>
+					{% endif %}
+				</div>
+				<div class="pp-card">
+					{% if c.term_fees %}{% set f = c.term_fees %}
+					<div class="pp-h"><h3>{{ icon("doc") }}{{ _("{0} fees").format(f.term) }}</h3><span class="pp-chip {{ 'green' if f.percent >= 100 else 'a' }}">{{ f.percent }}% {{ _("paid") }}</span></div>
+					<div class="pp-fee-total"><b>{{ money(f.paid) }}</b><span class="pp-sub">{{ _("of") }} {{ money(f.billed) }} {{ _("billed") }}</span></div>
+					<div class="pp-bar"><i style="width: {{ [[f.percent, 0]|max, 100]|min }}%"></i></div>
+					<div class="pp-fee-items">{% for i in f["items"] %}<div><span>{{ i.fee|e }}</span><b>{{ money(i.amount) }}</b></div>{% endfor %}</div>
+					{% else %}
+					<div class="pp-h"><h3>{{ icon("doc") }}{{ _("This term's fees") }}</h3></div>
+					<div class="pp-empty">{{ icon("doc") }}<div>{{ _("This term's invoice is not out yet.") }}</div></div>
+					{% endif %}
+				</div>
+			</div>
+			<div class="pp-card">
+				<div class="pp-h"><h3>{{ icon("receipt") }}{{ _("Payments") }}</h3>{% if c.payments %}<a class="pp-link" href="{{ stmt }}" target="_blank">{{ _("Full history") }}{{ icon("chev") }}</a>{% endif %}</div>
+				{% for p in c.payments %}
+				<div class="pp-pay"><span class="ib">{{ icon("check") }}</span>
+					<div><div class="amt">{{ money(p.amount) }}</div><div class="pp-sub">{{ p.date }} · {{ p.mode_of_payment }}{% if p.reference_no %} · {{ p.reference_no }}{% endif %}</div></div>
+					<a href="/api/method/school_erp.api.portal.receipt?payment={{ p.name|urlencode }}" target="_blank">{{ _("Receipt") }}</a></div>
+				{% else %}<div class="pp-empty">{{ icon("card") }}<div>{{ _("No payments yet") }}</div></div>{% endfor %}
+			</div>
+		</div>
+
+		{# ---------------------------------------------------------------- Results #}
+		{% if c.report_cards %}
+		<div class="pp-panel" data-panel="results">
+			<div class="pp-card">
+				<div class="pp-h"><h3>{{ icon("award") }}{{ _("Report cards") }}</h3><span class="pp-sub">{{ _("Tap one to open the PDF") }}</span></div>
+				<div class="pp-rc-grid">
+					{% for r in c.report_cards %}
+					{%- set pct = (r.mean_percent or 0)|float -%}
+					{%- set prev = c.report_cards[loop.index] if not loop.last else None -%}
+					<a class="pp-rc" href="/api/method/school_erp.api.portal.report_card?name={{ r.name|urlencode }}" target="_blank">
+						<div class="pp-rc-top">
+							<div class="pp-grade">{{ r.mean_grade or "–" }}</div>
+							<div class="pp-rc-name">{{ r.exam_name or r.exam }}<div class="pp-sub">{{ "%.1f"|format(pct) }}%</div></div>
+							{% if prev and prev.mean_percent is not none %}{% set d = pct - (prev.mean_percent|float) %}
+							{% if d >= 0.05 %}<span class="pp-trend up">▲ {{ "%.1f"|format(d) }}</span>{% elif d <= -0.05 %}<span class="pp-trend down">▼ {{ "%.1f"|format(-d) }}</span>{% endif %}
+							{% endif %}
+						</div>
+						<div class="pp-bar"><i style="width: {{ [[pct, 0]|max, 100]|min }}%"></i></div>
+						<div class="pp-rc-meta"><span>{{ _("Position") }} {{ r.stream_position or "–" }} / {{ r.stream_size or "–" }}</span><span>{{ _("PDF") }} ↗</span></div>
+					</a>
+					{% endfor %}
+				</div>
+			</div>
+			{% if lr %}
+			<div class="pp-grid pp-g32">
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("award") }}{{ lr.exam|e }}</h3><span class="pp-chip a">{{ _("Mean grade") }} {{ lr.mean_grade or "–" }}</span></div>
+					{% for sb in lr.subjects %}
+					<div class="pp-subj-row"><span>{{ sb.subject|e }}</span><div class="pp-bar"><i style="width: {{ [[sb.percent or 0, 0]|max, 100]|min }}%"></i></div>
+						<b>{{ "%.0f"|format(sb.percent or 0) }}%</b><span class="g">{{ sb.grade or "–" }}</span>
+						{% if sb.remark %}<small>{{ sb.remark|e }}</small>{% endif %}</div>
+					{% endfor %}
+				</div>
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("chat") }}{{ _("Teachers' remarks") }}</h3></div>
+					{% if lr.class_teacher_remark %}<div class="pp-remark"><span class="pp-lbl">{{ _("Class teacher") }}</span>{{ lr.class_teacher_remark|e }}</div>{% endif %}
+					{% if lr.head_teacher_remark %}<div class="pp-remark"><span class="pp-lbl">{{ _("Head teacher") }}</span>{{ lr.head_teacher_remark|e }}</div>{% endif %}
+					{% if not lr.class_teacher_remark and not lr.head_teacher_remark %}<div class="pp-empty">{{ icon("chat") }}<div>{{ _("No remarks on this report card.") }}</div></div>{% endif %}
+				</div>
+			</div>
+			{% endif %}
+		</div>
+		{% endif %}
+
+		{# ---------------------------------------------------------------- Attendance #}
+		{% if att %}
+		<div class="pp-panel" data-panel="attendance">
+			<div class="pp-grid pp-g32">
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("check") }}{{ _("Attendance this term") }}</h3><span class="pp-sub">{{ att.marked }} {{ _("school days") }}</span></div>
+					<div class="pp-att-big"><div class="pp-att-pct {{ 'low' if (att.percent or 0) < 90 }}">{{ att.percent }}%</div><span class="pp-sub">{{ _("of school days in class") }}</span></div>
+					<div class="pp-bar" style="margin-top:14px"><i style="width: {{ [[att.percent or 0, 0]|max, 100]|min }}%"></i></div>
+					<div class="pp-att-n">
+						<div><b>{{ att.present }}</b><span class="pp-sub">{{ _("Present") }}</span></div><div><b>{{ att.late }}</b><span class="pp-sub">{{ _("Late") }}</span></div>
+						<div><b>{{ att.absent }}</b><span class="pp-sub">{{ _("Absent") }}</span></div><div><b>{{ att.excused or 0 }}</b><span class="pp-sub">{{ _("Excused") }}</span></div>
+					</div>
+					{% if att.days %}
+					<div class="pp-days" aria-label="{{ _('The last school days') }}">{% for d in att.days %}<div class="pp-day {{ d.status }}" title="{{ d.date }}: {{ _(d.status) }}"><i></i>{{ d.day }}</div>{% endfor %}</div>
+					<div class="pp-legend"><span style="--c:#d5eedf">{{ _("Present") }}</span><span style="--c:#fde3bd">{{ _("Late") }}</span><span style="--c:#f6c7c1">{{ _("Absent") }}</span><span style="--c:#d5e3fb">{{ _("Excused") }}</span></div>
+					{% endif %}
+				</div>
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("calendar") }}{{ _("Days missed") }}</h3></div>
+					{% if att.recent_absences %}
+					<div class="pp-abs">{% for r in att.recent_absences %}<div><span>{{ r.date }}</span><span class="pp-sub">{{ _(r.status) }}{% if r.note %} · {{ r.note|e }}{% endif %}</span></div>{% endfor %}</div>
+					{% else %}<div class="pp-empty">{{ icon("check") }}<div>{{ _("No days missed this term.") }}</div></div>{% endif %}
+				</div>
+			</div>
+		</div>
+		{% endif %}
+
+		{# ---------------------------------------------------------------- Timetable #}
+		{% if c.lessons %}
+		<div class="pp-panel" data-panel="timetable">
+			<div class="pp-card">
+				<div class="pp-h"><h3>{{ icon("clock") }}{{ _("{0}'s lessons").format(c.lessons.label) }}</h3><span class="pp-chip a">{{ c.stream }}</span></div>
+				{% for l in c.lessons.slots %}
+				<div class="pp-lesson" data-time="{{ l.time or '' }}"><span class="t">{{ l.time or l.period }}</span>
+					<div><b>{{ l.subject_name|e }}</b>{% if l.teacher_name or l.room %}<small>{{ (l.teacher_name or "")|e }}{% if l.teacher_name and l.room %} · {% endif %}{{ (l.room or "")|e }}</small>{% endif %}</div>
+					<span class="now-tag">{{ _("Now") }}</span></div>
 				{% endfor %}
 			</div>
-			{% if c.latest_results %}{% set lr = c.latest_results %}
-			<div class="pp-subj">
-				<div class="pp-subj-h">{{ lr.exam|e }}: {{ _("subject by subject") }}</div>
-				{% for sb in lr.subjects %}
-				<div class="pp-subj-row"><span>{{ sb.subject|e }}</span><div class="pp-bar"><i style="width: {{ [[sb.percent or 0, 0]|max, 100]|min }}%"></i></div>
-					<b>{{ "%.0f"|format(sb.percent or 0) }}%</b><span class="g">{{ sb.grade or "–" }}</span>
-					{% if sb.remark %}<small>{{ sb.remark|e }}</small>{% endif %}</div>
-				{% endfor %}
-				{% if lr.class_teacher_remark %}<div class="pp-remark"><b>{{ _("Class teacher") }}</b>{{ lr.class_teacher_remark|e }}</div>{% endif %}
-				{% if lr.head_teacher_remark %}<div class="pp-remark"><b>{{ _("Head teacher") }}</b>{{ lr.head_teacher_remark|e }}</div>{% endif %}
-			</div>
-			{% endif %}
 		</div>
 		{% endif %}
 
-		{% if c.attendance %}{% set a = c.attendance %}
-		<div class="pp-sec pp-card" id="att-{{ loop.index0 }}">
-			<div class="pp-h"><h3>{{ icon("check") }}{{ _("Attendance this term") }}</h3><span class="pp-count">{{ a.marked }} {{ _("school days") }}</span></div>
-			<div class="pp-att">
-				<div class="pp-att-pct {{ 'low' if (a.percent or 0) < 90 }}">{{ a.percent }}%</div>
-				<div class="pp-att-n"><span><b>{{ a.present }}</b> {{ _("present") }}</span><span><b>{{ a.late }}</b> {{ _("late") }}</span><span><b>{{ a.absent }}</b> {{ _("absent") }}</span>{% if a.excused %}<span><b>{{ a.excused }}</b> {{ _("excused") }}</span>{% endif %}</div>
+		{# ---------------------------------------------------------------- Messages #}
+		<div class="pp-panel" data-panel="messages">
+			<div class="pp-grid pp-g32">
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("bell") }}{{ _("Notices from the school") }}</h3><span class="pp-sub">{{ notices|length }}</span></div>
+					{% for n in notices %}
+					<div class="pp-notice {{ n.priority }} {{ 'clamp' if (n.text or '')|length > 220 }}"><span class="ib">{{ icon("pin" if n.pinned else "bell") }}</span>
+						<div><div class="pp-notice-t"><b>{{ n.title|e }}</b>{% if n.new %}<span class="pp-badge new">{{ _("New") }}</span>{% endif %}{% if n.priority in ("Urgent", "Important") %}<span class="pp-badge p">{{ _(n.priority) }}</span>{% endif %}<span class="pp-sub">{{ n.date }}</span></div>
+							<p>{{ n.text|e }}</p>{% if (n.text or '')|length > 220 %}<button class="pp-more">{{ _("Read more") }}</button>{% endif %}</div></div>
+					{% else %}<div class="pp-empty">{{ icon("bell") }}<div>{{ _("No notices right now") }}</div></div>{% endfor %}
+				</div>
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("chat") }}{{ _("Talk to the school") }}</h3></div>
+					{% if c.concerns is not none %}
+					{% for q in c.concerns %}
+					<div class="pp-concern"><div><b>{{ q.subject|e }}</b><div class="pp-sub">{{ q.ref }} · {{ _(q.category) }} · {{ q.date }}</div>
+						{% if q.resolution %}<p>{{ q.resolution|e }}</p>{% endif %}</div><span class="pp-st {{ q.status }}">{{ _(q.status) }}</span></div>
+					{% else %}
+					<div class="pp-talk-cta">{{ icon("chat") }}<div>{{ _("Something about {0} you want the school to know or act on? The head teacher sees it straight away, and you can follow it here.").format(c.first_name) }}</div></div>
+					{% endfor %}
+					<div class="pp-btns"><button class="pp-btn primary" data-concern="{{ c.id }}" data-name="{{ c.first_name }}">{{ icon("chat") }}{{ _("Raise a concern") }}</button>
+					{% if school.phone %}<a class="pp-btn" href="tel:{{ school.phone }}">{{ icon("phone") }}{{ _("Call the office") }}</a>{% endif %}</div>
+					{% elif school.phone %}
+					<div class="pp-talk-cta">{{ icon("phone") }}<div>{{ _("Questions about {0}? Call the school office.").format(c.first_name) }}</div></div>
+					<div class="pp-btns"><a class="pp-btn primary" href="tel:{{ school.phone }}">{{ icon("phone") }}{{ school.phone }}</a></div>
+					{% endif %}
+				</div>
 			</div>
-			<div class="pp-bar"><i style="width: {{ [[a.percent or 0, 0]|max, 100]|min }}%"></i></div>
-			{% if a.days %}
-			<div class="pp-days" aria-label="{{ _('The last school days') }}">{% for d in a.days %}<div class="pp-day {{ d.status }}" title="{{ d.date }}: {{ _(d.status) }}"><i></i>{{ d.day }}</div>{% endfor %}</div>
-			<div class="pp-legend"><span style="--c:#dcefe4">{{ _("Present") }}</span><span style="--c:#fde7c7">{{ _("Late") }}</span><span style="--c:#f6cdc8">{{ _("Absent") }}</span><span style="--c:#dbe7fb">{{ _("Excused") }}</span></div>
-			{% endif %}
-			{% if a.recent_absences %}
-			<div class="pp-att-list">{% for r in a.recent_absences %}<div><span>{{ r.date }}</span><span class="pp-sub">{{ _(r.status) }}{% if r.note %} · {{ r.note }}{% endif %}</span></div>{% endfor %}</div>
-			{% endif %}
 		</div>
-		{% endif %}
-
-		<div class="pp-sec pp-card" id="pay-{{ loop.index0 }}">
-			<div class="pp-h"><h3>{{ icon("receipt") }}{{ _("Recent payments") }}</h3>{% if c.payments %}<a class="pp-count" href="{{ stmt }}" target="_blank">{{ _("See all") }} →</a>{% endif %}</div>
-			{% for p in c.payments %}
-			<div class="pp-pay">
-				<span class="ib">{{ icon("check") }}</span>
-				<div><div class="amt">{{ frappe.utils.fmt_money(p.amount, currency=currency) }}</div><div class="pp-sub">{{ p.date }} · {{ p.mode_of_payment }}{% if p.reference_no %} · {{ p.reference_no }}{% endif %}</div></div>
-				<a href="/api/method/school_erp.api.portal.receipt?payment={{ p.name|urlencode }}" target="_blank">{{ _("Receipt") }}</a>
-			</div>
-			{% else %}
-			<div class="pp-empty">{{ icon("card") }}<div>{{ _("No payments yet") }}</div></div>
-			{% endfor %}
-		</div>
-
-		{% if c.concerns is not none %}
-		<div class="pp-sec pp-card" id="talk-{{ loop.index0 }}">
-			<div class="pp-h"><h3>{{ icon("chat") }}{{ _("Talk to the school") }}</h3>
-				<button class="pp-btn" style="padding:7px 12px;font-size:13px" data-concern="{{ c.id }}" data-name="{{ c.first_name }}">{{ _("Raise a concern") }}</button></div>
-			{% for k in c.concerns %}
-			<div class="pp-concern"><div><b>{{ k.subject|e }}</b><div class="pp-sub">{{ k.ref }} · {{ _(k.category) }} · {{ k.date }}</div>
-				{% if k.resolution %}<p>{{ k.resolution|e }}</p>{% endif %}</div><span class="pp-st {{ k.status }}">{{ _(k.status) }}</span></div>
-			{% else %}
-			<div class="pp-sub">{{ _("Something about {0} you want the school to know or act on? Fees, transport, meals, bullying, anything. The head teacher sees it straight away, and you can follow it here.").format(c.first_name) }}</div>
-			{% endfor %}
-		</div>
-		{% endif %}
 	</section>
 	{% else %}
-	<div class="pp-sec pp-card pp-empty" style="padding:36px 20px">
+	<div class="pp-card pp-empty" style="margin-top:18px;padding:40px 20px">
 		{{ icon("help") }}
-		<div style="font-weight:700;color:var(--pp-ink);font-size:16px">{{ _("No students are linked to your login yet.") }}</div>
+		<div style="font-weight:750;color:var(--pp-ink);font-size:17px">{{ _("No students are linked to your login yet.") }}</div>
 		<div style="margin-top:6px">{{ _("Please contact the school office") }}{% if school.phone %} ({{ school.phone }}){% endif %}.</div>
 	</div>
 	{% endfor %}
-
-	{% if notices %}
-	<div class="pp-sec pp-card">
-		<div class="pp-h"><h3>{{ icon("bell") }}{{ _("Notices from the school") }}</h3><span class="pp-count">{{ notices|length }}</span></div>
-		{% for n in notices %}
-		<div class="pp-notice {{ n.priority }} {{ 'clamp' if (n.text or '')|length > 220 }}">
-			<span class="ib">{{ icon("pin" if n.pinned else "bell") }}</span>
-			<div>
-				<div class="pp-notice-t"><b>{{ n.title }}</b>{% if n.new %}<span class="pp-badge" style="color:var(--pp-a)">{{ _("New") }}</span>{% endif %}{% if n.priority in ("Urgent", "Important") %}<span class="pp-badge">{{ _(n.priority) }}</span>{% endif %}<span class="pp-sub">{{ n.date }}</span></div>
-				<p>{{ n.text }}</p>
-				{% if (n.text or '')|length > 220 %}<button class="pp-more">{{ _("Read more") }}</button>{% endif %}
-			</div>
-		</div>
-		{% endfor %}
-	</div>
-	{% endif %}
 
 	{% if school.phone %}
 	<div class="pp-help">{{ icon("help") }}<div>{{ _("Questions about fees or your child?") }} {{ _("Call the school office on") }} <a href="tel:{{ school.phone }}">{{ school.phone }}</a></div></div>
@@ -488,8 +602,8 @@
 	<div class="pp-sheet-in" role="dialog" aria-modal="true">
 		<div class="pp-sheet-h"><span class="ib" style="background:var(--pp-a-soft);color:var(--pp-a)">{{ icon("chat") }}</span><b id="pc-title">{{ _("Raise a concern") }}</b></div>
 		<div class="pp-sub">{{ _("The head teacher is told at once. You will see the answer here.") }}</div>
-		<div class="pp-field"><label>{{ _("What is it about?") }}</label><select id="pc-cat">{% for k in concern_categories %}<option value="{{ k }}">{{ _(k) }}</option>{% endfor %}</select></div>
-		<div class="pp-field"><label>{{ _("Title") }}</label><input id="pc-subject" maxlength="140" placeholder="{{ _('e.g. School bus was late on Monday') }}" style="font-size:15px;font-weight:500"></div>
+		<div class="pp-field"><label>{{ _("What is it about?") }}</label><select id="pc-cat">{% for q in concern_categories %}<option value="{{ q }}">{{ _(q) }}</option>{% endfor %}</select></div>
+		<div class="pp-field"><label>{{ _("Title") }}</label><input id="pc-subject" maxlength="140" placeholder="{{ _('e.g. School bus was late on Monday') }}"></div>
 		<div class="pp-field"><label>{{ _("Tell us more") }}</label><textarea id="pc-text" maxlength="3000"></textarea></div>
 		<div class="pp-status" id="pc-status"></div>
 		<div class="pp-btns"><button class="pp-btn" id="pc-cancel">{{ _("Close") }}</button><button class="pp-btn primary" id="pc-go">{{ _("Send") }}</button></div>
@@ -500,31 +614,58 @@
 <script>
 (() => {
 	const $ = (s) => document.querySelector(s);
-	const h = new Date().getHours();
-	$("#pp-hello").textContent = h < 12 ? "{{ _('Good morning') }}" : h < 17 ? "{{ _('Good afternoon') }}" : "{{ _('Good evening') }}";
+	const hr = new Date().getHours();
+	$("#pp-hello").textContent = hr < 12 ? "{{ _('Good morning') }}" : hr < 17 ? "{{ _('Good afternoon') }}" : "{{ _('Good evening') }}";
 
-	document.querySelectorAll("[data-tab]").forEach((t) => t.addEventListener("click", () => {
-		document.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("on", x === t));
-		document.querySelectorAll("[data-child]").forEach((x) => x.classList.toggle("on", x.dataset.child === t.dataset.tab));
+	// children and tabs: the chosen tab stays when switching child, and is kept in the address (#fees)
+	const tabs = ["overview", "fees", "results", "attendance", "timetable", "messages"];
+	let tab = tabs.includes(location.hash.slice(1)) ? location.hash.slice(1) : "overview";
+	const show = (name) => {
+		const child = document.querySelector(".pp-child.on");
+		if (!child) return;
+		if (!child.querySelector(`[data-panel="${name}"]`)) name = "overview";
+		tab = name;
+		child.querySelectorAll("[data-tab]").forEach((t) => { t.classList.toggle("on", t.dataset.tab === name); t.setAttribute("aria-selected", t.dataset.tab === name); });
+		child.querySelectorAll("[data-panel]").forEach((p) => p.classList.toggle("on", p.dataset.panel === name));
+		const on = child.querySelector(`[data-tab="${name}"]`);
+		if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
+		history.replaceState(null, "", name === "overview" ? location.pathname : "#" + name);
+	};
+	const toTop = () => {
+		const head = document.querySelector(".pp-child.on .pp-head");
+		if (head && head.getBoundingClientRect().top < 0) window.scrollTo({ top: window.scrollY + head.getBoundingClientRect().top - 8, behavior: "smooth" });
+	};
+	document.querySelectorAll("[data-tab]").forEach((t) => t.addEventListener("click", () => { show(t.dataset.tab); toTop(); }));
+	document.querySelectorAll("[data-go]").forEach((t) => t.addEventListener("click", () => { if (!t.disabled) { show(t.dataset.go); toTop(); } }));
+	document.querySelectorAll("[data-kid]").forEach((b) => b.addEventListener("click", () => {
+		document.querySelectorAll("[data-kid]").forEach((x) => x.classList.toggle("on", x === b));
+		document.querySelectorAll("[data-child]").forEach((x) => x.classList.toggle("on", x.dataset.child === b.dataset.kid));
+		show(tab);
 	}));
+	show(tab);
+
 	document.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
 		try { await navigator.clipboard.writeText(b.dataset.copy); b.classList.add("done"); setTimeout(() => b.classList.remove("done"), 1500); } catch (e) { /* clipboard blocked */ }
 	}));
 	document.querySelectorAll(".pp-more").forEach((b) => b.addEventListener("click", () => { b.closest(".pp-notice").classList.remove("clamp"); b.remove(); }));
 
-	// today's lessons: the one on now, and the ones already over
+	// today's lessons: the one on now, the ones already over, and the next one on the overview tile
 	const mins = (hm) => { const [hh, mm] = hm.split(":").map(Number); return hh * 60 + mm; };
-	const now = new Date(), nowM = now.getHours() * 60 + now.getMinutes();
-	document.querySelectorAll(".pp-lesson[data-time]").forEach((el) => {
-		const m = (el.dataset.time || "").match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/);
-		if (!m || now.getDay() === 0 || now.getDay() === 6) return;
-		if (nowM >= mins(m[1]) && nowM < mins(m[2])) el.classList.add("now");
-		else if (nowM >= mins(m[2])) el.classList.add("done");
+	const now = new Date(), nowM = now.getHours() * 60 + now.getMinutes(), weekday = now.getDay() > 0 && now.getDay() < 6;
+	document.querySelectorAll(".pp-child").forEach((child) => {
+		let next = null;
+		child.querySelectorAll(".pp-lesson[data-time]").forEach((el) => {
+			const m = (el.dataset.time || "").match(/(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})/);
+			if (!m || !weekday) return;
+			if (nowM >= mins(m[1]) && nowM < mins(m[2])) { el.classList.add("now"); next = next || ["{{ _('Now') }}", el]; }
+			else if (nowM >= mins(m[2])) el.classList.add("done");
+			else if (!next) next = ["{{ _('Next') }}", el];
+		});
+		const tile = child.querySelector("[data-next-lesson]");
+		if (tile && next) tile.textContent = next[0] + ": " + next[1].querySelector("b").textContent + " · " + next[1].querySelector(".t").textContent;
+		else if (tile && weekday && child.querySelector(".pp-lesson.done")) tile.textContent = "{{ _('Lessons are over for today') }}";
 	});
 
-	const sheet = $("#pp-sheet"), status = $("#pp-status"), go = $("#pp-go"), amount = $("#pp-amount");
-	let student = null, timer = null;
-	const show = (msg, cls) => { status.style.display = "block"; status.className = "pp-status " + (cls || ""); status.textContent = msg; };
 	const call = async (method, args) => {
 		const r = await fetch("/api/method/school_erp.api.portal." + method, {
 			method: "POST",
@@ -533,11 +674,7 @@
 			body: JSON.stringify(args),
 		});
 		let j;
-		try {
-			j = await r.json();
-		} catch (e) {
-			throw new Error("{{ _('The school server did not respond properly. Please try again in a moment.') }}");
-		}
+		try { j = await r.json(); } catch (e) { throw new Error("{{ _('The school server did not respond properly. Please try again in a moment.') }}"); }
 		if (!r.ok) {
 			let m = "{{ _('Something went wrong') }}";
 			try { m = JSON.parse(JSON.parse(j._server_messages)[0]).message; } catch (e) { /* keep default */ }
@@ -545,6 +682,11 @@
 		}
 		return j.message;
 	};
+	const say = (el, msg, cls) => { el.style.display = "block"; el.className = "pp-status " + (cls || ""); el.textContent = msg; };
+
+	// pay with M-Pesa
+	const sheet = $("#pp-sheet"), status = $("#pp-status"), go = $("#pp-go"), amount = $("#pp-amount");
+	let student = null, timer = null;
 	document.querySelectorAll("[data-pay]").forEach((b) => b.addEventListener("click", () => {
 		student = b.dataset.pay;
 		const full = parseInt(b.dataset.amount, 10);
@@ -565,34 +707,12 @@
 	}));
 	sheet.addEventListener("click", (e) => { if (e.target === sheet) $("#pp-cancel").click(); });
 	$("#pp-cancel").addEventListener("click", () => { sheet.classList.remove("open"); clearInterval(timer); if (status.classList.contains("ok")) location.reload(); });
-	// raise a concern
-	const cs = $("#pp-concern");
-	if (cs) {
-		let who = null;
-		const cst = $("#pc-status"), cgo = $("#pc-go");
-		const say = (msg, cls) => { cst.style.display = "block"; cst.className = "pp-status " + (cls || ""); cst.textContent = msg; };
-		document.querySelectorAll("[data-concern]").forEach((b) => b.addEventListener("click", () => {
-			who = b.dataset.concern; $("#pc-title").textContent = "{{ _('Raise a concern about') }} " + b.dataset.name;
-			cst.style.display = "none"; cgo.disabled = false; cs.classList.add("open"); $("#pc-subject").focus();
-		}));
-		cs.addEventListener("click", (e) => { if (e.target === cs) $("#pc-cancel").click(); });
-		$("#pc-cancel").addEventListener("click", () => { cs.classList.remove("open"); if (cst.classList.contains("ok")) location.reload(); });
-		cgo.addEventListener("click", async () => {
-			cgo.disabled = true; say("{{ _('Sending...') }}");
-			try {
-				const r = await call("raise_concern", { student: who, category: $("#pc-cat").value, subject: $("#pc-subject").value, description: $("#pc-text").value });
-				say("{{ _('Sent. Your reference is') }} " + r.ref + ". {{ _('The school will get back to you.') }}", "ok");
-				setTimeout(() => { cs.classList.remove("open"); location.reload(); }, 2500);
-			} catch (e) { say(e.message, "bad"); cgo.disabled = false; }
-		});
-	}
-
 	go.addEventListener("click", async () => {
 		go.disabled = true;
-		show("{{ _('Sending the prompt to your phone...') }}");
+		say(status, "{{ _('Sending the prompt to your phone...') }}");
 		try {
 			const r = await call("pay", { student, amount: amount.value, phone: $("#pp-phone").value });
-			show("{{ _('Check your phone and enter your M-Pesa PIN.') }}");
+			say(status, "{{ _('Check your phone and enter your M-Pesa PIN.') }}");
 			let tries = 0;
 			timer = setInterval(async () => {
 				tries += 1;
@@ -600,18 +720,38 @@
 					const s = await call("payment_status", { request: r.request });
 					if (s.status === "Paid") {
 						clearInterval(timer);
-						show("{{ _('Payment received. Thank you!') }} " + (s.receipt ? "(" + s.receipt + ")" : ""), "ok");
-						// close by itself and show the new balance
-						setTimeout(() => { sheet.classList.remove("open"); location.reload(); }, 2500);
+						say(status, "{{ _('Payment received. Thank you!') }} " + (s.receipt ? "(" + s.receipt + ")" : ""), "ok");
+						setTimeout(() => { sheet.classList.remove("open"); location.reload(); }, 2500);  // show the new balance
 					}
-					else if (s.status === "Cancelled" || s.status === "Failed") { clearInterval(timer); show((s.message || "{{ _('The payment was not completed.') }}"), "bad"); go.disabled = false; }
+					else if (s.status === "Cancelled" || s.status === "Failed") { clearInterval(timer); say(status, (s.message || "{{ _('The payment was not completed.') }}"), "bad"); go.disabled = false; }
 				} catch (e) { /* keep polling */ }
-				if (tries > 30) { clearInterval(timer); show("{{ _('Still waiting. If you paid, the balance will update shortly.') }}"); go.disabled = false; }
+				if (tries > 30) { clearInterval(timer); say(status, "{{ _('Still waiting. If you paid, the balance will update shortly.') }}"); go.disabled = false; }
 			}, 4000);
 		} catch (e) {
-			show(e.message, "bad"); go.disabled = false;
+			say(status, e.message, "bad"); go.disabled = false;
 		}
 	});
+
+	// raise a concern
+	const cs = $("#pp-concern");
+	if (cs) {
+		let who = null;
+		const cst = $("#pc-status"), cgo = $("#pc-go");
+		document.querySelectorAll("[data-concern]").forEach((b) => b.addEventListener("click", () => {
+			who = b.dataset.concern; $("#pc-title").textContent = "{{ _('Raise a concern about') }} " + b.dataset.name;
+			cst.style.display = "none"; cgo.disabled = false; cs.classList.add("open"); $("#pc-subject").focus();
+		}));
+		cs.addEventListener("click", (e) => { if (e.target === cs) $("#pc-cancel").click(); });
+		$("#pc-cancel").addEventListener("click", () => { cs.classList.remove("open"); if (cst.classList.contains("ok")) location.reload(); });
+		cgo.addEventListener("click", async () => {
+			cgo.disabled = true; say(cst, "{{ _('Sending...') }}");
+			try {
+				const r = await call("raise_concern", { student: who, category: $("#pc-cat").value, subject: $("#pc-subject").value, description: $("#pc-text").value });
+				say(cst, "{{ _('Sent. Your reference is') }} " + r.ref + ". {{ _('The school will get back to you.') }}", "ok");
+				setTimeout(() => { cs.classList.remove("open"); location.hash = "messages"; location.reload(); }, 2500);
+			} catch (e) { say(cst, e.message, "bad"); cgo.disabled = false; }
+		});
+	}
 })();
 </script>
 {% endblock %}

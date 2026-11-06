@@ -103,8 +103,9 @@ Object.assign(stemic_control, {
     is_platform_admin() {
         return frappe.user.has_role(["System Manager", "Stemic Platform Admin"]);
     },
-    money(v) {
-        return format_currency(v || 0, frappe.boot.sysdefaults.currency, 0);
+    // "KES 9,500", as on invoices and messages (Frappe's own symbol for KES is "Sh")
+    money(v, currency) {
+        return `${currency || frappe.boot.sysdefaults.currency || "KES"} ${format_number(v || 0, null, 0)}`;
     },
 });
 
@@ -143,7 +144,7 @@ stemic_control.onboard_school = function (defaults = {}) {
                 message: __("Create at least one plan first (Billing > Plans): every school starts on a plan."),
                 primary_action: { label: __("New Plan"), action: () => frappe.new_doc("SaaS Plan") } });
         }
-        const money = (v) => format_currency(v || 0, o.currency, 0);
+        const money = (v) => stemic_control.money(v, o.currency);
         const state = { plan: defaults.plan || o.defaults.plan, start: o.defaults.start, when: o.defaults.when,
                         slug_touched: false, slug: null, slug_ok: false, timer: null };
         const START = [

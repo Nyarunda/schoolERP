@@ -170,6 +170,9 @@ def student_attendance(student, from_date=None, to_date=None):
 		**{s.lower(): sum(1 for r in rows if r.status == s) for s in STATUSES},
 		"recent_absences": [{"date": formatdate(r.attendance_date, "EEE d MMM"), "status": r.status, "note": r.note}
 							for r in rows if r.status in ("Absent", "Excused")][:5],
+		# the last school days marked, oldest first (the portal's strip of days)
+		"days": [{"date": formatdate(r.attendance_date, "EEE d MMM"), "day": formatdate(r.attendance_date, "EEEEE"),
+				  "status": r.status} for r in rows[:15]][::-1],
 	}
 
 

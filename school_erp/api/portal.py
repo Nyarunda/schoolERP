@@ -2,7 +2,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt, formatdate, get_url, nowdate, random_string, strip_html
+from frappe.utils import date_diff, flt, formatdate, get_url, getdate, nowdate, random_string, strip_html
 
 from school_erp import licensing
 from school_erp.logic.paybill import is_till
@@ -160,7 +160,95 @@ def child_summary(student):
 		"id": stu.name, "name": stu.student_name, "first_name": stu.first_name, "stream": stu.stream or stu.school_class,
 		"photo": stu.photo, "balance": balance, "due": formatdate(due, "d MMM yyyy") if due else None,
 		"payments": payments, "report_cards": cards, "payer_phone": payer_phone(student),
+		"term_fees": term_fees(stu, term), "latest_results": latest_results(cards[0].name) if cards else None,
+		"lessons": lessons(stu.stream, term), "concerns": my_concerns(student),
 	}
+
+
+def term_fees(stu, term):
+	"""What this term's fees are for (by fee type) and how much of them is paid."""
+	if not term:
+		return None
+	invoices = frappe.get_all("Sales Invoice", filters={"customer": stu.customer or stu.name, "docstatus": 1, "is_return": 0,
+														 "school_term": term.name}, fields=["name", "grand_total", "outstanding_amount"])
+	if not invoices:
+		return None
+	items = frappe.db.sql("""select coalesce(nullif(fee_type, ''), item_name) as fee, sum(amount) as amount
+		from `tabSales Invoice Item` where parent in %s group by 1 order by sum(amount) desc""", [tuple(i.name for i in invoices)], as_dict=True)
+	billed = flt(sum(i.grand_total for i in invoices))
+	paid = billed - flt(sum(i.outstanding_amount for i in invoices))
+	return {"term": term.term_name or term.name, "billed": billed, "paid": paid, "items": items,
+			"percent": round(paid / billed * 100) if billed else 0}
+
+
+def latest_results(report_card):
+	"""The newest published report card, subject by subject, with the teachers' remarks."""
+	rc = frappe.get_doc("Report Card", report_card)
+	return {"exam": frappe.db.get_value("Exam", rc.exam, "exam_name") or rc.exam, "mean_grade": rc.mean_grade,
+			"class_teacher_remark": rc.class_teacher_remark, "head_teacher_remark": rc.head_teacher_remark,
+			"subjects": [{"subject": frappe.db.get_value("Subject", r.subject, "subject_name") or r.subject,
+						  "percent": flt(r.percent, 1), "grade": r.grade, "remark": r.remark, "position": r.subject_position}
+						 for r in rc.subjects]}
+
+
+def lessons(stream, term):
+	"""Today's lessons for the child's stream (the next school day's on a weekend)."""
+	if not (stream and term and licensing.is_enabled("timetable")):
+		return None
+	tt = frappe.db.get_value("Timetable", {"stream": stream, "school_term": term.name})
+	if not tt:
+		return None
+	day = getdate(nowdate())
+	label = _("Today")
+	if day.weekday() >= 5:
+		label = _("Monday")
+	name = "Monday" if day.weekday() >= 5 else day.strftime("%A")
+	rows = frappe.get_all("Timetable Slot", filters={"parent": tt, "parenttype": "Timetable", "day": name},
+						  fields=["period", "time", "subject", "teacher", "room"], order_by="idx")
+	if not rows:
+		return None
+	for r in rows:
+		r["subject_name"] = frappe.db.get_value("Subject", r.subject, "subject_name") or r.subject or ""
+		r["teacher_name"] = frappe.db.get_value("Teacher", r.teacher, "teacher_name") if r.teacher else ""
+	return {"label": label, "slots": rows}
+
+
+# ----------------------------------------------------------------------------- concerns raised from the portal
+CONCERN_CATEGORIES = ["Academics", "Fees & Payments", "Transport", "Meals", "Staff Conduct", "Bullying",
+					  "Safety & Security", "Facilities", "Other"]
+
+
+def my_concerns(student):
+	if not licensing.is_enabled("welfare"):
+		return None
+	return [{"ref": r.name, "subject": r.subject, "status": r.status, "category": r.category,
+			 "date": formatdate(r.creation, "d MMM yyyy"), "resolution": r.resolution if r.status in ("Resolved", "Closed") else None}
+			for r in frappe.get_all("Complaint", filters={"student": student, "owner": frappe.session.user},
+									fields=["name", "subject", "status", "category", "creation", "resolution"],
+									order_by="creation desc", limit=5, ignore_permissions=True)]
+
+
+@frappe.whitelist(methods=["POST"])
+def raise_concern(student, category, subject, description):
+	"""A parent tells the school about something: it becomes a Complaint the school follows up (Students & Welfare)."""
+	_require_portal()
+	assert_parent_of(student)
+	licensing.require("welfare")
+	if category not in CONCERN_CATEGORIES:
+		frappe.throw(_("Choose what it is about"))
+	subject, description = (subject or "").strip()[:140], (description or "").strip()[:3000]
+	if len(subject) < 3 or len(description) < 10:
+		frappe.throw(_("Write a short title and tell us what happened (at least a sentence)."))
+	if frappe.db.count("Complaint", {"owner": frappe.session.user, "creation": (">", frappe.utils.add_to_date(None, hours=-24))}) >= 5:
+		frappe.throw(_("You have raised several concerns today. Please call the school office."))
+	user = frappe.session.user
+	doc = frappe.get_doc({"doctype": "Complaint", "source": "Web Form", "relationship": "Parent / Guardian", "student": student,
+						  "student_ref": student, "complainant_name": frappe.utils.get_fullname(user), "email": user if "@" in user else None,
+						  "phone": payer_phone(student) or None, "category": category, "subject": subject, "description": description,
+						  "status": "Open", "priority": "High" if category in ("Bullying", "Safety & Security") else "Medium"})
+	doc.flags.ignore_permissions = True
+	doc.insert()
+	return {"ref": doc.name}
 
 
 def parent_notices(students):
@@ -175,6 +263,7 @@ def parent_notices(students):
 			continue
 		r["text"] = strip_html(r.message or "")
 		r["date"] = formatdate(r.publish_date, "d MMM")
+		r["new"] = date_diff(nowdate(), r.publish_date) <= 3
 		out.append(r)
 	return out
 
@@ -192,6 +281,7 @@ def portal_context():
 		"can_pay": bool(s.mpesa_enabled and s.mpesa_stk_enabled and licensing.is_enabled("mpesa")),
 		"phone": payer_phone(),
 		"parent_name": frappe.utils.get_fullname(frappe.session.user),
+		"concern_categories": CONCERN_CATEGORIES if licensing.is_enabled("welfare") else [],
 	}
 
 

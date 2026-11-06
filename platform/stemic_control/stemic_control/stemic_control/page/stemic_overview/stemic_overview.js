@@ -46,7 +46,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
     try { selected = localStorage.getItem("stemic-overview-tab") || "home"; } catch (e) { /* private window */ }
     if (!tabs.some(([id]) => id === selected)) selected = "home";
 
-    const money = (v) => format_currency(v || 0, ov ? ov.currency : "KES", 0);
+    const money = (v) => stemic_control.money(v, ov ? ov.currency : "KES");
     const short = (v) => {  // KES 1.2M, 340K: for tiles where the full figure would wrap
         const n = Math.abs(v || 0), cur = ov ? ov.currency : "KES";
         if (n >= 1e6) return `${cur} ${(v / 1e6).toFixed(n >= 1e7 ? 0 : 1)}M`;

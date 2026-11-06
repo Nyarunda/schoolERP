@@ -257,6 +257,10 @@ def run(job: str) -> str:
     from stemic_control import welcome
 
     welcome.after_provisioning(tenant.name)  # the school's contact gets the address and a set-password link
+    from stemic_control import licensing
+
+    licensing.after_site_ready(tenant.name)  # and its key, from its plan (Stemic Settings > Onboarding)
+    frappe.db.commit()
     return "Succeeded"
 
 

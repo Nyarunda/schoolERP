@@ -321,7 +321,10 @@ def link_existing_site(tenant, site):
     doc.save()
     doc.add_comment("Info", f"Linked to the existing site {site} by {frappe.session.user}. Its Administrator password is "
                             "not known here: use Open Site > Reset Password.")
-    return {"tenant": doc.name, "site": site, "status": doc.status}
+    from stemic_control import licensing
+
+    license, _why = licensing.after_site_ready(doc.name)
+    return {"tenant": doc.name, "site": site, "status": doc.status, "license": license}
 
 
 @frappe.whitelist(methods=["GET"])

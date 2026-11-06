@@ -79,7 +79,8 @@ class TestWelcome(TestCase):
         self.assertEqual(frappe.db.get_value("SaaS Tenant", self.slug, "status"), "Active")
         self.sendmail.assert_not_called()
         self.assertFalse(frappe.db.get_value("SaaS Tenant", self.slug, "welcome_sent_on"))
-        self.assertIn("welcome email", alert.call_args.args[0])
+        # (the automatic licence may alert too: there is no signing key in tests)
+        self.assertTrue(any("welcome email" in c.args[0] for c in alert.call_args_list))
         self.assertTrue(frappe.db.exists("Error Log", {"method": f"Welcome email not sent for {self.slug}"}))
 
     def test_resend_gives_a_fresh_link_and_is_for_platform_admins_only(self):

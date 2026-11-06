@@ -132,3 +132,170 @@ stemic_control.record_payment = function (invoice, outstanding, after) {
     });
     d.show();
 };
+
+// Onboard a School: one form that registers the school, starts its trial (or records its first payment), claims its
+// address, approves it and queues its site (stemic_control.wizard.onboard_school). Every step keeps its usual checks.
+stemic_control.onboard_school = function (defaults = {}) {
+    const esc = (s) => frappe.utils.escape_html(s == null ? "" : String(s));
+    frappe.xcall("stemic_control.wizard.options", {}, "GET").then((o) => {
+        if (!o.plans.length) {
+            return frappe.msgprint({ title: __("No plans yet"), indicator: "orange",
+                message: __("Create at least one plan first (Billing > Plans): every school starts on a plan."),
+                primary_action: { label: __("New Plan"), action: () => frappe.new_doc("SaaS Plan") } });
+        }
+        const money = (v) => format_currency(v || 0, o.currency, 0);
+        const state = { plan: defaults.plan || o.defaults.plan, start: o.defaults.start, when: o.defaults.when,
+                        slug_touched: false, slug: null, slug_ok: false, timer: null };
+        const START = [
+            ["Free trial", "clock", __("Free trial"), __("Site now, invoice before the trial ends")],
+            ["Paid", "check", __("Paid now"), __("Record the first payment")],
+            ["Internal / Demo", "tool", __("Internal / demo"), __("No billing")],
+        ];
+        const WHEN = [
+            ["build", __("Approve and build the site now")],
+            ["approval", __("Send to another admin to approve")],
+            ["draft", __("Save as a draft")],
+        ];
+        const d = new frappe.ui.Dialog({
+            title: __("Onboard a School"),
+            size: "large",
+            fields: [
+                { fieldtype: "Section Break", label: __("The school") },
+                { fieldname: "school_name", fieldtype: "Data", label: __("School name"), reqd: 1, default: defaults.school_name,
+                  placeholder: "Greenhill Academy", onchange: () => { if (!state.slug_touched) check_slug(); } },
+                { fieldname: "admin_email", fieldtype: "Data", options: "Email", label: __("Head or admin email"), reqd: 1,
+                  description: __("Gets the login and the set-password link when the site is ready.") },
+                { fieldtype: "Column Break" },
+                { fieldname: "slug", fieldtype: "Data", label: __("Address"), description: "&nbsp;",
+                  onchange: () => { state.slug_touched = !!d.get_value("slug"); check_slug(); } },
+                { fieldname: "contact_phone", fieldtype: "Data", options: "Phone", label: __("Phone"),
+                  description: __("For SMS notices, if SMS is on.") },
+                { fieldtype: "Section Break", label: __("Plan") },
+                { fieldname: "plan_html", fieldtype: "HTML" },
+                { fieldtype: "Section Break", label: __("How they start") },
+                { fieldname: "start_html", fieldtype: "HTML" },
+                { fieldtype: "Section Break" },
+                { fieldname: "trial_days", fieldtype: "Int", label: __("Trial length (days)"), default: o.defaults.trial_days,
+                  depends_on: "eval:doc.start === 'Free trial'", onchange: () => summary() },
+                { fieldname: "months", fieldtype: "Select", label: __("Months paid for"), options: "1\n3\n6\n12\n24",
+                  default: String([1, 3, 6, 12, 24].includes(o.defaults.months) ? o.defaults.months : 12),
+                  depends_on: "eval:doc.start === 'Paid'", onchange: () => summary() },
+                { fieldname: "payment_mode", fieldtype: "Select", label: __("Paid by"), options: o.pay_modes.join("\n"),
+                  default: "M-Pesa", depends_on: "eval:doc.start === 'Paid'" },
+                { fieldtype: "Column Break" },
+                { fieldname: "payment_ref", fieldtype: "Data", label: __("Payment reference"), placeholder: "QAB12CD34E",
+                  depends_on: "eval:doc.start === 'Paid'", mandatory_depends_on: "eval:doc.start === 'Paid'",
+                  description: __("M-Pesa code, bank reference or cheque number.") },
+                { fieldname: "amount", fieldtype: "Currency", label: __("Amount received"), depends_on: "eval:doc.start === 'Paid'",
+                  description: __("Blank means the full invoice.") },
+                { fieldname: "agent", fieldtype: "Select", label: __("Sales agent"),
+                  options: [{ value: "", label: __("None (direct)") }, ...o.agents.map((a) => ({ value: a.name, label: a.agent_name }))] },
+                { fieldname: "start", fieldtype: "Data", hidden: 1, default: state.start },
+                { fieldtype: "Section Break", label: __("Own domain (optional)"), collapsible: 1 },
+                { fieldname: "custom_domain", fieldtype: "Data", label: __("The school's own domain"), placeholder: "portal.greenhill.ac.ke",
+                  description: __("You will get a DNS record for the school to add. It can also be added later.") },
+                { fieldtype: "Section Break", label: __("When I press Onboard") },
+                { fieldname: "when_html", fieldtype: "HTML" },
+                { fieldname: "summary_html", fieldtype: "HTML" },
+            ],
+            primary_action_label: __("Onboard School"),
+            primary_action: (v) => submit(v),
+        });
+
+        function check_slug() {
+            clearTimeout(state.timer);
+            state.timer = setTimeout(() => {
+                const typed = d.get_value("slug"), name = d.get_value("school_name");
+                if (!typed && !name) return;
+                frappe.xcall("stemic_control.wizard.check_slug", { slug: state.slug_touched ? typed : null, school_name: name }, "GET")
+                    .then((r) => {
+                        state.slug = r.slug; state.slug_ok = r.ok;
+                        if (!state.slug_touched && d.get_value("slug") !== r.slug) d.fields_dict.slug.set_input(r.slug);
+                        const $d = d.fields_dict.slug.$wrapper.find(".help-box");
+                        $d.html(r.ok
+                            ? `<span style="color:var(--green-600)">${frappe.utils.icon("check", "xs")} ${esc(r.host)}</span>`
+                            : `<span style="color:var(--red-600)">${esc(r.problem)}</span>` + (r.alternative
+                                ? ` · <a href="#" class="sc-alt">${__("Use {0}", [esc(r.alternative)])}</a>` : ""));
+                        $d.find(".sc-alt").on("click", (e) => { e.preventDefault(); state.slug_touched = true;
+                            d.fields_dict.slug.set_input(r.alternative); check_slug(); });
+                        summary();
+                    });
+            }, 300);
+        }
+
+        function cards(field, items, current, cls = "") {
+            d.fields_dict[field].$wrapper.html(`<div class="sc-choices ${cls}">${items.map(([key, icon, title, text]) =>
+                `<button type="button" class="sc-choice ${key === current ? "on" : ""}" data-key="${esc(key)}">
+                    ${icon ? `<span class="sc-choice-ic">${frappe.utils.icon(icon, "md")}</span>` : ""}
+                    <span><b>${title}</b><small>${text}</small></span></button>`).join("")}</div>`);
+        }
+
+        function render() {
+            cards("plan_html", o.plans.map((p) => [p.name, "", esc(p.name),
+                `${money(p.monthly_price)} ${__("a month")}${p.student_limit ? ` · ${__("up to {0} students", [p.student_limit])}` : ""}
+                 <br>${esc((p.modules || []).join(", ") || __("Core only"))}`]), state.plan, "sc-plans");
+            cards("start_html", START, state.start, "sc-three");
+            cards("when_html", WHEN.map(([k, t]) => [k, "", t, ""]), state.when, "sc-three sc-slim");
+            d.fields_dict.plan_html.$wrapper.find("[data-key]").on("click", function () { state.plan = this.dataset.key; render(); });
+            d.fields_dict.start_html.$wrapper.find("[data-key]").on("click", function () {
+                state.start = this.dataset.key; d.set_value("start", state.start); render(); });
+            d.fields_dict.when_html.$wrapper.find("[data-key]").on("click", function () { state.when = this.dataset.key; render(); });
+            summary();
+        }
+
+        function summary() {
+            const plan = o.plans.find((p) => p.name === state.plan) || {};
+            const host = state.slug ? `${state.slug}.${o.platform_domain}` : `<${__("address")}>.${o.platform_domain}`;
+            const steps = [__("Register the school and reserve {0}", [`<b>${esc(host)}</b>`])];
+            if (state.start === "Free trial") steps.push(__("Start a {0}-day free trial of {1}", [cint(d.get_value("trial_days")) || 30, esc(plan.name || "")]));
+            else if (state.start === "Paid") {
+                const m = cint(d.get_value("months")) || 12;
+                steps.push(__("Invoice {0} month(s) of {1} ({2}) and record the payment", [m, esc(plan.name || ""), money((plan.monthly_price || 0) * m)]));
+            } else steps.push(__("Give it {0} as an internal / demo school, with no billing", [esc(plan.name || "")]));
+            if (state.when !== "draft") steps.push(__("Send it for approval"));
+            const warn = [];
+            if (state.when === "build") {
+                steps.push(__("Approve it and build its site (3 to 8 minutes, in the background)"));
+                steps.push(__("When the site is ready, email the head the login link"));
+                if (o.auto_license) steps.push(o.can_sign ? __("...and the licence key for the plan")
+                    : __("...but no licence key: signing is not set up here"));
+                if (o.environment_problem) warn.push(__("This server may not build sites yet ({0}), so the school will be approved but its site not queued.", [esc(o.environment_problem)]));
+            }
+            if (state.start === "Free trial") steps.push(__("Invoice it before the trial ends and remind the head 3 days before"));
+            d.fields_dict.summary_html.$wrapper.html(`<div class="sc-preview" style="margin-top:6px">
+                <div style="font-weight:600;margin-bottom:4px">${__("What will happen")}</div>
+                <ol>${steps.map((s) => `<li>${s}</li>`).join("")}</ol>
+                ${warn.map((w) => `<div style="color:var(--orange-600);font-size:13px;margin-top:8px">${w}</div>`).join("")}</div>`);
+        }
+
+        function submit(v) {
+            if (!state.slug_ok) return frappe.msgprint(__("Choose a free address for the school first."));
+            d.get_primary_btn().prop("disabled", true);
+            frappe.call({ method: "stemic_control.wizard.onboard_school", freeze: true, freeze_message: __("Onboarding {0}...", [esc(v.school_name)]),
+                args: { ...v, slug: state.slug, plan: state.plan, start: state.start, when: state.when } })
+                .then(({ message: r }) => { d.hide(); done(r); })
+                .always(() => d.get_primary_btn().prop("disabled", false));
+        }
+
+        function done(r) {
+            const ok = `<ul class="sc-done">${r.steps.map((s) => `<li>${frappe.utils.icon("check", "xs")} ${esc(s)}</li>`).join("")}</ul>`;
+            const warn = r.warnings.map((w) => `<div class="sc-warn">${esc(w)}</div>`).join("");
+            const next = r.job ? __("The site is being built. The school's page shows its progress and refreshes by itself.")
+                : r.status === "Pending Approval" ? __("Another platform admin can now approve it from the school's page.")
+                : r.status === "Draft" ? __("Saved as a draft. Send it for approval from the school's page when ready.")
+                : __("Open the school to finish.");
+            const dd = new frappe.ui.Dialog({ title: __("{0} is onboarded", [esc(d.get_value("school_name"))]),
+                fields: [{ fieldname: "info", fieldtype: "HTML" }],
+                primary_action_label: __("Open School"), primary_action: () => { dd.hide(); frappe.set_route("Form", "SaaS Tenant", r.tenant); } });
+            dd.fields_dict.info.$wrapper.html(`${ok}${warn}<p style="margin:12px 0 0">${next}</p>`);
+            dd.set_secondary_action_label(__("Onboard another"));
+            dd.set_secondary_action(() => { dd.hide(); stemic_control.onboard_school(); });
+            dd.show();
+            stemic_control.trigger_refresh && stemic_control.trigger_refresh();
+        }
+
+        d.show();
+        render();
+        if (defaults.school_name) check_slug();
+    });
+};

@@ -15,7 +15,7 @@ from frappe.utils import escape_html, fmt_money, formatdate, now_datetime
 EVENTS = {  # event -> Stemic Settings switch
     "Welcome": "notify_welcome", "Invoice Issued": "notify_invoice", "Payment Received": "notify_payment",
     "Invoice Overdue": "notify_overdue", "License Issued": "notify_license", "Suspended": "notify_status",
-    "Resumed": "notify_status", "School Registered": "notify_registered",
+    "Resumed": "notify_status", "School Registered": "notify_registered", "Trial Ending": "trial_reminder",
 }
 ADMIN_ONLY = {"School Registered"}
 # RFC 2606 / 6761 names that never belong to a real school: tests and scripts use them, so nothing is ever sent there
@@ -360,6 +360,24 @@ def render_status(event, school):
     return subject, html, sms
 
 
+def render_trial_ending(sub, invoice=None):
+    """A few days before a free trial ends: what happens next and how to keep the school's site."""
+    b = brand()
+    school = sub.school_name or sub.tenant
+    ends = formatdate(sub.ends_on)
+    subject = f"{school}'s free trial of {b.name} ends on {ends}"
+    rows = [("School", school), ("Plan", sub.plan), ("Trial ends", ends)]
+    if invoice:
+        rows += [("Invoice", invoice.name), ("Amount", _money(invoice.outstanding, invoice.currency)),
+                 ("Due", formatdate(invoice.due_date))]
+    html = email_html("Your free trial is ending", f"<b>{escape_html(school)}</b>'s free trial of {escape_html(b.name)} "
+                      f"ends on <b>{ends}</b>. To keep using it without a break, pay for your plan before then.", rows,
+                      blocks=[how_to_pay(invoice.name if invoice else None)], note=_contact())
+    pay = f" {_instructions(invoice.name)}" if invoice and _instructions(invoice.name) else ""
+    sms = f"{b.name}: {school}'s free trial ends {ends}. Pay for your plan to keep using it.{pay}".strip()
+    return subject, html, sms
+
+
 def send_event(event, **kw):
     """Background job: build the event's messages from the records as committed now, and deliver them."""
     if event in ("Invoice Issued", "Invoice Overdue"):
@@ -400,6 +418,18 @@ def send_event(event, **kw):
         tell_admins(event, f"{school} was {event.lower()}", "", ("SaaS Tenant", tenant), tenant, dedupe=False)
         return out
 
+    if event == "Trial Ending":
+        sub = frappe.get_doc("SaaS Subscription", kw["subscription"])
+        from stemic_control.billing import OPEN
+
+        inv_name = frappe.db.get_value("SaaS Invoice", {"subscription": sub.name, "docstatus": 1, "status": ("in", OPEN)}, "name")
+        inv = frappe.get_doc("SaaS Invoice", inv_name) if inv_name else None
+        subject, html, sms = render_trial_ending(sub, inv)
+        out = deliver(sub.tenant, event, ("SaaS Subscription", sub.name), (subject, html), sms)
+        tell_admins(event, f"{sub.school_name or sub.tenant}'s free trial ends {formatdate(sub.ends_on)}", "",
+                    ("SaaS Subscription", sub.name), sub.tenant)
+        return out
+
     if event == "School Registered":  # platform admins only
         t = frappe.db.get_value("SaaS Tenant", kw["tenant"], ["school_name", "admin_email", "contact_phone", "agent"], as_dict=True)
         extra = ", ".join(x for x in (t.admin_email, t.contact_phone, t.agent and f"agent {t.agent}") if x)
@@ -409,7 +439,7 @@ def send_event(event, **kw):
 
 
 # ----------------------------------------------------------------------------- preview (Stemic Settings)
-PREVIEWS = ["Welcome", "Invoice Issued", "Payment Received", "Invoice Overdue", "License Issued", "Suspended"]
+PREVIEWS = ["Welcome", "Invoice Issued", "Payment Received", "Invoice Overdue", "License Issued", "Trial Ending", "Suspended"]
 
 
 @frappe.whitelist(methods=["GET"])
@@ -447,6 +477,10 @@ def preview(event="Welcome"):
                            modules="Fees\nMessaging\nM-Pesa\nTimetable\nStaff\nTransport", expires_on=inv.period_end,
                            signed_key="SAMPLE.eyJzY2hvb2wiOiJHcmVlbmZpZWxkIEFjYWRlbXkifQ.SIGNATURE")
         subject, html, sms = render_license(lic)
+    elif event == "Trial Ending":
+        sub = frappe._dict(name="SUB-00012", tenant="greenfield", school_name=inv.school_name, plan="Standard",
+                           ends_on=add_days(today, 3))
+        subject, html, sms = render_trial_ending(sub, frappe._dict(inv, due_date=add_days(today, 3)))
     else:
         subject, html, sms = render_status(event, inv.school_name)
     footer = frappe.db.get_value("Email Account", {"default_outgoing": 1, "enable_outgoing": 1}, "footer") or ""

@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import col, date_range, bar_chart, card
 from school_erp import licensing
 
 
@@ -25,4 +25,10 @@ def execute(filters=None):
 			   col("litres", "Fuel (L)", "Float", 90), col("fuel_cost", "Fuel Cost", "Currency", 120),
 			   col("km_per_litre", "Km / L", "Float", 80), col("cost_per_km", "Cost / Km", "Currency", 100),
 			   col("issue_days", "Check-ins with Issues", "Int", 160)]
-	return columns, rows
+	km, litres, cost = (sum(flt(r.get(k)) for r in rows) for k in ("km", "litres", "fuel_cost"))
+	summary = [card("Km driven", round(km), "Float"), card("Fuel (litres)", round(litres, 1), "Float"),
+			   card("Fuel cost", cost, "Currency", indicator="Blue"),
+			   card("Km per litre", round(km / litres, 2) if litres else 0, "Float"),
+			   card("Check-ins with issues", sum(r.issue_days or 0 for r in rows), indicator="Orange" if any(r.issue_days for r in rows) else "Green")]
+	chart = bar_chart([r.vehicle for r in rows], [(_("Km"), [flt(r.km) for r in rows])]) if rows else None
+	return columns, rows, None, chart, summary

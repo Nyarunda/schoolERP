@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import col, date_range, bar_chart, card, top
 from school_erp import licensing
 
 
@@ -30,6 +30,11 @@ def execute(filters=None):
 		columns.append(col("student_name", "Name", "Data", 170))
 	columns += [col("total", "Incidents", "Int", 90), col("minor", "Minor", "Int", 80), col("major", "Major", "Int", 80),
 				col("critical", "Critical", "Int", 80), col("open_cases", "Open", "Int", 80), col("suspensions", "Suspensions", "Int", 100)]
-	chart = {"data": {"labels": [str(r.grp) for r in rows[:15]], "datasets": [{"name": _("Incidents"), "values": [r.total for r in rows[:15]]}]},
-			 "type": "bar"} if rows else None
-	return columns, rows, None, chart
+	shown = rows[:15]
+	chart = bar_chart([str(r.grp) for r in shown], [(_("Minor"), [r.minor for r in shown]), (_("Major"), [r.major for r in shown]),
+													(_("Critical"), [r.critical for r in shown])], stacked=True) if rows else None
+	open_n = sum(r.open_cases or 0 for r in rows)
+	summary = [card("Incidents", sum(r.total for r in rows)), card("Still open", open_n, indicator="Orange" if open_n else "Green"),
+			   card("Critical", sum(r.critical or 0 for r in rows), indicator="Red" if any(r.critical for r in rows) else "Green"),
+			   card("Suspensions", sum(r.suspensions or 0 for r in rows))]
+	return columns, rows, None, chart, summary

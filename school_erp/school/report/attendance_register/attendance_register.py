@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate
 
-from school_erp.api.report_utils import col
+from school_erp.api.report_utils import bar_chart, col
 from school_erp.logic.attendance import rate
 
 
@@ -51,4 +51,8 @@ def execute(filters=None):
 		{"label": _("Absences"), "value": sum(int(r.absent) for r in data), "datatype": "Int", "indicator": "Red"},
 		{"label": _("Below 90%"), "value": sum(1 for r in data if (r["percent"] or 0) < 90), "datatype": "Int"},
 	]
-	return columns, data, None, None, summary
+	# how many students fall in each attendance band, best first
+	bands = [("95-100%", 95, 101), ("90-95%", 90, 95), ("80-90%", 80, 90), (_("Below 80%"), 0, 80)]
+	chart = bar_chart([b[0] for b in bands], [(_("Students"), [sum(1 for r in data if r["percent"] is not None and lo <= r["percent"] < hi)
+																for _l, lo, hi in bands])]) if data else None
+	return columns, data, None, chart, summary

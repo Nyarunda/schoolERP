@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import col, date_range, bar_chart, card
 
 
 def execute(filters=None):
@@ -29,4 +29,12 @@ def execute(filters=None):
 	summary = [{"label": _("Students"), "value": total, "datatype": "Int", "indicator": "Blue"},
 			   {"label": _("Girls"), "value": sum(r.girls or 0 for r in rows), "datatype": "Int"},
 			   {"label": _("Boys"), "value": sum(r.boys or 0 for r in rows), "datatype": "Int"}]
-	return columns, rows, None, None, summary
+	summary += [card("Boarders", sum(r.boarders or 0 for r in rows)), card("On transport", sum(r.on_transport or 0 for r in rows)),
+				card("Take lunch", sum(r.lunch or 0 for r in rows))]
+	by_class = {}
+	for r in rows:
+		c = by_class.setdefault(r.school_class, [0, 0])
+		c[0] += r.girls or 0
+		c[1] += r.boys or 0
+	chart = bar_chart(list(by_class), [(_("Girls"), [v[0] for v in by_class.values()]), (_("Boys"), [v[1] for v in by_class.values()])], stacked=True)
+	return columns, rows, None, chart, summary

@@ -5,10 +5,25 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from school_erp.api.report_utils import bar_chart, card
+
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
-	return columns(), data(filters), None, chart(filters)
+	rows = data(filters)
+	return columns(), rows, None, chart(rows), summary(rows)
+
+
+def summary(rows):
+	billed = sum(flt(r["billed"]) for r in rows)
+	paid = sum(flt(r["paid"]) for r in rows)
+	owed = sum(max(flt(r["balance"]), 0) for r in rows)
+	owing = sum(1 for r in rows if flt(r["balance"]) > 0.5)
+	return [card("Billed", billed, "Currency"), card("Paid", paid, "Currency", indicator="Green"),
+			card("Still owed", owed, "Currency", indicator="Red" if owed else "Green"),
+			card("Collection rate", round(paid / billed * 100, 1) if billed else 0, "Percent", indicator="Blue"),
+			{"label": _("Students owing"), "value": _("{0} of {1}").format(owing, len(rows)), "datatype": "Data",
+			 "indicator": "Orange" if owing else "Green"}]
 
 
 def columns():
@@ -69,15 +84,14 @@ def data(filters):
 	return rows
 
 
-def chart(filters):
-	rows = data(filters)
+def chart(rows):
+	"""Per class: what has been paid and what is still owed, stacked to the amount billed."""
 	by_class = {}
 	for r in rows:
-		by_class[r["school_class"] or "-"] = by_class.get(r["school_class"] or "-", 0) + max(flt(r["balance"]), 0)
+		c = by_class.setdefault(r["school_class"] or "-", [0, 0])
+		c[0] += max(flt(r["paid"]), 0)
+		c[1] += max(flt(r["balance"]), 0)
 	if not by_class:
 		return None
-	return {
-		"data": {"labels": list(by_class), "datasets": [{"name": _("Balance owed"), "values": list(by_class.values())}]},
-		"type": "bar",
-		"fieldtype": "Currency",
-	}
+	return bar_chart(list(by_class), [(_("Paid"), [v[0] for v in by_class.values()]), (_("Owed"), [v[1] for v in by_class.values()])],
+					 money=True, stacked=True)

@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import bar_chart, col, date_range
 from school_erp.api.tax import TEMPLATES
 from school_erp.logic.tax import EXEMPT, STANDARD, ZERO_RATED
 from school_erp import licensing
@@ -68,4 +68,6 @@ def execute(filters=None):
 		{"label": _("VAT payable") if total >= 0 else _("VAT credit"), "value": abs(total), "datatype": "Currency",
 		 "indicator": "Red" if total > 0 else "Green"},
 	]
-	return columns, data, None, None, summary
+	chart = bar_chart([r.month for r in data], [(_("Output VAT"), [r.output_vat for r in data]), (_("Input VAT"), [r.input_vat for r in data])],
+					  money=True) if data else None
+	return columns, data, None, chart, summary

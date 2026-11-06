@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from school_erp.api.report_utils import col
+from school_erp.api.report_utils import col, bar_chart, card, top
 from school_erp import licensing
 
 
@@ -45,6 +45,16 @@ def execute(filters=None):
 			row[f"s_{s}"] = (f"{flt(m.marks):g} {m.grade}" if m.marks is not None and m.grade != "ABS" else "ABS") if m else ""
 		data.append(row)
 	means = [flt(c.mean_percent) for c in cards if c.mean_percent]
-	summary = [{"label": _("Students"), "value": len(cards), "datatype": "Int"},
-			   {"label": _("Average mean"), "value": round(sum(means) / len(means), 1) if means else 0, "datatype": "Float", "indicator": "Blue"}]
-	return columns, data, None, None, summary
+	improved = [d for d in data if d["change"] is not None and d["change"] > 0]
+	summary = [card("Students", len(cards)),
+			   card("Average mean %", round(sum(means) / len(means), 1) if means else 0, "Percent", indicator="Blue"),
+			   card("Top mean %", max(means) if means else 0, "Percent", indicator="Green"),
+			   card("Improved on last exam", len(improved), indicator="Green")]
+	# how many students got each mean grade, best grade first
+	counts = {}
+	for c in cards:
+		counts[c.mean_grade or "–"] = counts.get(c.mean_grade or "–", 0) + 1
+	order = frappe.get_all("Grading Band", filters={"parent": exam.grading_scale}, order_by="min_score desc", pluck="grade")
+	grades = [g for g in order if g in counts] + [g for g in counts if g not in order]
+	chart = bar_chart(grades, [(_("Students"), [counts[g] for g in grades])]) if grades else None
+	return columns, data, None, chart, summary

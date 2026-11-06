@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import col, date_range, bar_chart, card, top
 from school_erp import licensing
 
 
@@ -30,4 +30,9 @@ def execute(filters=None):
 	chart = {"data": {"labels": months, "datasets": [
 		{"name": _("Collected"), "values": [d["collected"] for d in data]},
 		{"name": _("Expenses"), "values": [d["expenses"] for d in data]}]}, "type": "bar", "fieldtype": "Currency"} if months else None
-	return columns, data, None, chart
+	tb, tc, te = (sum(d[k] for d in data) for k in ("billed", "collected", "expenses"))
+	summary = [card("Fees billed", tb, "Currency"), card("Fees collected", tc, "Currency", indicator="Green"),
+			   card("Collection rate", round(tc / tb * 100, 1) if tb else 0, "Percent"),
+			   card("Expenses", te, "Currency", indicator="Orange"),
+			   card("Collected - expenses", tc - te, "Currency", indicator="Green" if tc >= te else "Red")]
+	return columns, data, None, chart, summary

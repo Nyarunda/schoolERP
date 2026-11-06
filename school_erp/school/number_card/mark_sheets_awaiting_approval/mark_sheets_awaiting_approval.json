@@ -1,0 +1,21 @@
+{
+ "creation": "2026-11-06 09:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Exam Mark Sheet",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"Exam Mark Sheet\", \"approval_status\", \"=\", \"Pending Approval\"]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Mark Sheets Awaiting Approval",
+ "modified": "2026-11-06 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Mark Sheets Awaiting Approval",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Document Type"
+}

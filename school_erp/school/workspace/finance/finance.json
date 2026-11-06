@@ -376,7 +376,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-26 17:00:00.000000",
+ "modified": "2026-11-06 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Finance",
@@ -422,20 +422,20 @@
   {
    "color": "Blue",
    "doc_view": "List",
+   "format": "{} customers",
    "label": "Customers",
    "link_to": "Customer",
-   "type": "DocType",
    "stats_filter": "[[\"Customer\",\"student\",\"is\",\"not set\"]]",
-   "format": "{} customers"
+   "type": "DocType"
   },
   {
    "color": "Blue",
    "doc_view": "List",
+   "format": "{} unpaid",
    "label": "Customer Invoices",
    "link_to": "Sales Invoice",
-   "type": "DocType",
    "stats_filter": "[[\"Sales Invoice\",\"student\",\"is\",\"not set\"],[\"Sales Invoice\",\"docstatus\",\"=\",1],[\"Sales Invoice\",\"outstanding_amount\",\">\",0]]",
-   "format": "{} unpaid"
+   "type": "DocType"
   },
   {
    "color": "Blue",

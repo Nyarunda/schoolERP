@@ -32,7 +32,8 @@ $PY -c "import cryptography" 2>/dev/null || $PY -m pip install -q cryptography
 $PY -m pytest -q \
   school_erp/tests/test_logic.py \
   school_erp/tests/test_document_verification_policy.py \
-  school_erp/tests/test_verified_document_integrity.py || fail "unit tests"
+  school_erp/tests/test_verified_document_integrity.py \
+  school_erp/tests/test_library.py || fail "unit tests"
 
 step "No private keys staged"
 if git rev-parse --git-dir >/dev/null 2>&1; then

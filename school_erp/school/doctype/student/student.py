@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.naming import make_autoname
+from frappe.utils import nowdate
 
 from school_erp import licensing
 
@@ -29,6 +30,7 @@ class Student(Document):
 				self.set(f, " ".join(self.get(f).split()).title())
 		self.student_name = " ".join(filter(None, [self.first_name, self.middle_name, self.last_name]))
 		self.validate_admission_number()
+		self.validate_leaving()
 		self.validate_government_ids()
 		self.set_primary_guardian()
 		self.validate_services()
@@ -38,6 +40,17 @@ class Student(Document):
 			"Student", {"admission_number": self.admission_number, "name": ("!=", self.name)}
 		):
 			frappe.throw(_("Admission number {0} belongs to another student").format(self.admission_number))
+
+	def validate_leaving(self):
+		"""Transferred, Left and Graduated learners keep the date they left; a transfer also says where to."""
+		if self.status in ("Transferred", "Left", "Graduated"):
+			self.leaving_date = self.leaving_date or nowdate()
+			if self.status == "Transferred" and not (self.transferred_to or "").strip():
+				frappe.throw(_("Enter the school {0} transferred to").format(self.first_name or _("the learner")))
+			if self.status != "Transferred":
+				self.transferred_to = None
+		else:  # back in school
+			self.leaving_date = self.transferred_to = self.leaving_reason = None
 
 	def validate_government_ids(self):
 		"""UPI, birth certificate and KNEC numbers are stored clean (no spaces, upper case) and never shared by two learners."""

@@ -100,6 +100,8 @@ Numbers are normalised with the school's country code (`0712 345 678` → `25471
 
 ## 5. Day-to-day
 
+**Student status lists** → the sidebar has *Active Students*, *Transferred Students* and *Graduated Students*. On a student, *Status → Transfer Out* asks for the new school and date (Transferred learners keep both); *Re-admit* brings a transferred or left learner back to Active.
+
 **Admit a student** → Student form: names, stream, Day/Boarder, guardians (one marked Primary; tick SMS/Email per guardian), transport route, lunch, activities, scholarship %. A Customer with the same ID is created automatically.
 
 **Set fees for a term** → *School Fee Structure*: pick the term, optionally a class and boarding type, add fee lines. You can have a general structure plus class-specific ones; the most specific wins per fee type. Transport and activity fees come from the route/activity, not the structure. "Once" fee types (e.g. Admission) are only ever charged once per student.

@@ -1,0 +1,114 @@
+{
+ "doctype": "DocType",
+ "name": "School Webhook Delivery",
+ "module": "School",
+ "autoname": "field:delivery_key",
+ "engine": "InnoDB",
+ "field_order": [
+  "delivery_key",
+  "endpoint",
+  "event_id",
+  "event_type",
+  "payload",
+  "status",
+  "attempts",
+  "next_attempt_at",
+  "response_code",
+  "error"
+ ],
+ "fields": [
+  {
+   "fieldname": "delivery_key",
+   "fieldtype": "Data",
+   "label": "Delivery Key",
+   "unique": 1,
+   "reqd": 1,
+   "read_only": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "endpoint",
+   "fieldtype": "Link",
+   "label": "Endpoint",
+   "idx": 2,
+   "options": "School Webhook Endpoint",
+   "reqd": 1
+  },
+  {
+   "fieldname": "event_id",
+   "fieldtype": "Data",
+   "label": "Event ID",
+   "idx": 3,
+   "reqd": 1
+  },
+  {
+   "fieldname": "event_type",
+   "fieldtype": "Data",
+   "label": "Event Type",
+   "idx": 4,
+   "reqd": 1
+  },
+  {
+   "fieldname": "payload",
+   "fieldtype": "Long Text",
+   "label": "Payload",
+   "idx": 5,
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "idx": 6,
+   "options": "Queued\nSending\nAccepted\nRetrying\nFailed\nUnknown",
+   "default": "Queued"
+  },
+  {
+   "fieldname": "attempts",
+   "fieldtype": "Int",
+   "label": "Attempts",
+   "idx": 7
+  },
+  {
+   "fieldname": "next_attempt_at",
+   "fieldtype": "Datetime",
+   "label": "Next Attempt At",
+   "idx": 8
+  },
+  {
+   "fieldname": "response_code",
+   "fieldtype": "Int",
+   "label": "Response Code",
+   "idx": 9
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Error",
+   "idx": 10
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "create": 0,
+   "write": 0
+  },
+  {
+   "role": "School Admin",
+   "read": 1,
+   "create": 0,
+   "write": 0
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "modified": "2026-11-10 15:30:00.000000"
+}

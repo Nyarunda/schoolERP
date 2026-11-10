@@ -56,6 +56,10 @@ MODULES = {
     "exams": "Exams & Report Cards",
     "portal": "Parent Portal & Online Fee Payment",
     "library": "Library",
+    "pocket_money": "Pocket Money",
+    "boarding": "Boarding & Exeat",
+    "homework": "Homework & Assignments",
+    "admissions": "Online Admissions",
 }
 
 # Tenant status a job moves its tenant to: (action, job status) -> tenant status

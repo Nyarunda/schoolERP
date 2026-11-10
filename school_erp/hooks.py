@@ -52,6 +52,7 @@ jinja = {
 		"school_erp.api.statement.render_fee_statement",
 		"school_erp.api.statement.get_statement_data",
 		"school_erp.api.exams.render_report_card",
+		"school_erp.api.cbc.render_cbc_progress_report",
 		"school_erp.api.timetable.get_timetable_grid",
 	]
 }
@@ -111,7 +112,7 @@ scheduler_events = {
 		"*/30 15-20 * * 1-5": ["school_erp.api.staff.alert_missing_duty_reports"],
 		"*/5 * * * *": ["school_erp.api.stk.query_stale_requests"],
 	},
-	"hourly": ["school_erp.api.paybill.retry_pending"],
+	"hourly": ["school_erp.api.paybill.retry_pending", "school_erp.api.boarding.alert_overdue_exeats"],
 }
 
 fixtures = []

@@ -170,6 +170,21 @@ def pocket_money(student):
 	from school_erp.api.pocket_money import portal_pocket_money
 
 	return portal_pocket_money(student)
+		"cbc_reports": cbc_reports(student),
+		"homework": homework(student, stu.stream),
+	}
+
+
+def cbc_reports(student):
+	from school_erp.api.cbc import portal_reports
+
+	return portal_reports(student)
+
+
+def homework(student, stream):
+	from school_erp.api.homework import portal_homework
+
+	return portal_homework(student, stream)
 
 
 def term_fees(stu, term):

@@ -1,0 +1,179 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:dormitory_name",
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "dormitory_name",
+  "gender",
+  "capacity",
+  "cb_1",
+  "house_parent",
+  "house_parent_phone",
+  "is_active",
+  "cb_2",
+  "occupied",
+  "free_beds",
+  "sb_3",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "dormitory_name",
+   "fieldtype": "Data",
+   "label": "Dormitory",
+   "reqd": 1,
+   "unique": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "For",
+   "options": "Boys\nGirls\nMixed",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "capacity",
+   "fieldtype": "Int",
+   "label": "Beds",
+   "reqd": 1,
+   "in_list_view": 1,
+   "idx": 3
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "house_parent",
+   "fieldtype": "Link",
+   "label": "House Parent / Matron",
+   "options": "User",
+   "description": "Gets exeat requests and late-return alerts",
+   "idx": 5
+  },
+  {
+   "fieldname": "house_parent_phone",
+   "fieldtype": "Data",
+   "label": "House Parent Phone",
+   "options": "Phone",
+   "idx": 6
+  },
+  {
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Active",
+   "default": "1",
+   "idx": 7
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 8
+  },
+  {
+   "fieldname": "occupied",
+   "fieldtype": "Int",
+   "label": "Occupied",
+   "read_only": 1,
+   "in_list_view": 1,
+   "idx": 9
+  },
+  {
+   "fieldname": "free_beds",
+   "fieldtype": "Int",
+   "label": "Free Beds",
+   "read_only": 1,
+   "in_list_view": 1,
+   "idx": 10
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "idx": 11
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes",
+   "idx": 12
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Dormitory",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Teacher",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Staff",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "gender",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

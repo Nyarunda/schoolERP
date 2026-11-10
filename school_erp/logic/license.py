@@ -31,6 +31,9 @@ MODULES = {
 	"exams": "Exams & Report Cards",
 	"portal": "Parent Portal & Online Fee Payment",
 	"pocket_money": "Pocket Money",
+	"boarding": "Boarding & Exeat",
+	"homework": "Homework & Assignments",
+	"admissions": "Online Admissions",
 }
 
 # Which module each DocType belongs to
@@ -62,14 +65,24 @@ DOCTYPE_MODULE = {
 	"Exam": "exams",
 	"Exam Mark Sheet": "exams",
 	"Report Card": "exams",
+	"CBC Settings": "exams",
+	"CBC Strand": "exams",
+	"Competency Assessment": "exams",
+	"CBC Progress Report": "exams",
 	"STK Push Request": "portal",
 	"Pocket Money Account": "pocket_money",
 	"Pocket Money Transaction": "pocket_money",
+	"Dormitory": "boarding",
+	"Boarding Allocation": "boarding",
+	"Exeat": "boarding",
+	"Homework": "homework",
+	"Admission Application": "admissions",
+	"Admission Settings": "admissions",
 }
 
 # DocTypes another module's forms link to: still readable when that module is licensed, so its forms keep working
 READABLE_WITH = {
-	"Subject": {"exams"},  # exam mark sheets and report cards list subjects
+	"Subject": {"exams", "homework"},  # exam mark sheets, report cards and homework list subjects
 	"Fee Type": {"transport", "activities", "lunch"},
 	"Staff Member": {"welfare", "transport_ops", "transport"},
 	"School Vehicle": {"transport", "staff"},

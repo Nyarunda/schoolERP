@@ -52,6 +52,7 @@ jinja = {
 		"school_erp.api.statement.render_fee_statement",
 		"school_erp.api.statement.get_statement_data",
 		"school_erp.api.exams.render_report_card",
+		"school_erp.api.cbc.render_cbc_progress_report",
 		"school_erp.api.timetable.get_timetable_grid",
 	]
 }

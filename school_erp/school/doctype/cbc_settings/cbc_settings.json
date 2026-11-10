@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "rubric",
+  "progress_sms",
+  "cb_1",
+  "report_footer"
+ ],
+ "fields": [
+  {
+   "fieldname": "rubric",
+   "fieldtype": "Select",
+   "label": "Rubric",
+   "options": "4-level (EE / ME / AE / BE)\n8-level (EE1 - BE2)",
+   "default": "4-level (EE / ME / AE / BE)",
+   "reqd": 1,
+   "description": "Levels teachers choose from. Assessments keep the rubric they were made with.",
+   "idx": 1
+  },
+  {
+   "fieldname": "progress_sms",
+   "fieldtype": "Small Text",
+   "label": "Progress Report SMS",
+   "default": "Dear {guardian_name}, {student_name}'s CBC progress report for {term} is ready. View it on the parent portal: {url} - {school_name}",
+   "description": "Placeholders: {guardian_name} {student_name} {term} {url} {school_name}",
+   "idx": 2
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "fieldname": "report_footer",
+   "fieldtype": "Small Text",
+   "label": "Report Footer",
+   "default": "This report describes what the learner can do in each learning area. CBC does not rank learners.",
+   "idx": 4
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "CBC Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Teacher",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Head of Department",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

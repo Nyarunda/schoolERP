@@ -12,7 +12,7 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 
 | Module (license code) | What it gives the school |
 |---|---|
-| **Core** (always on) | Students, parents/guardians, classes, streams, teachers, school years and terms, **year-end promotion**, **daily class attendance** from a phone (absence SMS with the messaging module). See [docs/ATTENDANCE_AND_MARKS_APPROVAL.md](docs/ATTENDANCE_AND_MARKS_APPROVAL.md) |
+| **Core** (always on) | Students, parents/guardians, classes, streams, teachers, school years and terms, **government learner IDs (NEMIS/KEMIS UPI, birth certificate, KNEC assessment number) with a NEMIS Census report**, **year-end promotion**, **daily class attendance** from a phone (absence SMS with the messaging module). See [docs/ATTENDANCE_AND_MARKS_APPROVAL.md](docs/ATTENDANCE_AND_MARKS_APPROVAL.md) |
 | `fees` | Fee types, fee structures per term/class/boarding, one-click term billing, fee payments split by fee type, receipts, **parent fee statements**, Fee Balances report |
 | `transport` | Transport routes with a fee per term; students on a route are billed for it |
 | `lunch` | Lunch fee charged only to students marked "Takes School Lunch" |
@@ -121,6 +121,8 @@ You can run it again later for new admissions; anyone already invoiced is skippe
 * M-Pesa codes can't be used twice. Submitting posts an ERPNext Payment Entry, prints a receipt, and SMSes the parent the new balance.
 
 **Statements** → Student → Fees → *Fee Statement (PDF)* (choose dates), or *Send Statement to Parents*, or print the Student with the "Fee Statement" print format. Bulk: *School Message* with audience "Students with a balance", channel Email, tick "Attach PDF Fee Statement".
+
+**Government census & KNEC registration** → Student → *Government IDs* section: UPI (NEMIS/KEMIS), birth certificate, KNEC assessment number, county, special needs. IDs are stored without spaces in capitals and can't be shared by two learners. The *NEMIS Census* report lists every learner with what is still missing (tick "Only learners missing census data"), a class-by-gender summary and the enrolment-by-age table; export it from the report menu.
 
 **Who owes what** → *Fee Balances* report (filter by term/class/stream; "Message these parents" button).
 

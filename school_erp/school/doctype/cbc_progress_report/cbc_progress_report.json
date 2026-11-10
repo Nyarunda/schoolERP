@@ -1,0 +1,235 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "CPR-.YYYY.-.#####",
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "school_term",
+  "cb_1",
+  "stream",
+  "school_class",
+  "rubric",
+  "cb_2",
+  "status",
+  "published_on",
+  "sent_to_parents",
+  "sb_3",
+  "areas",
+  "sb_4",
+  "strengths",
+  "areas_to_improve",
+  "cb_5",
+  "class_teacher_remark",
+  "head_teacher_remark"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Learner",
+   "options": "Student",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "fetch_from": "student.student_name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "label": "Term",
+   "options": "School Term",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 3
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "label": "Stream",
+   "options": "Stream",
+   "in_standard_filter": 1,
+   "idx": 5
+  },
+  {
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "label": "Grade",
+   "options": "School Class",
+   "in_list_view": 1,
+   "idx": 6
+  },
+  {
+   "fieldname": "rubric",
+   "fieldtype": "Data",
+   "label": "Rubric",
+   "read_only": 1,
+   "idx": 7
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 8
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nPublished",
+   "default": "Draft",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 9
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Datetime",
+   "label": "Published On",
+   "read_only": 1,
+   "idx": 10
+  },
+  {
+   "fieldname": "sent_to_parents",
+   "fieldtype": "Check",
+   "label": "Sent to Parents",
+   "read_only": 1,
+   "idx": 11
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "label": "Learning Areas",
+   "idx": 12
+  },
+  {
+   "fieldname": "areas",
+   "fieldtype": "Table",
+   "label": "Learning Areas",
+   "options": "CBC Progress Area",
+   "idx": 13
+  },
+  {
+   "fieldname": "sb_4",
+   "fieldtype": "Section Break",
+   "label": "Remarks",
+   "idx": 14
+  },
+  {
+   "fieldname": "strengths",
+   "fieldtype": "Small Text",
+   "label": "Strongest Learning Areas",
+   "idx": 15
+  },
+  {
+   "fieldname": "areas_to_improve",
+   "fieldtype": "Small Text",
+   "label": "Areas to Work On",
+   "idx": 16
+  },
+  {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break",
+   "idx": 17
+  },
+  {
+   "fieldname": "class_teacher_remark",
+   "fieldtype": "Small Text",
+   "label": "Class Teacher's Remark",
+   "idx": 18
+  },
+  {
+   "fieldname": "head_teacher_remark",
+   "fieldtype": "Small Text",
+   "label": "Head Teacher's Remark",
+   "idx": 19
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "CBC Progress Report",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Teacher"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "student,student_name,school_term",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

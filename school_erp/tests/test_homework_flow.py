@@ -40,14 +40,18 @@ class TestHomeworkFlow(TestCase):
 		hw = self.homework(submissions=[{"student": self.kid, "status": "Submitted"}]).insert()
 		self.assertEqual((hw.done_count, hw.completion), (1, 100))
 		self.assertEqual(portal_homework(self.kid, "Grade 4 Test"), [])  # drafts are not shown
+		learners = frappe.db.count("Student", {"stream": "Grade 4 Test", "status": "Active"})
 		with patch("school_erp.api.messaging.send_sms", return_value={"sent": ["x"], "failed": []}) as sms:
 			hw.status = "Published"
 			hw.save()
 			hw.reload()
 			self.assertTrue(hw.parents_notified)
+			first_round = sum(1 for c in sms.call_args_list if "homework" in c.args[1])
 			hw.title = "Fractions worksheet (updated)"
 			hw.save()  # editing again does not SMS again
-		self.assertEqual(sum(1 for c in sms.call_args_list if "homework" in c.args[1]), 1)
+			second_round = sum(1 for c in sms.call_args_list if "homework" in c.args[1]) - first_round
+		self.assertEqual(first_round, learners)  # one SMS per learner in the stream (each has one SMS guardian)
+		self.assertEqual(second_round, 0)
 		shown = portal_homework(self.kid, "Grade 4 Test")
 		self.assertEqual(shown[0]["handed_in"], "Submitted")
 		self.assertEqual(shown[0]["due_label"], "Due in 2 days")

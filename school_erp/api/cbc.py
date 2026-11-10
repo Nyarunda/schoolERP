@@ -9,8 +9,14 @@ from school_erp.logic.cbc import FOUR_LEVEL, roll_up, strengths_and_gaps
 from school_erp.logic.cbc import rubric as rubric_rows
 
 
+def cbc_settings():
+	from school_erp.api.singles import get_settings
+
+	return get_settings("CBC Settings")
+
+
 def cbc_rubric() -> str:
-	return frappe.db.get_single_value("CBC Settings", "rubric") or FOUR_LEVEL
+	return cbc_settings().rubric or FOUR_LEVEL
 
 
 @frappe.whitelist()
@@ -109,7 +115,7 @@ def send_progress_reports(names):
 	from school_erp.api.messaging import sms_student
 
 	s = frappe.get_cached_doc("School Settings")
-	template = frappe.db.get_single_value("CBC Settings", "progress_sms") or ""
+	template = cbc_settings().progress_sms or ""
 	url = get_url("/parent")
 	for name in names:
 		rc = frappe.db.get_value("CBC Progress Report", name, ["student", "school_term", "sent_to_parents", "status"], as_dict=True)
@@ -131,7 +137,7 @@ def send_progress_reports(names):
 def progress_report_context(name):
 	doc = frappe.get_doc("CBC Progress Report", name) if isinstance(name, str) else name
 	s = frappe.get_cached_doc("School Settings")
-	settings = frappe.get_cached_doc("CBC Settings")
+	settings = cbc_settings()
 	names = dict(frappe.get_all("Subject", fields=["name", "subject_name"], as_list=True))
 	return {
 		"rc": doc, "student": frappe.get_doc("Student", doc.student),

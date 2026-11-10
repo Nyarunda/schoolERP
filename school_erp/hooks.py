@@ -110,7 +110,7 @@ scheduler_events = {
 		"*/30 15-20 * * 1-5": ["school_erp.api.staff.alert_missing_duty_reports"],
 		"*/5 * * * *": ["school_erp.api.stk.query_stale_requests"],
 	},
-	"hourly": ["school_erp.api.paybill.retry_pending"],
+	"hourly": ["school_erp.api.paybill.retry_pending", "school_erp.api.boarding.alert_overdue_exeats"],
 }
 
 fixtures = []

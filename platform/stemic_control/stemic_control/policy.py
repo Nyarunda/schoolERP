@@ -55,6 +55,7 @@ MODULES = {
     "transport_ops": "Driver Daily Logs & Vehicles",
     "exams": "Exams & Report Cards",
     "portal": "Parent Portal & Online Fee Payment",
+    "boarding": "Boarding & Exeat",
 }
 
 # Tenant status a job moves its tenant to: (action, job status) -> tenant status

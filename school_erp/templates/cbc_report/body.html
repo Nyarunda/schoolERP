@@ -1,0 +1,90 @@
+{%- set a = school.accent or "#1f6f5c" -%}
+<style>
+	.cbc { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #1d2433; font-size: 11.5px; line-height: 1.45; }
+	.cbc table { width: 100%; border-collapse: collapse; }
+	.cbc td, .cbc th { vertical-align: top; }
+	.cbc .bar { height: 6px; background: {{ a }}; border-radius: 3px; margin-bottom: 14px; }
+	.cbc .sn { font-size: 19px; font-weight: 700; color: {{ a }}; }
+	.cbc .motto { font-style: italic; color: #6b7280; font-size: 11px; }
+	.cbc .contact { color: #4b5563; font-size: 10.5px; margin-top: 3px; }
+	.cbc .dt { font-size: 18px; font-weight: 800; letter-spacing: 1.5px; text-align: right; }
+	.cbc .dm { text-align: right; color: #4b5563; font-size: 10.5px; margin-top: 2px; }
+	.cbc .logo { max-height: 60px; max-width: 78px; margin-right: 12px; }
+	.cbc .who { background: #f4f6f8; border-radius: 8px; margin: 14px 0 12px; }
+	.cbc .who td { padding: 10px 14px; }
+	.cbc .lbl { font-size: 9.5px; text-transform: uppercase; letter-spacing: .8px; color: #6b7280; }
+	.cbc .val { font-size: 12.5px; font-weight: 600; }
+	.cbc .big { font-size: 16px; font-weight: 700; }
+	.cbc h3 { font-size: 12.5px; margin: 16px 0 6px; font-weight: 700; }
+	.cbc .g th { background: #f4f6f8; color: #4b5563; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .6px; padding: 7px 8px; text-align: left; border-bottom: 1px solid #e3e7ec; }
+	.cbc .g td { padding: 7px 8px; border-bottom: 1px solid #eef1f4; }
+	.cbc .g tr.z td { background: #fafbfc; }
+	.cbc .lv { display: inline-block; min-width: 34px; text-align: center; font-weight: 700; border-radius: 5px; padding: 2px 6px; color: #fff; }
+	.cbc .lv.EE { background: #1b8a5a; } .cbc .lv.ME { background: #2a78d6; } .cbc .lv.AE { background: #d08a00; } .cbc .lv.BE { background: #c2410c; }
+	.cbc .c { text-align: center !important; }
+	.cbc .two td.half { width: 50%; padding-right: 8px; } .cbc .two td.half + td.half { padding: 0 0 0 8px; }
+	.cbc .rm { border: 1px solid #e3e7ec; border-radius: 8px; padding: 10px 14px; margin-top: 10px; }
+	.cbc .sig { margin-top: 18px; }
+	.cbc .sig td { width: 50%; padding-right: 20px; }
+	.cbc .line { border-bottom: 1px solid #9aa1ab; height: 26px; }
+	.cbc .key { margin-top: 14px; font-size: 10px; color: #4b5563; }
+	.cbc .key span { display: inline-block; margin: 0 10px 4px 0; }
+	.cbc .ft { margin-top: 14px; padding-top: 8px; border-top: 1px solid #e3e7ec; color: #6b7280; font-size: 10px; text-align: center; }
+</style>
+<div class="cbc">
+	<div class="bar"></div>
+	<table><tr>
+		<td style="width:60%"><table><tr>
+			{% if school.logo %}<td style="width:1%"><img class="logo" src="{{ school.logo }}"></td>{% endif %}
+			<td><div class="sn">{{ school.name or "" }}</div>
+				{% if school.motto %}<div class="motto">{{ school.motto }}</div>{% endif %}
+				<div class="contact">{{ (school.address or "") | replace("\n", ", ") }}{% if school.phone %} &middot; Tel {{ school.phone }}{% endif %}</div></td>
+		</tr></table></td>
+		<td style="width:40%"><div class="dt">LEARNER PROGRESS REPORT</div>
+			<div class="dm"><b>Competency Based Curriculum</b> &middot; {{ term }}</div>
+			<div class="dm">Issued {{ issued }}</div></td>
+	</tr></table>
+
+	<table class="who"><tr>
+		<td style="width:38%"><div class="lbl">Learner</div><div class="val big">{{ student.student_name }}</div></td>
+		<td style="width:20%"><div class="lbl">Learner ID</div><div class="val">{{ student.name }}</div></td>
+		<td style="width:20%"><div class="lbl">Grade</div><div class="val">{{ rc.stream or rc.school_class }}</div></td>
+		<td style="width:22%"><div class="lbl">Class Teacher</div><div class="val">{{ class_teacher or "-" }}</div></td>
+	</tr></table>
+
+	<h3>Learning areas</h3>
+	<table class="g">
+		<thead><tr><th style="width:24%">Learning Area</th><th class="c" style="width:9%">Level</th><th style="width:25%">Descriptor</th>
+			<th class="c" style="width:8%">Strands</th><th style="width:34%">Teacher's Comment</th></tr></thead>
+		<tbody>
+		{% for s in areas %}
+			<tr class="{{ 'z' if loop.index is even else '' }}">
+				<td>{{ s.subject_name }}</td>
+				<td class="c"><span class="lv {{ (s.level or '')[:2] }}">{{ s.level or "-" }}</span></td>
+				<td>{{ s.descriptor or "" }}</td>
+				<td class="c">{{ s.strands_assessed or 0 }}</td>
+				<td>{{ s.teacher_comment or "" }}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+
+	{% if rc.strengths or rc.areas_to_improve %}
+	<table class="two" style="margin-top:10px"><tr>
+		<td class="half"><div class="rm"><div class="lbl">Strongest learning areas</div><div style="margin-top:4px">{{ rc.strengths or "-" }}</div></div></td>
+		<td class="half"><div class="rm"><div class="lbl">Areas to work on</div><div style="margin-top:4px">{{ rc.areas_to_improve or "-" }}</div></div></td>
+	</tr></table>
+	{% endif %}
+
+	<div class="rm"><div class="lbl">Class Teacher's Remarks</div><div style="margin-top:4px;min-height:16px">{{ rc.class_teacher_remark or "" }}</div></div>
+	<div class="rm"><div class="lbl">Head Teacher's Remarks</div><div style="margin-top:4px;min-height:16px">{{ rc.head_teacher_remark or "" }}</div></div>
+
+	<table class="sig"><tr>
+		<td><div class="line"></div><div class="lbl" style="margin-top:4px">Class Teacher</div></td>
+		<td><div class="line"></div><div class="lbl" style="margin-top:4px">Head Teacher &amp; School Stamp</div></td>
+	</tr></table>
+
+	<div class="key"><b>Rubric:</b> {% for k in key %}<span><b>{{ k.level }}</b> {{ k.descriptor }}</span>{% endfor %}</div>
+	{% if footer %}<div class="key">{{ footer }}</div>{% endif %}
+	<div class="ft">{{ school.name or "" }}</div>
+</div>

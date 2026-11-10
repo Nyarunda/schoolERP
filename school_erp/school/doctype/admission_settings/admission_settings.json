@@ -1,0 +1,162 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "accepting_applications",
+  "closed_message",
+  "daily_limit_per_phone",
+  "cb_1",
+  "notify_role",
+  "sb_2",
+  "received_sms",
+  "interview_sms",
+  "cb_3",
+  "offer_sms",
+  "regret_sms",
+  "admitted_sms"
+ ],
+ "fields": [
+  {
+   "fieldname": "accepting_applications",
+   "fieldtype": "Check",
+   "label": "Accepting Online Applications",
+   "default": "1",
+   "description": "Public form at /admission-application",
+   "idx": 1
+  },
+  {
+   "fieldname": "closed_message",
+   "fieldtype": "Small Text",
+   "label": "Message When Closed",
+   "default": "We are not taking applications online right now. Please call the school office.",
+   "idx": 2
+  },
+  {
+   "fieldname": "daily_limit_per_phone",
+   "fieldtype": "Int",
+   "label": "Applications per Phone per Day",
+   "default": "3",
+   "idx": 3
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "notify_role",
+   "fieldtype": "Link",
+   "label": "Alert Role on New Application",
+   "options": "Role",
+   "default": "School Admin",
+   "idx": 5
+  },
+  {
+   "fieldname": "sb_2",
+   "fieldtype": "Section Break",
+   "label": "SMS to the parent",
+   "collapsible": 1,
+   "idx": 6
+  },
+  {
+   "fieldname": "received_sms",
+   "fieldtype": "Small Text",
+   "label": "Application Received",
+   "default": "Dear {guardian_name}, we have received {applicant}'s application for {class_name} (ref {ref}). Track it at {url} - {school_name}",
+   "idx": 7
+  },
+  {
+   "fieldname": "interview_sms",
+   "fieldtype": "Small Text",
+   "label": "Interview Scheduled",
+   "default": "Dear {guardian_name}, {applicant} is invited for an interview on {interview_date}. Ref {ref}. - {school_name}",
+   "idx": 8
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break",
+   "idx": 9
+  },
+  {
+   "fieldname": "offer_sms",
+   "fieldtype": "Small Text",
+   "label": "Place Offered",
+   "default": "Dear {guardian_name}, we are pleased to offer {applicant} a place in {class_name}. Please contact the school office to accept. Ref {ref}. - {school_name}",
+   "idx": 10
+  },
+  {
+   "fieldname": "regret_sms",
+   "fieldtype": "Small Text",
+   "label": "Not Successful",
+   "default": "Dear {guardian_name}, thank you for applying. We are unable to offer {applicant} a place at this time. Ref {ref}. - {school_name}",
+   "idx": 11
+  },
+  {
+   "fieldname": "admitted_sms",
+   "fieldtype": "Small Text",
+   "label": "Admitted",
+   "default": "Dear {guardian_name}, {applicant} has been admitted. Student ID: {student_id}. Welcome to {school_name}!",
+   "idx": 12
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Admission Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

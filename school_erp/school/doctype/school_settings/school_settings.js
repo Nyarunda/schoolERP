@@ -127,6 +127,7 @@ const MODULE_HELP = {
 	exams: __("Exams, mark sheets, merit lists and report cards"),
 	portal: __("Parent portal: balances, report cards and M-Pesa prompts to pay"),
 	homework: __("Homework per stream and subject, hand-in tracking, on the parent portal"),
+	admissions: __("Online application form, interviews, offers and one-click admission"),
 };
 
 function render_license(frm) {

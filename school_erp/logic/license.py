@@ -31,6 +31,7 @@ MODULES = {
 	"exams": "Exams & Report Cards",
 	"portal": "Parent Portal & Online Fee Payment",
 	"homework": "Homework & Assignments",
+	"admissions": "Online Admissions",
 }
 
 # Which module each DocType belongs to
@@ -62,8 +63,14 @@ DOCTYPE_MODULE = {
 	"Exam": "exams",
 	"Exam Mark Sheet": "exams",
 	"Report Card": "exams",
+	"CBC Settings": "exams",
+	"CBC Strand": "exams",
+	"Competency Assessment": "exams",
+	"CBC Progress Report": "exams",
 	"STK Push Request": "portal",
 	"Homework": "homework",
+	"Admission Application": "admissions",
+	"Admission Settings": "admissions",
 }
 
 # DocTypes another module's forms link to: still readable when that module is licensed, so its forms keep working

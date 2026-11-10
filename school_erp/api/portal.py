@@ -170,6 +170,14 @@ def homework(student, stream):
 	from school_erp.api.homework import portal_homework
 
 	return portal_homework(student, stream)
+		"cbc_reports": cbc_reports(student),
+	}
+
+
+def cbc_reports(student):
+	from school_erp.api.cbc import portal_reports
+
+	return portal_reports(student)
 
 
 def term_fees(stu, term):

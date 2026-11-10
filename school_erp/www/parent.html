@@ -351,6 +351,7 @@
 			<nav class="pp-tabs" role="tablist">
 				<button class="pp-tab on" data-tab="overview" role="tab">{{ icon("home") }}{{ _("Overview") }}</button>
 				<button class="pp-tab" data-tab="fees" role="tab">{{ icon("wallet") }}{{ _("Fees") }}{% if due %}<span class="n red">!</span>{% endif %}</button>
+				{% if c.pocket_money %}<button class="pp-tab" data-tab="pocket" role="tab">{{ icon("card") }}{{ _("Pocket Money") }}</button>{% endif %}
 				{% if c.report_cards %}<button class="pp-tab" data-tab="results" role="tab">{{ icon("award") }}{{ _("Results") }}<span class="n">{{ c.report_cards|length }}</span></button>{% endif %}
 				{% if att %}<button class="pp-tab" data-tab="attendance" role="tab">{{ icon("check") }}{{ _("Attendance") }}</button>{% endif %}
 				{% if c.lessons %}<button class="pp-tab" data-tab="timetable" role="tab">{{ icon("calendar") }}{{ _("Timetable") }}</button>{% endif %}
@@ -453,6 +454,30 @@
 				{% else %}<div class="pp-empty">{{ icon("card") }}<div>{{ _("No payments yet") }}</div></div>{% endfor %}
 			</div>
 		</div>
+
+		{# ---------------------------------------------------------------- Pocket money #}
+		{% if c.pocket_money %}{% set pm = c.pocket_money %}
+		<div class="pp-panel" data-panel="pocket">
+			<div class="pp-grid pp-g2">
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("card") }}{{ _("Pocket money") }}</h3>{% if pm.frozen %}<span class="pp-badge p">{{ _("Frozen") }}</span>{% endif %}</div>
+					<div class="pp-bal {{ 'paid' if pm.balance > 0 else 'due' }}">
+						<div class="pp-lbl">{{ _("Balance") }}</div>
+						<div class="pp-amt">{{ money(pm.balance) }}</div>
+						{% if pm.daily_limit %}<div class="pp-sub">{{ _("Daily spending limit") }}: {{ money(pm.daily_limit) }}</div>{% endif %}
+					</div>
+					<div class="pp-sub" style="margin-top:10px">{{ _("To add money, pay the bursar and ask for it to go to {0}'s pocket money.").format(c.first_name) }}</div>
+				</div>
+				<div class="pp-card">
+					<div class="pp-h"><h3>{{ icon("receipt") }}{{ _("Recent") }}</h3></div>
+					{% for t in pm.recent %}
+					<div class="pp-pay"><div><b>{{ t.what|e }}</b><div class="pp-sub">{{ t.date }}</div></div>
+						<div class="amt" style="margin-left:auto;color:{{ 'var(--pp-green)' if t.amount > 0 else 'inherit' }}">{{ "+" if t.amount > 0 else "−" }}{{ money(t.amount if t.amount > 0 else -t.amount) }}</div></div>
+					{% else %}<div class="pp-empty">{{ icon("receipt") }}<div>{{ _("Nothing yet") }}</div></div>{% endfor %}
+				</div>
+			</div>
+		</div>
+		{% endif %}
 
 		{# ---------------------------------------------------------------- Results #}
 		{% if c.report_cards %}

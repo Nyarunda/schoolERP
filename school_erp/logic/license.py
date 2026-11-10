@@ -30,6 +30,7 @@ MODULES = {
 	"transport_ops": "Driver Daily Logs & Vehicles",
 	"exams": "Exams & Report Cards",
 	"portal": "Parent Portal & Online Fee Payment",
+	"homework": "Homework & Assignments",
 	"admissions": "Online Admissions",
 }
 
@@ -67,13 +68,14 @@ DOCTYPE_MODULE = {
 	"Competency Assessment": "exams",
 	"CBC Progress Report": "exams",
 	"STK Push Request": "portal",
+	"Homework": "homework",
 	"Admission Application": "admissions",
 	"Admission Settings": "admissions",
 }
 
 # DocTypes another module's forms link to: still readable when that module is licensed, so its forms keep working
 READABLE_WITH = {
-	"Subject": {"exams"},  # exam mark sheets and report cards list subjects
+	"Subject": {"exams", "homework"},  # exam mark sheets, report cards and homework list subjects
 	"Fee Type": {"transport", "activities", "lunch"},
 	"Staff Member": {"welfare", "transport_ops", "transport"},
 	"School Vehicle": {"transport", "staff"},

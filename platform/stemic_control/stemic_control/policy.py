@@ -55,6 +55,7 @@ MODULES = {
     "transport_ops": "Driver Daily Logs & Vehicles",
     "exams": "Exams & Report Cards",
     "portal": "Parent Portal & Online Fee Payment",
+    "homework": "Homework & Assignments",
     "admissions": "Online Admissions",
 }
 

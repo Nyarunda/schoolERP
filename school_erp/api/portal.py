@@ -163,6 +163,7 @@ def child_summary(student):
 		"term_fees": term_fees(stu, term), "latest_results": latest_results(cards[0].name) if cards else None,
 		"lessons": lessons(stu.stream, term), "concerns": my_concerns(student),
 		"cbc_reports": cbc_reports(student),
+		"homework": homework(student, stu.stream),
 	}
 
 
@@ -170,6 +171,12 @@ def cbc_reports(student):
 	from school_erp.api.cbc import portal_reports
 
 	return portal_reports(student)
+
+
+def homework(student, stream):
+	from school_erp.api.homework import portal_homework
+
+	return portal_homework(student, stream)
 
 
 def term_fees(stu, term):

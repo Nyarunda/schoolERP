@@ -18,6 +18,7 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 | `lunch` | Lunch fee charged only to students marked "Takes School Lunch" |
 | `activities` | Games & activities (swimming, football...) each with a fee per term |
 | `timetable` | Subjects, periods, class timetables with teacher clash checks, printable grid |
+| `homework` | **Homework & assignments**: teachers set homework per stream and subject (with a worksheet), parents get one SMS when it is published and see it on the parent portal's Homework tab, teachers tick who handed it in; Homework Register report |
 | `messaging` | SMS and email to parents: billing notices, payment receipts, reminders, PDF statements |
 | `staff` | Staff members (teachers, drivers, support), **leave** with types, balances, workflow approvals, approval + **reliever notifications** and live toasts, **duty roster & daily Teacher-on-Duty reports**. See [docs/STAFF_AND_OPERATIONS.md](docs/STAFF_AND_OPERATIONS.md) |
 | `expenses` | **Expense posting with amount-based approvals** (one or two levels, on a Frappe Workflow), posted to the accounts automatically |

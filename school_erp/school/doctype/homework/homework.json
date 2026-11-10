@@ -1,0 +1,272 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "HW-.YYYY.-.#####",
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "subject",
+  "stream",
+  "school_class",
+  "cb_1",
+  "set_on",
+  "due_date",
+  "teacher",
+  "cb_2",
+  "status",
+  "notify_parents",
+  "parents_notified",
+  "sb_3",
+  "description",
+  "attachment",
+  "sb_4",
+  "submissions",
+  "done_count",
+  "cb_5",
+  "pending_count",
+  "completion"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "reqd": 1,
+   "in_list_view": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "subject",
+   "fieldtype": "Link",
+   "label": "Subject",
+   "options": "Subject",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "label": "Stream",
+   "options": "Stream",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 3
+  },
+  {
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "label": "Class",
+   "options": "School Class",
+   "fetch_from": "stream.school_class",
+   "read_only": 1,
+   "idx": 4
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "fieldname": "set_on",
+   "fieldtype": "Date",
+   "label": "Set On",
+   "default": "Today",
+   "reqd": 1,
+   "idx": 6
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "reqd": 1,
+   "in_list_view": 1,
+   "idx": 7
+  },
+  {
+   "fieldname": "teacher",
+   "fieldtype": "Link",
+   "label": "Teacher",
+   "options": "Teacher",
+   "in_standard_filter": 1,
+   "idx": 8
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 9
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Draft\nPublished\nClosed",
+   "default": "Draft",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Parents see published homework on the portal",
+   "idx": 10
+  },
+  {
+   "fieldname": "notify_parents",
+   "fieldtype": "Check",
+   "label": "SMS Parents When Published",
+   "default": "1",
+   "idx": 11
+  },
+  {
+   "fieldname": "parents_notified",
+   "fieldtype": "Check",
+   "label": "Parents Notified",
+   "read_only": 1,
+   "idx": 12
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "label": "Instructions",
+   "idx": 13
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Instructions",
+   "reqd": 1,
+   "idx": 14
+  },
+  {
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Worksheet / Attachment",
+   "idx": 15
+  },
+  {
+   "fieldname": "sb_4",
+   "fieldtype": "Section Break",
+   "label": "Who handed it in",
+   "collapsible": 1,
+   "idx": 16
+  },
+  {
+   "fieldname": "submissions",
+   "fieldtype": "Table",
+   "label": "Learners",
+   "options": "Homework Submission",
+   "idx": 17
+  },
+  {
+   "fieldname": "done_count",
+   "fieldtype": "Int",
+   "label": "Handed In",
+   "read_only": 1,
+   "idx": 18
+  },
+  {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break",
+   "idx": 19
+  },
+  {
+   "fieldname": "pending_count",
+   "fieldtype": "Int",
+   "label": "Still Pending",
+   "read_only": 1,
+   "idx": 20
+  },
+  {
+   "fieldname": "completion",
+   "fieldtype": "Percent",
+   "label": "Completion",
+   "read_only": 1,
+   "idx": 21
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "make_attachments_public": 1,
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Homework",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Teacher"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head of Department"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "title,subject,stream",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

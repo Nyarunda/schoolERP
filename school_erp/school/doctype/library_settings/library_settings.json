@@ -1,0 +1,196 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "loan_days_student",
+  "max_books_student",
+  "cb_1",
+  "loan_days_teacher",
+  "max_books_teacher",
+  "cb_2",
+  "max_renewals",
+  "sb_3",
+  "fine_per_day",
+  "fine_grace_days",
+  "cb_4",
+  "max_fine",
+  "bill_fines_to_fees",
+  "cb_5",
+  "sms_overdue"
+ ],
+ "fields": [
+  {
+   "fieldname": "loan_days_student",
+   "fieldtype": "Int",
+   "label": "Loan Days (Learners)",
+   "default": "14",
+   "idx": 1
+  },
+  {
+   "fieldname": "max_books_student",
+   "fieldtype": "Int",
+   "label": "Books at a Time (Learners)",
+   "default": "2",
+   "description": "0 = no limit",
+   "idx": 2
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 3
+  },
+  {
+   "fieldname": "loan_days_teacher",
+   "fieldtype": "Int",
+   "label": "Loan Days (Teachers)",
+   "default": "30",
+   "idx": 4
+  },
+  {
+   "fieldname": "max_books_teacher",
+   "fieldtype": "Int",
+   "label": "Books at a Time (Teachers)",
+   "default": "5",
+   "description": "0 = no limit",
+   "idx": 5
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 6
+  },
+  {
+   "fieldname": "max_renewals",
+   "fieldtype": "Int",
+   "label": "Renewals Allowed",
+   "default": "1",
+   "idx": 7
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "label": "Fines",
+   "idx": 8
+  },
+  {
+   "fieldname": "fine_per_day",
+   "fieldtype": "Currency",
+   "label": "Fine per Day Late",
+   "default": "10",
+   "idx": 9
+  },
+  {
+   "fieldname": "fine_grace_days",
+   "fieldtype": "Int",
+   "label": "Grace Days",
+   "default": "0",
+   "idx": 10
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break",
+   "idx": 11
+  },
+  {
+   "fieldname": "max_fine",
+   "fieldtype": "Currency",
+   "label": "Maximum Fine per Book",
+   "default": "500",
+   "description": "0 = no cap",
+   "idx": 12
+  },
+  {
+   "fieldname": "bill_fines_to_fees",
+   "fieldtype": "Check",
+   "label": "Bill Learners' Fines to Their Fee Account",
+   "default": "1",
+   "description": "Needs the Fees module. Fines are invoiced as the fee type 'Library Fine'.",
+   "idx": 13
+  },
+  {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break",
+   "idx": 14
+  },
+  {
+   "fieldname": "sms_overdue",
+   "fieldtype": "Check",
+   "label": "SMS Parents About Overdue Books",
+   "default": "1",
+   "description": "The day after the due date, then weekly",
+   "idx": 15
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Library Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Staff",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  },
+  {
+   "role": "Teacher",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -15,6 +15,7 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 | **Core** (always on) | Students, parents/guardians, classes, streams, teachers, school years and terms, **government learner IDs (NEMIS/KEMIS UPI, birth certificate, KNEC assessment number) with a NEMIS Census report**, **year-end promotion**, **daily class attendance** from a phone (absence SMS with the messaging module). See [docs/ATTENDANCE_AND_MARKS_APPROVAL.md](docs/ATTENDANCE_AND_MARKS_APPROVAL.md) |
 | `fees` | Fee types, fee structures per term/class/boarding, one-click term billing, fee payments split by fee type, receipts, **parent fee statements**, Fee Balances report |
 | `transport` | Transport routes with a fee per term; students on a route are billed for it |
+| `library` | **Library**: book catalogue with numbered copies, issue and return (copy availability and per-borrower limits checked), renewals, lost books charged at replacement price, overdue fines billed to the learner's fee account, and an overdue SMS to parents (the day after the due date, then weekly); Overdue Books and Circulation reports |
 | `lunch` | Lunch fee charged only to students marked "Takes School Lunch" |
 | `activities` | Games & activities (swimming, football...) each with a fee per term |
 | `timetable` | Subjects, periods, class timetables with teacher clash checks, printable grid |

@@ -1,0 +1,308 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "LN-.YYYY.-.#####",
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "borrower_type",
+  "student",
+  "teacher",
+  "borrower_name",
+  "school_class",
+  "cb_1",
+  "book",
+  "book_title",
+  "accession_no",
+  "cb_2",
+  "issue_date",
+  "due_date",
+  "status",
+  "sb_3",
+  "return_date",
+  "days_overdue",
+  "renewals",
+  "cb_4",
+  "fine_amount",
+  "fine_waived",
+  "fine_invoice",
+  "cb_5",
+  "issued_by",
+  "last_reminder",
+  "sb_6",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "borrower_type",
+   "fieldtype": "Select",
+   "label": "Borrower",
+   "options": "Student\nTeacher",
+   "default": "Student",
+   "reqd": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Learner",
+   "options": "Student",
+   "depends_on": "eval:doc.borrower_type=='Student'",
+   "in_standard_filter": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "teacher",
+   "fieldtype": "Link",
+   "label": "Teacher",
+   "options": "Teacher",
+   "depends_on": "eval:doc.borrower_type=='Teacher'",
+   "idx": 3
+  },
+  {
+   "fieldname": "borrower_name",
+   "fieldtype": "Data",
+   "label": "Borrower Name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "idx": 4
+  },
+  {
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "label": "Class",
+   "options": "School Class",
+   "read_only": 1,
+   "idx": 5
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 6
+  },
+  {
+   "fieldname": "book",
+   "fieldtype": "Link",
+   "label": "Book",
+   "options": "Library Book",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "idx": 7
+  },
+  {
+   "fieldname": "book_title",
+   "fieldtype": "Data",
+   "label": "Title",
+   "fetch_from": "book.title",
+   "read_only": 1,
+   "in_list_view": 1,
+   "idx": 8
+  },
+  {
+   "fieldname": "accession_no",
+   "fieldtype": "Autocomplete",
+   "label": "Copy (Accession No.)",
+   "reqd": 1,
+   "idx": 9
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 10
+  },
+  {
+   "fieldname": "issue_date",
+   "fieldtype": "Date",
+   "label": "Issued On",
+   "default": "Today",
+   "reqd": 1,
+   "idx": 11
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "label": "Due Back",
+   "in_list_view": 1,
+   "idx": 12
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "On Loan\nReturned\nLost",
+   "default": "On Loan",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 13
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "label": "Return",
+   "idx": 14
+  },
+  {
+   "fieldname": "return_date",
+   "fieldtype": "Date",
+   "label": "Returned On",
+   "read_only": 1,
+   "idx": 15
+  },
+  {
+   "fieldname": "days_overdue",
+   "fieldtype": "Int",
+   "label": "Days Overdue",
+   "read_only": 1,
+   "idx": 16
+  },
+  {
+   "fieldname": "renewals",
+   "fieldtype": "Int",
+   "label": "Renewals",
+   "read_only": 1,
+   "idx": 17
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break",
+   "idx": 18
+  },
+  {
+   "fieldname": "fine_amount",
+   "fieldtype": "Currency",
+   "label": "Fine / Charge",
+   "read_only": 1,
+   "idx": 19
+  },
+  {
+   "fieldname": "fine_waived",
+   "fieldtype": "Check",
+   "label": "Fine Waived",
+   "idx": 20
+  },
+  {
+   "fieldname": "fine_invoice",
+   "fieldtype": "Link",
+   "label": "Fine Invoice",
+   "options": "Sales Invoice",
+   "read_only": 1,
+   "idx": 21
+  },
+  {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break",
+   "idx": 22
+  },
+  {
+   "fieldname": "issued_by",
+   "fieldtype": "Link",
+   "label": "Issued By",
+   "options": "User",
+   "read_only": 1,
+   "idx": 23
+  },
+  {
+   "fieldname": "last_reminder",
+   "fieldtype": "Date",
+   "label": "Last Overdue Reminder",
+   "read_only": 1,
+   "idx": 24
+  },
+  {
+   "fieldname": "sb_6",
+   "fieldtype": "Section Break",
+   "idx": 25
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes",
+   "idx": 26
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Library Loan",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Staff"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Teacher"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "borrower_name,book_title,accession_no",
+ "sort_field": "issue_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "book_title",
+ "track_changes": 1
+}

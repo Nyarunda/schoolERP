@@ -105,6 +105,7 @@ scheduler_events = {
 		"school_erp.api.transport_ops.alert_expiring_documents",
 		"school_erp.school.doctype.school_notice.school_notice.publish_scheduled",
 		"school_erp.api.billing.auto_bill_terms",
+		"school_erp.api.library.remind_overdue",
 	],
 	"cron": {
 		"*/15 4-10 * * 1-6": ["school_erp.api.transport_ops.alert_missing_checkins"],

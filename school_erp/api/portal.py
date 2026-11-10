@@ -164,6 +164,7 @@ def child_summary(student):
 		"lessons": lessons(stu.stream, term), "concerns": my_concerns(student),
 		"cbc_reports": cbc_reports(student),
 		"homework": homework(student, stu.stream),
+		"pocket_money": pocket_money(student),
 	}
 
 
@@ -177,6 +178,12 @@ def homework(student, stream):
 	from school_erp.api.homework import portal_homework
 
 	return portal_homework(student, stream)
+
+
+def pocket_money(student):
+	from school_erp.api.pocket_money import portal_pocket_money
+
+	return portal_pocket_money(student)
 
 
 def term_fees(stu, term):

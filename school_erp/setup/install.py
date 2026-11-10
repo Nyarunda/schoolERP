@@ -1,7 +1,8 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-ROLES = ["School Admin", "Bursar", "Teacher", "Head Teacher", "Staff", "Driver", "Transport Manager", "Leave Approver"]
+ROLES = ["School Admin", "Bursar", "Teacher", "Head Teacher", "Staff", "Driver", "Transport Manager", "Leave Approver",
+	"School Viewer", "Head of Department"]
 
 
 def before_install():
@@ -15,6 +16,7 @@ def after_install():
 	fill_new_settings_defaults()
 	make_workflows()
 	setup_finance()
+	setup_viewer()
 
 
 def after_migrate():
@@ -23,6 +25,13 @@ def after_migrate():
 	fill_new_settings_defaults()
 	make_workflows()
 	setup_finance()
+	setup_viewer()
+
+
+def setup_viewer():
+	from school_erp.setup.viewer import setup
+
+	setup()
 
 
 def setup_finance():
@@ -32,9 +41,10 @@ def setup_finance():
 
 
 def make_workflows():
-	from school_erp.setup.workflows import make_workflows as _make
+	from school_erp.setup.workflows import make_workflows as _make, sync_heads_of_department
 
 	_make()
+	sync_heads_of_department()
 
 
 def fill_new_settings_defaults():

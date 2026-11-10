@@ -131,13 +131,13 @@ def check_ready(site: str) -> None:
         raise ProvisioningError(f"Site {site} is missing apps: {', '.join(missing)}")
 
 
-def set_public_url(site: str) -> None:
-    """Tell the new site its https:// address, so links in its emails (password resets, the parent portal, receipts)
+def set_public_url(site: str, host: str | None = None) -> None:
+    """Tell the site its https:// address (its own name, or the school's main custom domain: stemic_control.domains), so links in its emails (password resets, the parent portal, receipts)
     are https. Frappe otherwise builds them from the bare site name as http://, since jobs that send email have no
     request to read the scheme from. Development sites (*.localhost) are served over plain http and are left alone."""
     if site.endswith(".localhost") or site == "localhost":
         return
-    _frappe_cli("--site", site, "set-config", "host_name", f"https://{site}", timeout=120)
+    _frappe_cli("--site", site, "set-config", "host_name", f"https://{host or site}", timeout=120)
 
 
 def _site_config_path(site: str) -> str:
@@ -251,9 +251,16 @@ def run(job: str) -> str:
     if frappe.db.get_value("SaaS Domain", subdomain, "status") == "Verified":
         frappe.db.set_value("SaaS Domain", subdomain, {"status": "Active", "is_primary": 1})
     frappe.db.commit()
+    from stemic_control import domains
+
+    domains.refresh()  # a custom domain verified before the site existed is routed now
     from stemic_control import welcome
 
     welcome.after_provisioning(tenant.name)  # the school's contact gets the address and a set-password link
+    from stemic_control import licensing
+
+    licensing.after_site_ready(tenant.name)  # and its key, from its plan (Stemic Settings > Onboarding)
+    frappe.db.commit()
     return "Succeeded"
 
 

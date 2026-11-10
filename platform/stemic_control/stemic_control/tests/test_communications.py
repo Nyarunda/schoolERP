@@ -67,14 +67,23 @@ class TestCommunications(TestCase):
             s.save()
         frappe.clear_document_cache("Stemic Settings", "Stemic Settings")
 
+    def queued(self, event):
+        return [c for c in self.enqueue.call_args_list if c.args and c.args[0].startswith("stemic_control.communications.")
+                and c.kwargs.get("school_event") == event]
+
     def run_queued(self, event):
-        """Run what was queued for `event` (the background job), as the worker would after commit."""
-        calls = [c.kwargs for c in self.enqueue.call_args_list if c.args and c.args[0] == "stemic_control.communications.send_event"
-                 and c.kwargs.get("event") == event]
+        """Run what was queued for `event` exactly as the worker would after commit: frappe.enqueue keeps its own
+        parameters (queue, event, timeout...), and only the rest reach the job."""
+        import inspect
+
+        from frappe.utils.background_jobs import enqueue
+
+        calls = self.queued(event)
         self.assertTrue(calls, f"{event} was not queued")
-        self.assertTrue(all(c["enqueue_after_commit"] for c in calls))  # never announced before it is committed
-        kwargs = {k: v for k, v in calls[-1].items() if k not in ("queue", "enqueue_after_commit")}
-        return communications.send_event(**kwargs)
+        self.assertTrue(all(c.kwargs["enqueue_after_commit"] for c in calls))  # never announced before it is committed
+        own = set(inspect.signature(enqueue).parameters) - {"kwargs"}
+        kwargs = {k: v for k, v in calls[-1].kwargs.items() if k not in own}
+        return frappe.get_attr(calls[-1].args[0])(**kwargs)
 
     def logs(self, event):
         return frappe.get_all("SaaS Communication", filters={"tenant": self.tenant, "event": event},
@@ -129,7 +138,7 @@ class TestCommunications(TestCase):
     def test_switched_off_events_are_not_sent(self):
         self.settings({"notify_invoice": 0})
         billing.create_invoice(self.sub, months=1)
-        self.assertFalse([c for c in self.enqueue.call_args_list if c.kwargs.get("event") == "Invoice Issued"])
+        self.assertFalse(self.queued("Invoice Issued"))
 
     # ------------------------------------------------------------------ SMS
     def test_sms_goes_out_when_switched_on_through_the_platform_gateway(self):
@@ -261,4 +270,4 @@ class TestCommunications(TestCase):
         frappe.flags.stemic_comms_in_tests = False
         self.enqueue.reset_mock()
         billing.create_invoice(self.sub, months=1)
-        self.assertFalse([c for c in self.enqueue.call_args_list if c.args and c.args[0] == "stemic_control.communications.send_event"])
+        self.assertFalse([c for c in self.enqueue.call_args_list if c.args and c.args[0].startswith("stemic_control.communications.")])

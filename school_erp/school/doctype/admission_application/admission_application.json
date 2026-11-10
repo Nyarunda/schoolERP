@@ -1,0 +1,354 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "APP-.YYYY.-.#####",
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_name",
+  "first_name",
+  "middle_name",
+  "last_name",
+  "cb_1",
+  "gender",
+  "date_of_birth",
+  "birth_certificate_no",
+  "cb_2",
+  "applying_for_class",
+  "boarding_type",
+  "intake_term",
+  "previous_school",
+  "sb_3",
+  "guardian_name",
+  "relation",
+  "guardian_id_number",
+  "cb_4",
+  "guardian_phone",
+  "guardian_email",
+  "residence",
+  "sb_5",
+  "special_needs_details",
+  "additional_info",
+  "sb_6",
+  "status",
+  "source",
+  "interview_date",
+  "interview_notes",
+  "cb_7",
+  "assigned_stream",
+  "decision_notes",
+  "student",
+  "admitted_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant",
+   "read_only": 1,
+   "in_list_view": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name",
+   "reqd": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "middle_name",
+   "fieldtype": "Data",
+   "label": "Middle Name",
+   "idx": 3
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name",
+   "reqd": 1,
+   "idx": 4
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "Gender",
+   "options": "\nFemale\nMale",
+   "reqd": 1,
+   "idx": 6
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "reqd": 1,
+   "idx": 7
+  },
+  {
+   "fieldname": "birth_certificate_no",
+   "fieldtype": "Data",
+   "label": "Birth Certificate No.",
+   "idx": 8
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 9
+  },
+  {
+   "fieldname": "applying_for_class",
+   "fieldtype": "Link",
+   "label": "Applying For",
+   "options": "School Class",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 10
+  },
+  {
+   "fieldname": "boarding_type",
+   "fieldtype": "Select",
+   "label": "Day / Boarder",
+   "options": "Day\nBoarder",
+   "default": "Day",
+   "idx": 11
+  },
+  {
+   "fieldname": "intake_term",
+   "fieldtype": "Link",
+   "label": "Intake Term",
+   "options": "School Term",
+   "in_standard_filter": 1,
+   "idx": 12
+  },
+  {
+   "fieldname": "previous_school",
+   "fieldtype": "Data",
+   "label": "Previous School",
+   "idx": 13
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "label": "Parent / Guardian",
+   "idx": 14
+  },
+  {
+   "fieldname": "guardian_name",
+   "fieldtype": "Data",
+   "label": "Parent / Guardian Name",
+   "reqd": 1,
+   "idx": 15
+  },
+  {
+   "fieldname": "relation",
+   "fieldtype": "Select",
+   "label": "Relationship",
+   "options": "Mother\nFather\nGuardian\nSponsor\nOther",
+   "default": "Mother",
+   "idx": 16
+  },
+  {
+   "fieldname": "guardian_id_number",
+   "fieldtype": "Data",
+   "label": "ID / Passport No.",
+   "idx": 17
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break",
+   "idx": 18
+  },
+  {
+   "fieldname": "guardian_phone",
+   "fieldtype": "Data",
+   "label": "Phone",
+   "options": "Phone",
+   "reqd": 1,
+   "in_list_view": 1,
+   "idx": 19
+  },
+  {
+   "fieldname": "guardian_email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "idx": 20
+  },
+  {
+   "fieldname": "residence",
+   "fieldtype": "Data",
+   "label": "Residence / Estate",
+   "idx": 21
+  },
+  {
+   "fieldname": "sb_5",
+   "fieldtype": "Section Break",
+   "label": "More about the applicant",
+   "collapsible": 1,
+   "idx": 22
+  },
+  {
+   "fieldname": "special_needs_details",
+   "fieldtype": "Small Text",
+   "label": "Special Needs, Allergies or Medical Conditions",
+   "idx": 23
+  },
+  {
+   "fieldname": "additional_info",
+   "fieldtype": "Small Text",
+   "label": "Anything Else We Should Know",
+   "idx": 24
+  },
+  {
+   "fieldname": "sb_6",
+   "fieldtype": "Section Break",
+   "label": "Decision",
+   "idx": 25
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Received\nUnder Review\nInterview Scheduled\nOffered\nAccepted\nAdmitted\nRejected\nWithdrawn",
+   "default": "Received",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 26
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Office\nWeb Form\nWalk-in\nPhone",
+   "default": "Office",
+   "in_standard_filter": 1,
+   "idx": 27
+  },
+  {
+   "fieldname": "interview_date",
+   "fieldtype": "Datetime",
+   "label": "Interview Date",
+   "depends_on": "eval:['Interview Scheduled','Offered','Accepted','Admitted'].includes(doc.status)",
+   "idx": 28
+  },
+  {
+   "fieldname": "interview_notes",
+   "fieldtype": "Small Text",
+   "label": "Interview Notes",
+   "depends_on": "eval:doc.interview_date",
+   "idx": 29
+  },
+  {
+   "fieldname": "cb_7",
+   "fieldtype": "Column Break",
+   "idx": 30
+  },
+  {
+   "fieldname": "assigned_stream",
+   "fieldtype": "Link",
+   "label": "Place in Stream",
+   "options": "Stream",
+   "idx": 31
+  },
+  {
+   "fieldname": "decision_notes",
+   "fieldtype": "Small Text",
+   "label": "Decision Notes",
+   "description": "Internal: not sent to the parent",
+   "idx": 32
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Student",
+   "options": "Student",
+   "read_only": 1,
+   "idx": 33
+  },
+  {
+   "fieldname": "admitted_on",
+   "fieldtype": "Date",
+   "label": "Admitted On",
+   "read_only": 1,
+   "idx": 34
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Admission Application",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Bursar"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "applicant_name,guardian_name,guardian_phone",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "applicant_name",
+ "track_changes": 1
+}

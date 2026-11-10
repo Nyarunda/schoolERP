@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import col, date_range, bar_chart, card
 from school_erp import licensing
 
 
@@ -40,4 +40,21 @@ def execute(filters=None):
 		col("has_issues", "Issues", "Check", 70), col("issues", "Notes", "Data", 200), col("distance_km", "Km", "Float", 70),
 		col("name", "Log", "Link", 140, "Driver Daily Log"),
 	]
-	return columns, rows
+	logs = [r for r in rows if r.get("name")]
+	morning = [r for r in logs if r.trip == "Morning Pickup"]
+	missing = [r for r in rows if r.get("state") == "NOT CHECKED IN"]
+	summary = [
+		card("Check-ins", len(logs)), card("Late morning check-ins", sum(r.late for r in morning), indicator="Orange" if any(r.late for r in morning) else "Green"),
+		card("With vehicle issues", sum(1 for r in logs if r.has_issues), indicator="Red" if any(r.has_issues for r in logs) else "Green"),
+		card("Not fit to drive", sum(1 for r in logs if r.fit_to_drive == 0), indicator="Red" if any(r.fit_to_drive == 0 for r in logs) else "Green"),
+		card("Km driven", round(sum(flt(r.distance_km) for r in logs)), "Float"),
+	]
+	if f.date_for_missing:
+		summary.insert(0, card("Not checked in", len(missing), indicator="Red" if missing else "Green"))
+	days = {}
+	for r in morning:
+		d = days.setdefault(r.log_date, [0, 0])
+		d[1 if r.late else 0] += 1
+	labels = sorted(days)
+	chart = bar_chart([frappe.format(d, "Date") for d in labels], [(_("On time"), [days[d][0] for d in labels]), (_("Late"), [days[d][1] for d in labels])], stacked=True) if labels else None
+	return columns, rows, None, chart, summary

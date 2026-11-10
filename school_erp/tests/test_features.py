@@ -101,7 +101,9 @@ class TestFeatures(TestCase):
 			if sub == "Mathematics":
 				self.assertEqual(ms.average, round((80 + 60 + 60) / 3, 1))
 				self.assertEqual({m.student: m.grade for m in ms.marks}, {a: "A", b: "B-", c: "B-"})
-			ms.submit()
+			from school_erp.demo import _approve_marks
+
+			_approve_marks(ms)  # sent for approval, then approved (marks approval is on by default)
 		with self.assertRaises(frappe.ValidationError):  # duplicate sheet
 			frappe.get_doc({"doctype": "Exam Mark Sheet", "exam": exam.name, "stream": stream, "subject": "English",
 							"marks": [{"student": a, "marks": "1"}]}).insert()
@@ -140,6 +142,53 @@ class TestFeatures(TestCase):
 
 		if os.path.exists(frappe.get_site_path("..", "assets", "assets.json")):
 			self.assertTrue(report_card_pdf(rc[a].name).startswith(b"%PDF"))
+
+	# ------------------------------------------------------------------ parent portal: fees, lessons, concerns
+	def test_parent_portal_shows_term_fees_lessons_and_concerns(self):
+		from school_erp.api import portal
+		from school_erp.api.billing import bill_single_student
+
+		phone = "0797" + frappe.generate_hash(length=6)[:6].translate(str.maketrans("abcdef", "123456"))
+		stream = self.make_stream("Grade 4", "Extras")
+		kid = self.make_student(stream, "Imani", phone=phone, takes_lunch=1)
+		other = self.make_student(stream, "Neighbour", phone="0700000002")
+		bill_single_student(kid.name, self.term)
+		portal.give_portal_access(student=kid.name, send_sms=0)
+		user = frappe.db.get_value("Student Guardian", {"parent": kid.name}, "user")
+		frappe.db.set_single_value("School Settings", "portal_enabled", 1)
+		subject = frappe.get_all("Subject", pluck="name", limit=1)
+		period = frappe.get_all("Period", filters={"is_break": 0}, pluck="name", limit=1)
+		if subject and period:
+			frappe.get_doc({"doctype": "Timetable", "stream": stream, "school_term": self.term, "slots": [
+				{"day": d, "period": period[0], "time": "08:00-08:40", "subject": subject[0]}
+				for d in ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")]}).insert()
+
+		term = frappe.get_doc("School Term", self.term)  # other tests leave newer terms behind: pin "this term"
+		pin = patch("school_erp.school.doctype.school_term.school_term.get_current_term", return_value=term)
+		pin.start()
+		frappe.set_user(user)
+		try:
+			c = portal.portal_context()["children"][0]
+			fees = c["term_fees"]
+			self.assertTrue(fees and fees["billed"] > 0 and fees["items"])
+			self.assertAlmostEqual(sum(i.amount for i in fees["items"]), fees["billed"], delta=1)
+			self.assertEqual(fees["paid"], 0)
+			if subject and period:
+				self.assertEqual(len(c["lessons"]["slots"]), 1)
+			self.assertEqual(c["concerns"], [])
+			ref = portal.raise_concern(kid.name, "Transport", "Bus late", "The bus came an hour late on Monday.")["ref"]
+			c = portal.portal_context()["children"][0]
+			self.assertEqual([k["ref"] for k in c["concerns"]], [ref])
+			self.assertEqual(c["concerns"][0]["status"], "Open")
+			with self.assertRaises(frappe.PermissionError):
+				portal.raise_concern(other.name, "Transport", "Not mine", "A concern about someone else's child.")
+			with self.assertRaises(frappe.ValidationError):
+				portal.raise_concern(kid.name, "Gossip", "Bad category", "This category is not on the list.")
+		finally:
+			frappe.set_user("Administrator")
+			pin.stop()
+		row = frappe.db.get_value("Complaint", ref, ["student", "source", "relationship", "owner"], as_dict=True)
+		self.assertEqual((row.student, row.source, row.relationship, row.owner), (kid.name, "Web Form", "Parent / Guardian", user))
 
 	# ------------------------------------------------------------------ parent portal + STK push
 	def test_parent_portal_and_stk_payment(self):

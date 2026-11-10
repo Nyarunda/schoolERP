@@ -48,6 +48,19 @@ class ManagementDashboard {
 			});
 	}
 
+	// one row per class: collection-rate bar with what is still owed (rate first: the number management acts on)
+	fees_by_class(rows) {
+		const S = school_dash;
+		if (!rows.length) return `<div class="sd-empty">${__("Nothing billed this term yet")}</div>`;
+		return `<table class="sd-table sd-fees-class">
+			<tr><th>${__("Class")}</th><th>${__("Collected")}</th><th class="r">${__("Billed")}</th><th class="r">${__("Owed")}</th></tr>
+			${rows.map((r) => `<tr class="clickable" data-route='${S.esc(JSON.stringify(["query-report", "Fee Balances", { school_class: r.label }]))}'>
+				<td>${S.esc(r.label || __("Not set"))}<br><small style="color:var(--text-muted)">${__("{0} owe", [r.students])}</small></td>
+				<td style="width:40%"><div class="sd-rate"><div class="sd-bar" role="img" aria-label="${r.rate || 0}%"><span style="width:${Math.min(100, r.rate || 0)}%"></span></div><b>${r.rate != null ? r.rate + "%" : "–"}</b></div></td>
+				<td class="r sd-num">${S.short(r.billed)}</td><td class="r sd-num">${S.short(r.value)}</td></tr>`).join("")}
+		</table>`;
+	}
+
 	render() {
 		const d = this.data, S = school_dash, cur = d.currency, m = new Set(d.modules);
 		const money = (v) => S.money(v, cur);
@@ -62,12 +75,19 @@ class ManagementDashboard {
 				</div>
 			</div>`);
 
-		// ---------------------------------------------------------- KPI tiles
-		const k = [];
+		// ---------------------------------------------------------- KPI tiles: what is happening today, then the term
+		const k = [], today = [];
 		k.push(S.kpi({
 			label: __("Students"), value: format_number(d.students.total, null, 0), route: ["List", "Student", { status: "Active" }],
 			foot: __("{0} girls · {1} boys", [d.students.girls, d.students.boys]) + (d.students.new_this_term ? ` · +${d.students.new_this_term} ${__("new")}` : ""),
 		}));
+		if (d.attendance) {
+			const a = d.attendance;
+			today.push(S.kpi({
+				label: __("Attendance today"), value: a.percent != null ? `${a.percent}%` : "–", route: ["query-report", "Daily Attendance"],
+				foot: __("{0} absent · {1} of {2} registers taken", [a.absent, a.taken, a.total]), bar: a.percent,
+			}));
+		}
 		if (d.fees) {
 			const f = d.fees;
 			k.push(S.kpi({
@@ -78,13 +98,13 @@ class ManagementDashboard {
 				label: __("Outstanding this term"), value: S.short(f.outstanding), title: money(f.outstanding), route: ["query-report", "Fee Balances"],
 				foot: __("{0} students owe · {1} all terms", [f.defaulters, S.short(f.all_outstanding)]),
 			}));
-			k.push(S.kpi({
+			today.push(S.kpi({
 				label: __("Collected today"), value: S.short(f.today), title: money(f.today), route: ["List", "Fee Payment", { posting_date: frappe.datetime.get_today() }],
 				foot: __("{0} payments · {1} this week", [f.today_count, S.short(f.week)]),
 			}));
 		}
 		if (d.staff) {
-			k.push(S.kpi({
+			today.push(S.kpi({
 				label: __("Staff in today"), value: d.staff.present, of: d.staff.total,
 				route: ["query-report", "Staff On Leave"], foot: d.staff.on_leave.length ? __("{0} on leave", [d.staff.on_leave.length]) : __("Nobody on leave"),
 				bar: d.staff.total ? (d.staff.present / d.staff.total) * 100 : null,
@@ -92,14 +112,14 @@ class ManagementDashboard {
 		}
 		if (d.transport) {
 			const t = d.transport;
-			k.push(S.kpi({
+			today.push(S.kpi({
 				label: __("Drivers checked in"), value: t.checked_in, of: t.routes,
 				route: ["query-report", "Driver Check-in Register"], foot: t.issues ? S.pill("serious", __("{0} with vehicle issues", [t.issues])) : __("No vehicle issues"),
 				bar: t.routes ? (t.checked_in / t.routes) * 100 : null,
 			}));
 		}
 		if (d.welfare) {
-			k.push(S.kpi({
+			today.push(S.kpi({
 				label: __("Open complaints"), value: d.welfare.open_complaints, route: ["List", "Complaint", { status: "Open" }],
 				foot: d.welfare.urgent_complaints ? S.pill("critical", __("{0} urgent / high", [d.welfare.urgent_complaints])) : __("{0} discipline cases this week", [d.welfare.incidents_week]),
 			}));
@@ -110,7 +130,14 @@ class ManagementDashboard {
 				foot: d.expenses.pending_first + d.expenses.pending_final ? __("{0} awaiting approval ({1})", [d.expenses.pending_first + d.expenses.pending_final, S.short(d.expenses.pending_amount)]) : __("Nothing awaiting approval"),
 			}));
 		}
-		html.push(`<div class="sd-grid sd-kpis">${k.join("")}</div>`);
+		if (d.exam) {
+			k.push(S.kpi({
+				label: __("Latest exam mean"), value: `${d.exam.mean}%`, route: ["query-report", "Exam Merit List", { exam: d.exam.name }],
+				foot: __("{0} · {1} students", [d.exam.title, d.exam.students]), bar: d.exam.mean,
+			}));
+		}
+		const band = (title, tiles) => tiles.length ? `<div class="sd-band"><div class="sd-band-title">${title}</div><div class="sd-grid sd-kpis">${tiles.join("")}</div></div>` : "";
+		html.push(band(__("Today"), today) + band(__("This term"), k));
 
 		// ---------------------------------------------------------- attention + collections trend
 		const att = d.attention.length
@@ -125,12 +152,34 @@ class ManagementDashboard {
 			${d.fees ? S.card(__("Fee collections, last 4 weeks"), `<div class="sd-chart" data-chart="daily"></div>`, { sub: money(d.fees.daily.values.reduce((a, b) => a + b, 0)), link: { label: __("Collection report"), route: ["query-report", "Fee Collection"] } }) : S.card(__("Notice board"), S.notices(d.notices, { management: true }))}
 		</div>`);
 
+		// ---------------------------------------------------------- attendance
+		if (d.attendance && (d.attendance.trend.values.length || d.attendance.absent_by_class.length)) {
+			const a = d.attendance;
+			html.push(`<div class="sd-grid sd-two-r">
+				${S.card(__("Attendance, last {0} school days", [a.trend.values.length]), a.trend.values.length > 1 ? `<div class="sd-chart" data-chart="attendance"></div>` : `<div class="sd-empty">${__("The trend appears after two days of registers")}</div>`,
+					{ sub: __("Present and late, as a share of students marked"), link: { label: __("Attendance register"), route: ["query-report", "Attendance Register"] } })}
+				${S.card(__("Absent today by class"), a.absent_by_class.length ? S.barlist(a.absent_by_class) : `<div class="sd-allclear">${S.pill("good", __("Nobody absent"))}</div>`,
+					{ sub: a.missing.length ? __("{0} registers not taken yet", [a.missing.length]) : __("All registers taken"), link: { label: __("Today's registers"), route: ["query-report", "Daily Attendance"] } })}
+			</div>`);
+		}
+
 		// ---------------------------------------------------------- money charts
 		if (d.cashflow || (d.fees && d.fees.by_class.length)) {
 			const legend = "";  // Frappe Charts draws the legend for multi-series charts
 			html.push(`<div class="sd-grid sd-halves">
 				${d.cashflow ? S.card(d.expenses ? __("Fees collected vs expenses") : __("Fees collected by month"), legend + `<div class="sd-chart" data-chart="cashflow"></div>`, { link: { label: __("Details"), route: ["query-report", "Income vs Expenses"] } }) : ""}
-				${d.fees ? S.card(__("Outstanding by class"), S.barlist(d.fees.by_class.map((r) => ({ label: r.label, value: r.value })), (v) => S.short(v)), { sub: this.term || "", link: { label: __("Who owes"), route: ["query-report", "Fee Balances"] } }) : ""}
+				${d.fees ? S.card(__("Fees by class"), this.fees_by_class(d.fees.by_class), { sub: __("Billed, collected and still owed · {0}", [this.term || ""]), link: { label: __("Who owes"), route: ["query-report", "Fee Balances"] } }) : ""}
+			</div>`);
+		}
+
+		// ---------------------------------------------------------- latest exam
+		if (d.exam && d.exam.by_class.length) {
+			const e = d.exam;
+			html.push(`<div class="sd-grid sd-halves">
+				${S.card(__("{0}: mean score by class", [e.title]), S.barlist(e.by_class, (v) => `${v}%`),
+					{ sub: e.status === "Published" ? __("Published to parents") : __("Results ready, not yet published"), link: { label: __("Merit list"), route: ["query-report", "Exam Merit List", { exam: e.name }] } })}
+				${S.card(__("Grade spread"), `<div class="sd-chart" data-chart="grades"></div>`,
+					{ sub: __("Students by mean grade"), link: { label: __("Subject analysis"), route: ["query-report", "Exam Subject Analysis", { exam: e.name }] } })}
 			</div>`);
 		}
 
@@ -177,6 +226,14 @@ class ManagementDashboard {
 		this.$root.html(html.join(""));
 
 		if (d.fees) S.chart(this.$root.find('[data-chart="daily"]')[0], "line", d.fees.daily.labels, [{ name: __("Collected"), values: d.fees.daily.values }], { money: true, currency: cur, colors: [S.series()[0]] });
+		if (d.attendance && d.attendance.trend.values.length > 1) {
+			S.chart(this.$root.find('[data-chart="attendance"]')[0], "line", d.attendance.trend.labels,
+				[{ name: __("Attendance %"), values: d.attendance.trend.values }], { colors: [S.series()[0]], percent: true });
+		}
+		if (d.exam && d.exam.grades.labels.length) {
+			S.chart(this.$root.find('[data-chart="grades"]')[0], "bar", d.exam.grades.labels,
+				[{ name: __("Students"), values: d.exam.grades.values }], { colors: [S.series()[0]] });
+		}
 		if (d.cashflow) {
 			const ds = [{ name: __("Fees collected"), values: d.cashflow.collected }];
 			if (d.expenses) ds.push({ name: __("Expenses"), values: d.cashflow.expenses });

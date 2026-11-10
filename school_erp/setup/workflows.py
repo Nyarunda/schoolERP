@@ -1,4 +1,4 @@
-"""Frappe Workflows for School approvals (leave, expenses).
+"""Frappe Workflows for School approvals (leave, expenses, exam marks).
 
 Created/updated on install, migrate, Run School Setup and when the approver roles in School Settings change.
 The approval buttons, allowed roles, states and audit trail are Frappe's standard Workflow engine;
@@ -9,9 +9,9 @@ import frappe
 
 STATE_STYLE = {
 	"Draft": "", "Pending Approval": "Warning", "Pending Final Approval": "Warning",
-	"Approved": "Success", "Rejected": "Danger", "Cancelled": "Inverse",
+	"Approved": "Success", "Rejected": "Danger", "Cancelled": "Inverse", "Returned": "Danger",
 }
-ACTIONS = ["Send for Approval", "Approve", "Reject", "Resend", "Cancel"]
+ACTIONS = ["Send for Approval", "Approve", "Reject", "Return", "Resend", "Cancel"]
 STAFF_EDITORS = ["Staff", "Teacher", "Driver", "Bursar", "Head Teacher", "School Admin", "Transport Manager"]
 
 
@@ -83,19 +83,57 @@ def expense_workflow():
 	return {"workflow_name": "School Expense Approval", "document_type": "School Expense", "states": states, "transitions": transitions}
 
 
+MARKS_EDITORS = ["Teacher", "Head of Department", "Head Teacher", "School Admin"]
+MARKS_DECIDERS = ["Head Teacher", "School Admin"]
+
+
+def marks_workflow():
+	"""Teacher enters marks and sends the sheet; the subject's Head of Department (or the Head Teacher) approves it,
+	which submits it, or returns it with a reason. Only approved sheets go into report cards."""
+	editors = _roles_exist(*MARKS_EDITORS)
+	states = [{"state": "Draft", "doc_status": "0", "allow_edit": r} for r in editors]
+	states += [{"state": "Pending Approval", "doc_status": "0", "allow_edit": r} for r in _roles_exist("Head of Department", *MARKS_DECIDERS)]
+	states += [{"state": "Returned", "doc_status": "0", "allow_edit": r} for r in editors]
+	states += [{"state": "Approved", "doc_status": "1", "allow_edit": r} for r in _roles_exist(*MARKS_DECIDERS)]
+	states += [{"state": "Cancelled", "doc_status": "2", "allow_edit": r} for r in _roles_exist(*MARKS_DECIDERS)]
+	own = "doc.reviewer == frappe.session.user"
+	transitions = []
+	for role in editors:
+		transitions.append({"state": "Draft", "action": "Send for Approval", "next_state": "Pending Approval", "allowed": role, "allow_self_approval": 1})
+		transitions.append({"state": "Returned", "action": "Resend", "next_state": "Pending Approval", "allowed": role, "allow_self_approval": 1})
+	if _roles_exist("Head of Department"):
+		# a Head of Department approves their own subject's sheets, but not a sheet they entered themselves
+		transitions += [
+			{"state": "Pending Approval", "action": "Approve", "next_state": "Approved", "allowed": "Head of Department", "condition": own, "allow_self_approval": 0},
+			{"state": "Pending Approval", "action": "Return", "next_state": "Returned", "allowed": "Head of Department", "condition": own, "allow_self_approval": 0},
+		]
+	for role in _roles_exist(*MARKS_DECIDERS):
+		transitions += [
+			{"state": "Pending Approval", "action": "Approve", "next_state": "Approved", "allowed": role, "allow_self_approval": 1},
+			{"state": "Pending Approval", "action": "Return", "next_state": "Returned", "allowed": role, "allow_self_approval": 1},
+			{"state": "Approved", "action": "Cancel", "next_state": "Cancelled", "allowed": role, "allow_self_approval": 1},
+		]
+	active = 1 if frappe.db.get_single_value("School Settings", "marks_need_approval") else 0
+	return {"workflow_name": "School Marks Approval", "document_type": "Exam Mark Sheet", "states": states,
+			"transitions": transitions, "field": "approval_status", "active": active, "follows_setting": True}
+
+
 def make_workflows():
 	if not frappe.db.exists("DocType", "Leave Application"):
 		return
 	_ensure_masters()
-	for spec in (leave_workflow(), expense_workflow()):
+	specs = [leave_workflow(), expense_workflow()]
+	if frappe.db.has_column("Exam Mark Sheet", "approval_status"):
+		specs.append(marks_workflow())
+	for spec in specs:
 		name = spec["workflow_name"]
 		exists = frappe.db.exists("Workflow", name)
-		if exists and not frappe.db.get_value("Workflow", name, "is_active"):
+		if exists and not spec.get("follows_setting") and not frappe.db.get_value("Workflow", name, "is_active"):
 			continue  # a school deliberately switched it off: leave it alone
 		doc = frappe.get_doc("Workflow", name) if exists else frappe.new_doc("Workflow")
 		doc.update({
-			"workflow_name": name, "document_type": spec["document_type"], "is_active": 1,
-			"workflow_state_field": "status", "override_status": 1, "send_email_alert": 0,
+			"workflow_name": name, "document_type": spec["document_type"], "is_active": spec.get("active", 1),
+			"workflow_state_field": spec.get("field", "status"), "override_status": 1, "send_email_alert": 0,
 		})
 		doc.set("states", spec["states"])
 		doc.set("transitions", spec["transitions"])
@@ -119,12 +157,22 @@ def sync_leave_approvers():
 			user.add_roles("Leave Approver")
 
 
-REASON_FIELD = {"Leave Application": "decision_comment", "School Expense": "rejection_reason"}
+def sync_heads_of_department():
+	"""Everyone named as a subject's Head of Department gets the Head of Department role."""
+	users = set(frappe.get_all("Subject", filters={"head_of_department": ("is", "set")}, pluck="head_of_department"))
+	for u in users:
+		if u not in ("Administrator", "Guest") and frappe.db.exists("User", u) and "Head of Department" not in frappe.get_roles(u):
+			user = frappe.get_doc("User", u)
+			user.flags.ignore_permissions = True
+			user.add_roles("Head of Department")
+
+
+REASON_FIELD = {"Leave Application": "decision_comment", "School Expense": "rejection_reason", "Exam Mark Sheet": "review_comment"}
 
 
 @frappe.whitelist()
 def save_rejection_reason(doctype, name, reason):
-	"""Store the reason just before the Workflow 'Reject' action runs (apply_workflow reloads the document
+	"""Store the reason just before the Workflow 'Reject' / 'Return' action runs (apply_workflow reloads the document
 	from the database, so an unsaved reason would be lost). Only someone who may reject can call it."""
 	from frappe.model.workflow import get_transitions
 
@@ -132,7 +180,7 @@ def save_rejection_reason(doctype, name, reason):
 	if not field:
 		frappe.throw("Not supported")
 	doc = frappe.get_doc(doctype, name)
-	if not any(t.action == "Reject" for t in get_transitions(doc)):
+	if not any(t.action in ("Reject", "Return") for t in get_transitions(doc)):
 		frappe.throw(frappe._("You cannot reject this document"), frappe.PermissionError)
 	reason = (reason or "").strip()
 	if not reason:

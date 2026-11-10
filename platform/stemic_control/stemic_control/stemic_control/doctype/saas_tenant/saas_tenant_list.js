@@ -5,4 +5,11 @@ frappe.listview_settings["SaaS Tenant"] = {
     get_indicator(doc) {
         return [__(doc.status), TENANT_COLORS[doc.status] || "gray", "status,=," + doc.status];
     },
+    onload(listview) {
+        // one form for the whole journey; the blank form stays under the usual Add button
+        if (stemic_control.is_platform_admin()) {
+            listview.page.add_inner_button(__("Onboard a School"), () => stemic_control.onboard_school())
+                .removeClass("btn-default").addClass("btn-primary");
+        }
+    },
 };

@@ -401,3 +401,22 @@ def test_kra_pin_format():
 
 	assert valid_pin("P051234567X") and valid_pin("a123456789z")
 	assert not valid_pin("P05123456X") and not valid_pin("") and not valid_pin("X051234567P")
+
+
+# ----------------------------------------------------------------------------- class attendance
+def test_attendance_summary_counts_late_as_attending():
+	from school_erp.logic.attendance import summarise
+
+	s = summarise(["Present", "Present", "Late", "Absent", "Excused"])
+	assert (s["present"], s["late"], s["absent"], s["excused"], s["total_students"]) == (2, 1, 1, 1, 5)
+	assert s["attendance_percent"] == 60.0
+	assert summarise([])["attendance_percent"] == 0.0
+
+
+def test_attendance_rate_and_newly_absent():
+	from school_erp.logic.attendance import newly_absent, rate
+
+	assert rate(19, 20) == 95.0 and rate(0, 0) is None
+	old = {"A": "Absent", "B": "Present"}
+	new = {"A": "Absent", "B": "Absent", "C": "Absent", "D": "Late"}
+	assert sorted(newly_absent(old, new)) == ["B", "C"]  # A was already absent: the parent was told once

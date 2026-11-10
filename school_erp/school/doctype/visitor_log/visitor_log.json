@@ -1,0 +1,252 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "VIS-.YYYY.-.#####",
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "visitor_name",
+  "phone",
+  "id_number",
+  "organisation",
+  "cb_1",
+  "purpose",
+  "person_to_see",
+  "student",
+  "cb_2",
+  "time_in",
+  "time_out",
+  "status",
+  "sb_3",
+  "vehicle_registration",
+  "badge_number",
+  "cb_4",
+  "signed_in_by",
+  "minutes_on_premises",
+  "sb_5",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "visitor_name",
+   "fieldtype": "Data",
+   "label": "Visitor",
+   "reqd": 1,
+   "in_list_view": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone",
+   "options": "Phone",
+   "reqd": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "id_number",
+   "fieldtype": "Data",
+   "label": "ID / Passport No.",
+   "idx": 3
+  },
+  {
+   "fieldname": "organisation",
+   "fieldtype": "Data",
+   "label": "Organisation / Company",
+   "idx": 4
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 5
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "label": "Purpose",
+   "options": "Parent visit\nOfficial / Ministry\nDelivery\nContractor / Repairs\nInterview\nMeeting\nCollecting a learner\nOther",
+   "default": "Parent visit",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 6
+  },
+  {
+   "fieldname": "person_to_see",
+   "fieldtype": "Data",
+   "label": "Here to See",
+   "idx": 7
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Learner (if visiting one)",
+   "options": "Student",
+   "idx": 8
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 9
+  },
+  {
+   "fieldname": "time_in",
+   "fieldtype": "Datetime",
+   "label": "Time In",
+   "default": "now",
+   "reqd": 1,
+   "in_list_view": 1,
+   "idx": 10
+  },
+  {
+   "fieldname": "time_out",
+   "fieldtype": "Datetime",
+   "label": "Time Out",
+   "read_only": 1,
+   "idx": 11
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "On premises\nSigned out",
+   "default": "On premises",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 12
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "idx": 13
+  },
+  {
+   "fieldname": "vehicle_registration",
+   "fieldtype": "Data",
+   "label": "Vehicle Reg.",
+   "idx": 14
+  },
+  {
+   "fieldname": "badge_number",
+   "fieldtype": "Data",
+   "label": "Visitor Badge No.",
+   "idx": 15
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break",
+   "idx": 16
+  },
+  {
+   "fieldname": "signed_in_by",
+   "fieldtype": "Link",
+   "label": "Signed In By",
+   "options": "User",
+   "read_only": 1,
+   "idx": 17
+  },
+  {
+   "fieldname": "minutes_on_premises",
+   "fieldtype": "Int",
+   "label": "Minutes on Premises",
+   "read_only": 1,
+   "idx": 18
+  },
+  {
+   "fieldname": "sb_5",
+   "fieldtype": "Section Break",
+   "idx": 19
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes",
+   "idx": 20
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Visitor Log",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Staff"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Teacher"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "visitor_name,phone,id_number",
+ "sort_field": "time_in",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "visitor_name",
+ "track_changes": 1
+}

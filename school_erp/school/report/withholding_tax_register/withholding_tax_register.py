@@ -4,9 +4,9 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import getdate, flt
 
-from school_erp.api.report_utils import col, date_range
+from school_erp.api.report_utils import bar_chart, col, date_range
 from school_erp import licensing
 
 
@@ -39,7 +39,12 @@ def execute(filters=None):
 		{"label": _("VAT withheld to remit"), "value": sum(flt(r.vat_wht_amount) for r in data), "datatype": "Currency", "indicator": "Red"},
 		{"label": _("Payments"), "value": len(data), "datatype": "Int"},
 	]
-	return columns, data, None, None, summary
+	by_month = {}
+	for r in data:
+		m = getdate(r.posting_date).strftime("%b %Y")
+		by_month[m] = by_month.get(m, 0) + flt(r.wht_amount) + flt(r.vat_wht_amount)
+	chart = bar_chart(list(by_month), [(_("Tax withheld"), list(by_month.values()))], money=True) if by_month else None
+	return columns, data, None, chart, summary
 
 
 def _supplier_bills(f, fd, td):

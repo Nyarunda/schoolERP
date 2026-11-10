@@ -58,6 +58,9 @@ def management(term=None):
 		"attention": [],
 	}
 	out["students"] = _students(t)
+	out["attendance"] = _attendance_today(today, detail=True)
+	if "exams" in mods:
+		out["exam"] = _latest_exam(t)
 	if "fees" in mods:
 		out["fees"] = _fees(t, today)
 	if "staff" in mods:
@@ -122,12 +125,17 @@ def _fees(t, today):
 
 	by_class = []
 	if t:
+		# billed, collected and still owed per class this term (one row per class that was billed)
 		by_class = frappe.db.sql(
-			"""select s.school_class label, sum(si.outstanding_amount) value, count(distinct si.student) students
+			"""select s.school_class label, sum(si.outstanding_amount) value, sum(si.grand_total) billed,
+				sum(si.grand_total - si.outstanding_amount) collected,
+				count(distinct case when si.outstanding_amount > 0 then si.student end) students
 			from `tabSales Invoice` si join `tabStudent` s on s.name = si.student
 			left join `tabSchool Class` c on c.name = s.school_class
-			where si.docstatus=1 and si.is_return=0 and si.school_term=%s and si.outstanding_amount>0
+			where si.docstatus=1 and si.is_return=0 and si.school_term=%s
 			group by s.school_class order by c.level""", t.name, as_dict=True)
+		for r in by_class:
+			r["rate"] = round(flt(r.collected) / flt(r.billed) * 100, 1) if flt(r.billed) else None
 	defaulters = 0
 	if t:
 		defaulters = cint(frappe.db.sql(
@@ -229,8 +237,71 @@ def _cashflow(today):
 	return {"labels": months, "collected": [col.get(k, 0) for k in keys], "expenses": [exp.get(k, 0) for k in keys]}
 
 
+def _attendance_today(today, detail=False):
+	from school_erp.api.attendance import day_summary, is_school_day
+
+	s = day_summary(today)
+	if not s["taken"] and not is_school_day(today):
+		return None  # weekend or holiday: no tile
+	out = {"percent": s["percent"], "absent": s["absent"], "taken": s["taken"], "total": s["total"],
+		   "missing": [r["stream"] for r in s["streams"] if not r["taken"]]}
+	if detail:
+		by_class = {}
+		for r in s["streams"]:
+			if r["taken"]:
+				by_class[r["school_class"]] = by_class.get(r["school_class"], 0) + (r["absent"] or 0)
+		out["absent_by_class"] = [{"label": k, "value": v} for k, v in by_class.items() if v]
+		out["trend"] = _attendance_trend(today)
+	return out
+
+
+def _attendance_trend(today, days=15):
+	"""Whole-school attendance % for each school day with registers, most recent `days` of them."""
+	rows = frappe.db.sql(
+		"""select attendance_date, sum(present + late) attended, sum(total_students) marked
+		from `tabClass Attendance` where attendance_date <= %s and attendance_date >= %s
+		group by attendance_date order by attendance_date""", (today, add_days(today, -days * 2)), as_dict=True)[-days:]
+	return {"labels": [formatdate(r.attendance_date, "EEE d") for r in rows],
+			"values": [round(flt(r.attended) / flt(r.marked) * 100, 1) if flt(r.marked) else 0 for r in rows]}
+
+
+def _latest_exam(t):
+	"""The most recent exam with report cards: mean % per class and how many students got each grade."""
+	filters = {"status": ("in", ["Results Ready", "Published"])}
+	if t:
+		filters["school_term"] = t.name
+	exam = frappe.get_all("Exam", filters=filters, fields=["name", "exam_name", "status", "grading_scale"],
+						  order_by="modified desc", limit=1)
+	if not exam:
+		return None
+	e = exam[0]
+	by_class = frappe.db.sql(
+		"""select rc.school_class label, round(avg(rc.mean_percent), 1) value, count(*) students
+		from `tabReport Card` rc left join `tabSchool Class` c on c.name = rc.school_class
+		where rc.exam=%s group by rc.school_class order by c.level""", e.name, as_dict=True)
+	counts = dict(frappe.db.sql("select mean_grade, count(*) from `tabReport Card` where exam=%s group by mean_grade", e.name))
+	# grades in the scale's own order, best first
+	order = frappe.get_all("Grading Band", filters={"parent": e.grading_scale}, fields=["grade"], order_by="min_score desc", pluck="grade")
+	grades = [g for g in order if g in counts] + [g for g in counts if g not in order]
+	mean = frappe.db.sql("select round(avg(mean_percent), 1) from `tabReport Card` where exam=%s", e.name)[0][0]
+	return {"name": e.name, "title": e.exam_name, "status": e.status, "mean": flt(mean), "by_class": by_class,
+			"grades": {"labels": grades, "values": [cint(counts[g]) for g in grades]},
+			"students": sum(cint(v) for v in counts.values())}
+
+
 def _management_attention(mods, today):
 	items = []
+	from school_erp.api.attendance import is_school_day
+
+	if is_school_day(today) and now_datetime().hour >= 9:  # give class teachers the first hour
+		att = _attendance_today(today) or {}
+		if att.get("missing"):
+			items.append(_attention(_("Class registers not taken today"), len(att["missing"]), ["query-report", "Daily Attendance"],
+									hint=", ".join(att["missing"][:6])))
+	if "exams" in mods:
+		n = frappe.db.count("Exam Mark Sheet", {"docstatus": 0, "approval_status": "Pending Approval"})
+		if n:
+			items.append(_attention(_("Mark sheets waiting for approval"), n, ["List", "Exam Mark Sheet", {"approval_status": "Pending Approval"}]))
 	if "staff" in mods:
 		n = frappe.db.count("Leave Application", {"docstatus": 0, "status": "Pending Approval"})
 		if n:
@@ -343,6 +414,18 @@ def staff_room():
 			where ts.teacher=%s and tt.school_term=%s""", (teacher, t.name))[0][0]
 	if teacher:
 		out["my_classes"] = _my_classes(teacher, t, mods)
+	if frappe.has_permission("Class Attendance", "create"):
+		from school_erp.api.attendance import is_school_day
+
+		out["can_take_register"] = True
+		out["school_day"] = is_school_day(today)
+		taken = set(frappe.get_all("Class Attendance", filters={"attendance_date": today}, pluck="stream"))
+		for c in out.get("my_classes") or []:
+			c["register_taken"] = c["stream"] in taken
+	if "exams" in mods and set(frappe.get_roles(user)) & {"Head of Department", "Head Teacher", "School Admin"}:
+		from school_erp.api.exams import approval_queue_names
+
+		out["marks_to_approve"] = len(approval_queue_names(user=user))
 	if "staff" in mods and staff:
 		out["duty"] = _my_duty(staff, today)
 		from school_erp.api.staff import leave_balances
@@ -436,6 +519,9 @@ def _my_duty(staff, today):
 
 def _actions(out, mods):
 	a = []
+	if out.get("can_take_register") and (out.get("my_classes") or out.get("staff_type") == "Teaching"):
+		mine = (out.get("my_classes") or [{}])[0].get("stream")
+		a.append({"label": _("Take register"), "icon": "check", "route": ["class-register", {"stream": mine} if mine else {}]})
 	if "staff" in mods and out.get("staff"):
 		a.append({"label": _("Apply for leave"), "icon": "calendar", "route": ["Form", "Leave Application", "new"]})
 		if (out.get("duty") or {}).get("on_duty_now"):

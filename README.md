@@ -12,19 +12,26 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 
 | Module (license code) | What it gives the school |
 |---|---|
-| **Core** (always on) | Students, parents/guardians, classes, streams, teachers, school years and terms, **year-end promotion** |
+| **Core** (always on) | Students, parents/guardians, classes, streams, teachers, school years and terms, **government learner IDs (NEMIS/KEMIS UPI, birth certificate, KNEC assessment number) with a NEMIS Census report**, **year-end promotion**, **daily class attendance** from a phone (absence SMS with the messaging module). See [docs/ATTENDANCE_AND_MARKS_APPROVAL.md](docs/ATTENDANCE_AND_MARKS_APPROVAL.md) |
 | `fees` | Fee types, fee structures per term/class/boarding, one-click term billing, fee payments split by fee type, receipts, **parent fee statements**, Fee Balances report |
 | `transport` | Transport routes with a fee per term; students on a route are billed for it |
+| `library` | **Library**: book catalogue with numbered copies, issue and return (copy availability and per-borrower limits checked), renewals, lost books charged at replacement price, overdue fines billed to the learner's fee account, and an overdue SMS to parents (the day after the due date, then weekly); Overdue Books and Circulation reports |
 | `lunch` | Lunch fee charged only to students marked "Takes School Lunch" |
 | `activities` | Games & activities (swimming, football...) each with a fee per term |
 | `timetable` | Subjects, periods, class timetables with teacher clash checks, printable grid |
+| `homework` | **Homework & assignments**: teachers set homework per stream and subject (with a worksheet), parents get one SMS when it is published and see it on the parent portal's Homework tab, teachers tick who handed it in; Homework Register report |
 | `messaging` | SMS and email to parents: billing notices, payment receipts, reminders, PDF statements |
 | `staff` | Staff members (teachers, drivers, support), **leave** with types, balances, workflow approvals, approval + **reliever notifications** and live toasts, **duty roster & daily Teacher-on-Duty reports**. See [docs/STAFF_AND_OPERATIONS.md](docs/STAFF_AND_OPERATIONS.md) |
+| `boarding` | **Boarding & exeat**: dormitories with beds and house parents, bed allocation (boys/girls, capacity and bed clashes checked), **exeat passes**: request → approve → gate check-out (who collected the learner) → check-in, with parent SMS at each gate step and an hourly alert when a learner is overdue; Dormitory Occupancy and Exeat Register reports |
 | `expenses` | **Expense posting with amount-based approvals** (one or two levels, on a Frappe Workflow), posted to the accounts automatically |
 | `transport_ops` | **Driver morning check-in** (safety checklist, fitness, odometer, fuel), alerts for failed checks and missed check-ins, vehicles and document expiry |
 | `welfare` | **Discipline incidents** (SMS parent) and **complaints** (staff + public web form with SMS tracking) |
-| `exams` | **Exams & report cards**: marks entry per stream/subject, CBC and 8-4-4 grading, positions, remarks, PDF report cards sent to parents, merit list and subject analysis. See [docs/EXAMS_PORTAL_PROMOTION.md](docs/EXAMS_PORTAL_PROMOTION.md) |
+| `health` | **Sick bay & visitors**: learner health records (allergies, conditions, SHA/insurance, emergency contacts), sick bay visits with allergies shown up front and an automatic parent SMS when a learner is sent home, referred or has a fever, a visitor book with sign-out, and gate passes for learners leaving during the day; Sick Bay Register (with frequent visitors) and Visitor Register reports. |
+| `exams` | **Exams & report cards**: marks entry per stream/subject, **Head of Department approval of marks** ([how](docs/ATTENDANCE_AND_MARKS_APPROVAL.md#marks-approval-exams-module)), CBC and 8-4-4 grading, positions, remarks, PDF report cards sent to parents, merit list and subject analysis. See [docs/EXAMS_PORTAL_PROMOTION.md](docs/EXAMS_PORTAL_PROMOTION.md) |
+| `pocket_money` | **Pocket money**: learners' money held by the school. Deposits (cash, M-Pesa or bank, each reference recorded only once), canteen/shop purchases, withdrawals and adjustments. Balances are row-locked so spending can never go below zero. Optional daily spending limit, freezing, SMS on deposit and on low balance, a Pocket Money tab on the parent portal, and Balances and Statement reports |
+| `exams` | **Exams & report cards**: marks entry per stream/subject, **Head of Department approval of marks** ([how](docs/ATTENDANCE_AND_MARKS_APPROVAL.md#marks-approval-exams-module)), CBC and 8-4-4 grading, positions, remarks, PDF report cards sent to parents, merit list and subject analysis. **CBC competency assessment**: strands and sub-strands per learning area, formative assessments on the EE/ME/AE/BE rubric (or the 8-level EE1–BE2), termly learner progress reports with no ranking, on the parent portal. See [docs/EXAMS_PORTAL_PROMOTION.md](docs/EXAMS_PORTAL_PROMOTION.md) and [docs/CBC_ASSESSMENT.md](docs/CBC_ASSESSMENT.md) |
 | `portal` | **Parent portal**: parents log in with their phone number to see balances, statements, receipts, report cards and notices, and **pay with an M-Pesa prompt (STK Push)** |
+| `admissions` | **Online admissions**: a public application form at `/admission-application`, SMS reference and status tracking at `/admission-status`, review → interview → offer → admit, and **Admit as Student** in one click. See [docs/ADMISSIONS.md](docs/ADMISSIONS.md) |
 | `mpesa` | **M-Pesa Paybill auto-posting**: parents pay with the Student ID as account number and the payment is posted to the student automatically. See [docs/MPESA.md](docs/MPESA.md) |
 
 ---
@@ -93,6 +100,8 @@ Numbers are normalised with the school's country code (`0712 345 678` → `25471
 
 ## 5. Day-to-day
 
+**Student status lists** → the sidebar has *Active Students*, *Transferred Students* and *Graduated Students*. On a student, *Status → Transfer Out* asks for the new school and date (Transferred learners keep both); *Re-admit* brings a transferred or left learner back to Active.
+
 **Admit a student** → Student form: names, stream, Day/Boarder, guardians (one marked Primary; tick SMS/Email per guardian), transport route, lunch, activities, scholarship %. A Customer with the same ID is created automatically.
 
 **Set fees for a term** → *School Fee Structure*: pick the term, optionally a class and boarding type, add fee lines. You can have a general structure plus class-specific ones; the most specific wins per fee type. Transport and activity fees come from the route/activity, not the structure. "Once" fee types (e.g. Admission) are only ever charged once per student.
@@ -121,6 +130,8 @@ You can run it again later for new admissions; anyone already invoiced is skippe
 * M-Pesa codes can't be used twice. Submitting posts an ERPNext Payment Entry, prints a receipt, and SMSes the parent the new balance.
 
 **Statements** → Student → Fees → *Fee Statement (PDF)* (choose dates), or *Send Statement to Parents*, or print the Student with the "Fee Statement" print format. Bulk: *School Message* with audience "Students with a balance", channel Email, tick "Attach PDF Fee Statement".
+
+**Government census & KNEC registration** → Student → *Government IDs* section: UPI (NEMIS/KEMIS), birth certificate, KNEC assessment number, county, special needs. IDs are stored without spaces in capitals and can't be shared by two learners. The *NEMIS Census* report lists every learner with what is still missing (tick "Only learners missing census data"), a class-by-gender summary and the enrolment-by-age table; export it from the report menu.
 
 **Who owes what** → *Fee Balances* report (filter by term/class/stream; "Message these parents" button).
 

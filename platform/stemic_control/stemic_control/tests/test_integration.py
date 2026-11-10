@@ -169,7 +169,7 @@ class TestControlPlane(TestCase):
         frappe.db.set_value("SaaS Tenant", retried, "status", "Pending")
 
         groups = {g["key"]: g for g in api.operations_queue(per_group=10)["groups"]}
-        self.assertEqual(set(groups), {"background", "failed_sites", "overdue", "unpaid_invoices", "dns", "approval", "creating"})  # every group, even when empty
+        self.assertEqual(set(groups), {"background", "failed_sites", "overdue", "unpaid_invoices", "dns", "domain_live", "approval", "creating"})  # every group, even when empty
         failed_item = next(i for i in groups["failed_sites"]["items"] if i["name"] == failed)
         self.assertEqual((failed_item["school"], failed_item["detail"]), ("Greenfield Academy", "Database refused"))
         self.assertNotIn(retried, [i["name"] for i in groups["failed_sites"]["items"]])

@@ -1,0 +1,33 @@
+{#- Frappe's email footer (templates/emails/email_footer.html) with Stemic's line in place of "Sent via ERPNext".
+    Jinja looks in the most recently installed apps first, so this copy is used on sites with this app. -#}
+<div class="email-footer-container text-muted {% if email_account_footer or sender_address or default_mail_footer %}with-divider{% endif %}">
+	<!-- email_account_footer -->
+	{% if email_account_footer %}
+	<div class="email-account-footer">
+		{{ email_account_footer }}
+	</div>
+	{% endif %}
+
+	<!-- sender_address -->
+	{% if sender_address %}
+	<div class="sender-address">
+		{% for line in sender_address.splitlines(True) %}
+		<div>{{ line }}</div>
+		{% endfor %}
+	</div>
+	{% endif %}
+
+	<!--unsubscribe link here-->
+
+	<div class="email-pixel">
+		<!--email_open_check-->
+	</div>
+
+	<!-- default_mail_footer: Stemic instead of the apps' own lines -->
+	{% if default_mail_footer %}
+	<div class="default-mail-footer">
+		<div><span>Sent via <a class="text-muted" href="https://stemic.cloud" target="_blank">Stemic Technologies</a></span></div>
+	</div>
+	{% endif %}
+
+</div>

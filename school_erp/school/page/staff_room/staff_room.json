@@ -5,7 +5,7 @@
  "doctype": "Page",
  "icon": "",
  "idx": 0,
- "modified": "2026-10-22 08:00:00.000000",
+ "modified": "2026-10-29 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "staff-room",
@@ -35,6 +35,9 @@
   },
   {
    "role": "Transport Manager"
+  },
+  {
+   "role": "School Viewer"
   }
  ],
  "script": null,

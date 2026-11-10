@@ -293,9 +293,11 @@ def make_demo_extras(students=None):
 					else:
 						m.marks = str(int(max(5, min(100, random.gauss(ability.get(m.student, 60), 9)))))
 				ms.insert()
-				ms.submit()
+				_approve_marks(ms)
 		generate_report_cards(exam.name)
 		publish(exam.name, notify_parents=0)
+
+	_demo_attendance()
 
 	# a parent login for the first student's guardian, plus a sibling so the portal shows two children
 	first = frappe.get_doc("Student", students[0])
@@ -321,3 +323,41 @@ def make_demo_extras(students=None):
 			frappe.get_doc({"doctype": "School Notice", "title": title, "audience": "Parents", "priority": prio, "message": msg,
 							"pinned": int(prio == "Important")}).insert()
 	frappe.db.commit()
+
+
+def _approve_marks(ms):
+	"""Demo marks go through the same approval as real ones (sent, then approved by the Head Teacher)."""
+	from frappe.model.workflow import apply_workflow
+
+	from school_erp.school.doctype.exam_mark_sheet.exam_mark_sheet import approval_required
+
+	if not approval_required():
+		return ms.submit()
+	ms = apply_workflow(ms, "Send for Approval")
+	apply_workflow(ms, "Approve")
+
+
+def _demo_attendance(days=10):
+	"""Two weeks of class registers: most children present, a few absent or late."""
+	from frappe.utils import add_days
+
+	from school_erp.api.attendance import stream_students
+
+	today = getdate(nowdate())
+	for stream in frappe.get_all("Stream", filters={"is_active": 1}, pluck="name"):
+		students = stream_students(stream)
+		if not students:
+			continue
+		day, made = today, 0
+		while made < days:
+			day = add_days(day, -1)
+			if day.weekday() >= 5:
+				continue
+			made += 1
+			if frappe.db.exists("Class Attendance", {"stream": stream, "attendance_date": day}):
+				continue
+			rows = []
+			for st in students:
+				r = random.random()
+				rows.append({"student": st.name, "status": "Absent" if r < 0.04 else "Late" if r < 0.07 else "Excused" if r < 0.08 else "Present"})
+			frappe.get_doc({"doctype": "Class Attendance", "stream": stream, "attendance_date": day, "students": rows}).insert()

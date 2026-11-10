@@ -1,0 +1,7 @@
+[Unit]
+Description=Stemic custom domains -> nginx (stemic-domains-sync)
+After=nginx.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/stemic-domains-sync @BENCH@

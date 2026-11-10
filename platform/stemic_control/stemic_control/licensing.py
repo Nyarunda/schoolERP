@@ -103,3 +103,77 @@ def issue(subscription: str) -> str:
 
     communications.queue("License Issued", license=lic.name)
     return lic.name
+
+
+def _setting(field) -> bool:
+    value = frappe.get_cached_doc("Stemic Settings").get(field)
+    return value is None or bool(int(value or 0))  # not saved yet counts as on (patches.default_onboarding_settings)
+
+
+def auto_issue(subscription: str, why: str = "ready"):
+    """Issue the school's key without an operator: when its site is ready (why="ready") or a payment extended its
+    subscription (why="renewal"). Never fails the caller: if it cannot be issued, the platform admins are told why.
+    Returns the license name, or None with the reason it was not issued."""
+    switch = "auto_issue_license" if why == "ready" else "auto_renew_license"
+    if not _setting(switch):
+        return None, "switched off in Stemic Settings > Onboarding"
+    sub = frappe.db.get_value("SaaS Subscription", subscription, ["name", "tenant", "status", "ends_on"], as_dict=True)
+    if not sub:
+        return None, "no subscription"
+    site = frappe.db.get_value("SaaS Tenant", sub.tenant, "canonical_site")
+    if not site:
+        return None, "the school has no site yet"  # issued when the site is ready
+    if sub.status not in policy.LICENSABLE or (sub.ends_on and getdate(sub.ends_on) < getdate(nowdate())):
+        return None, f"a {sub.status} subscription is not licensed"
+    if why == "renewal":
+        # only when the key in force would stop before the new end date
+        current = frappe.db.get_value("SaaS License", {"tenant": sub.tenant, "status": "Issued"}, "expires_on",
+                                      order_by="creation desc")
+        if current and sub.ends_on and getdate(current) >= getdate(sub.ends_on):
+            return None, "the key in force already covers the subscription"
+    if not can_sign():
+        _tell(sub.tenant, why, "License signing is not set up on this Control Center (stemic_license_private_key_file).")
+        return None, "license signing is not set up"
+    try:
+        frappe.db.savepoint("auto_license")
+        name = issue(subscription)
+    except Exception as e:
+        frappe.db.rollback(save_point="auto_license")
+        frappe.clear_messages()
+        frappe.log_error(title=f"Automatic license not issued for {sub.tenant}")
+        _tell(sub.tenant, why, str(e).splitlines()[0][:300] if str(e) else e.__class__.__name__)
+        return None, str(e)
+    frappe.get_doc("SaaS Tenant", sub.tenant).add_comment(
+        "Info", f"License {name} issued automatically ({'site ready' if why == 'ready' else 'subscription renewed'}).")
+    return name, None
+
+
+def _tell(tenant, why, reason):
+    from stemic_control.alerts import notify_admins
+
+    what = "its site is ready" if why == "ready" else "it renewed"
+    notify_admins(f"No license key was issued for {tenant}",
+                  f"{frappe.utils.escape_html(reason)}<br>The school needs a key now that {what}: open its subscription and "
+                  "use Issue License.", "SaaS Tenant", tenant)
+
+
+def current_subscription(tenant):
+    """The school's subscription in force: the one on the school, else its newest one that is not cancelled."""
+    sub = frappe.db.get_value("SaaS Tenant", tenant, "subscription")
+    if sub and frappe.db.get_value("SaaS Subscription", sub, "status") != "Cancelled":
+        return sub
+    return frappe.db.get_value("SaaS Subscription", {"tenant": tenant, "status": ("!=", "Cancelled")}, "name",
+                               order_by="creation desc")
+
+
+def after_site_ready(tenant):
+    """Called once a school's site exists (built or linked): its key, from its plan, without an operator."""
+    sub = current_subscription(tenant)
+    return auto_issue(sub, "ready") if sub else (None, "no subscription")
+
+
+def auto_issue_job(subscription, why="renewal"):
+    """Background job (after a payment commits)."""
+    result = auto_issue(subscription, why)
+    frappe.db.commit()
+    return result

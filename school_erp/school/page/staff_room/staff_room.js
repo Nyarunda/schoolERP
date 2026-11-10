@@ -183,6 +183,16 @@ class StaffRoom {
 				alert("serious", "bus", __("Checked in, issues reported"), __("The transport office has been told."));
 			}
 		}
+		if (d.school_day) {
+			(d.my_classes || []).filter((c) => c.register_taken === false).forEach((c) =>
+				alert("warning", "check", __("Today's register for {0} is not taken", [c.stream]), __("It takes a minute on your phone."),
+					{ label: __("Take register"), route: ["class-register", { stream: c.stream }] }));
+		}
+		if (d.marks_to_approve) {
+			alert("warning", "clipboard", __("{0} mark sheet(s) waiting for your approval", [d.marks_to_approve]),
+				__("Approved marks go onto the report cards."),
+				{ label: __("Review"), route: ["List", "Exam Mark Sheet", { approval_status: "Pending Approval" }] });
+		}
 		if (!d.staff) alert("muted", "user", __("Your login is not linked to a Staff Member yet"), __("Ask the school office to link it so your lessons, duty and leave show here."));
 		return out.length ? `<div class="sr-alerts">${out.join("")}</div>` : "";
 	}
@@ -218,7 +228,7 @@ class StaffRoom {
 		const cards = d.my_classes.map((c) => {
 			const total = c.students || 0, g = total ? (c.girls / total) * 100 : 0;
 			return `<div class="sr-class" data-route='${S.esc(JSON.stringify(["List", "Student", { stream: c.stream, status: "Active" }]))}'>
-				<div class="sr-class-top"><b>${S.esc(c.stream)}</b>${"incidents" in c && c.incidents
+				<div class="sr-class-top"><b>${S.esc(c.stream)}</b>${c.register_taken ? `<span class="sr-tag done" title="${__("Today's register taken")}">${sr_icon("check")}</span>` : ""}${"incidents" in c && c.incidents
 					? `<span class="sr-tag warn" title="${__("Discipline incidents this term")}">${sr_icon("alert")}${c.incidents}</span>` : ""}</div>
 				<div class="sr-class-num">${total}<small>${__("students")}</small></div>
 				<div class="sr-split" role="img" aria-label="${__("{0} girls, {1} boys", [c.girls, c.boys])}"><span class="g" style="width:${g}%"></span><span class="b" style="width:${100 - g}%"></span></div>

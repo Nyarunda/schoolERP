@@ -234,6 +234,16 @@ def apply_payment(doc):
         sub.external_payment_ref = doc.reference
         sub.flags.ignore_permissions = True
         sub.save()
+        # the key in force stops on the old end date: give the school one for the new date once this commits
+        if frappe.flags.in_demo:
+            pass  # demo data (stemic_control.demo): no keys
+        elif frappe.flags.in_test:
+            from stemic_control import licensing
+
+            licensing.auto_issue(sub.name, "renewal")  # inline: a test's transaction is rolled back, never committed
+        else:
+            frappe.enqueue("stemic_control.licensing.auto_issue_job", queue="short", subscription=sub.name,
+                           why="renewal", enqueue_after_commit=True)
     earn_commission(doc, inv)
 
 
@@ -330,7 +340,40 @@ def daily():
                     _create_invoice(sub)
                 except frappe.ValidationError:
                     frappe.log_error(title=f"Renewal invoice not raised for {sub}")
+    trials(today)
     frappe.db.commit()
+
+
+def _on(field):
+    value = frappe.get_cached_doc("Stemic Settings").get(field)
+    return value is None or bool(int(value or 0))
+
+
+def trials(today=None):
+    """Free trials coming to an end (Stemic Settings > Onboarding): raise the first invoice a few days ahead so the
+    school can pay in time, and remind the school 3 days before. Internal / demo schools are never invoiced."""
+    from stemic_control import communications
+
+    today = getdate(today or nowdate())
+    s = frappe.get_cached_doc("Stemic Settings")
+    lead = int(s.get("trial_invoice_days") if s.get("trial_invoice_days") is not None else 7)
+    horizon = add_days(today, max(lead, 3))
+    for sub in frappe.get_all("SaaS Subscription", filters={"status": "Trial", "ends_on": ("between", [today, horizon])},
+                              fields=["name", "ends_on", "billing_exception"]):
+        if sub.billing_exception == "Internal / Demo":
+            continue
+        if frappe.db.exists("SaaS Invoice", {"subscription": sub.name, "docstatus": 1, "status": "Paid"}):
+            continue  # already paid ahead
+        if _on("invoice_trials") and getdate(sub.ends_on) <= add_days(today, lead) and not open_invoice(sub.name):
+            try:
+                frappe.db.savepoint("trial_invoice")
+                _create_invoice(sub.name)
+            except frappe.ValidationError:
+                frappe.db.rollback(save_point="trial_invoice")
+                frappe.clear_messages()
+                frappe.log_error(title=f"First invoice not raised for trial {sub.name}")
+        if getdate(sub.ends_on) <= add_days(today, 3):
+            communications.queue("Trial Ending", subscription=sub.name)  # once per subscription (SaaS Communication)
 
 
 def ledger_mismatches(limit=50):

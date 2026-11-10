@@ -5,4 +5,5 @@ frappe.query_reports["Expense Register"] = {
 		{ fieldname: "expense_category", label: __("Category"), fieldtype: "Link", options: "Expense Category" },
 		{ fieldname: "status", label: __("Status"), fieldtype: "Select", options: "\nDraft\nPending Approval\nPending Final Approval\nApproved\nRejected" },
 	],
+	formatter: (...a) => school_dash.report_formatter({ status: ["status"] })(...a),
 };

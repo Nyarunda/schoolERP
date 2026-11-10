@@ -34,6 +34,14 @@ override_whitelisted_methods = {"frappe.desk.desktop.get_desktop_page": "school_
 
 # Parents are website users: after login they land on the parent portal
 role_home_page = {"Parent": "parent"}
+
+# Branding on the school's web pages (parent portal, login, verify): Stemic, not ERPNext. website_context is applied
+# after Website Settings, and for keys several apps set, the last installed app wins (school_erp comes after erpnext).
+website_context = {
+	"footer_powered": 'Powered by <a href="https://stemic.cloud" target="_blank" rel="noopener" class="text-muted">Stemic Technologies</a>',
+	"favicon": "/assets/school_erp/images/stemic-favicon.svg",
+	"splash_image": "/assets/school_erp/images/stemic-wordmark.svg",
+}
 standard_portal_menu_items = [
 	{"title": "My Children", "route": "/parent", "role": "Parent"},
 ]
@@ -44,6 +52,7 @@ jinja = {
 		"school_erp.api.statement.render_fee_statement",
 		"school_erp.api.statement.get_statement_data",
 		"school_erp.api.exams.render_report_card",
+		"school_erp.api.cbc.render_cbc_progress_report",
 		"school_erp.api.timetable.get_timetable_grid",
 	]
 }
@@ -100,13 +109,14 @@ scheduler_events = {
 		"school_erp.api.transport_ops.alert_expiring_documents",
 		"school_erp.school.doctype.school_notice.school_notice.publish_scheduled",
 		"school_erp.api.billing.auto_bill_terms",
+		"school_erp.api.library.remind_overdue",
 	],
 	"cron": {
 		"*/15 4-10 * * 1-6": ["school_erp.api.transport_ops.alert_missing_checkins"],
 		"*/30 15-20 * * 1-5": ["school_erp.api.staff.alert_missing_duty_reports"],
 		"*/5 * * * *": ["school_erp.api.stk.query_stale_requests", "school_erp.api.webhooks.retry_due"],
 	},
-	"hourly": ["school_erp.api.paybill.retry_pending"],
+	"hourly": ["school_erp.api.paybill.retry_pending", "school_erp.api.boarding.alert_overdue_exeats"],
 }
 
 fixtures = []

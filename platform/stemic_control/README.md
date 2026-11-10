@@ -8,6 +8,30 @@ Seven DocTypes: SaaS Tenant (named by slug), SaaS Domain (named by hostname), Sa
 
 **Important:** This is a reviewable **control-plane foundation**, not an operational production SaaS. Provisioning jobs are recorded and their results reported through the API, but nothing here executes Bench, creates databases, changes DNS, provisions TLS, or issues licenses. **Create Site jobs cannot be marked Succeeded until a trusted infrastructure provisioner with independent site-readiness checks exists; this prevents false Active tenants.** Subscription invoicing, agent commissions, secret storage, signed-license issuance and the privileged provisioner (with its own credentials) are not yet implemented. No live school should be onboarded automatically with this branch.
 
+## Onboarding a school (one form)
+
+**Onboard a School** (the Overview page's main button, and the Schools list) does in one step what used to take five
+forms: it registers the school, reserves `<address>.<platform domain>`, puts it on a plan, starts its **free trial**
+(or invoices and records its **first payment**, or marks it **internal / demo**), claims its own domain if it has one,
+and approves it and queues its site. Every step goes through the same guarded function an operator would press by
+hand (`stemic_control/wizard.py`), in one transaction: if any step is refused, nothing is kept and the form says which
+step and why. Choose "Send to another admin to approve" to keep the four-eyes approval, or "Save as a draft".
+
+Defaults (plan, trial length, how schools usually start, build straight away) are in **Stemic Settings > Onboarding**.
+
+## What happens by itself
+
+| When | What | Switch (Stemic Settings > Onboarding) |
+| --- | --- | --- |
+| A school's site is built (or an existing site is linked) | The licence key for its plan is signed and emailed | Issue the licence key when a site is ready |
+| A payment extends a subscription | A new key for the new end date (the old one would stop working) | Issue a new key after each renewal |
+| A free trial is 7 days from its end | Its first invoice is raised, starting the day after the trial | Invoice schools before their trial ends |
+| A free trial is 3 days from its end | The school is reminded by email (and SMS), once | Remind the school 3 days before |
+| A subscription is saved | The school's form points at it (unless it already has a live one) | always |
+
+If a key cannot be issued (no signing key on the server, an ended subscription), nothing else is held up: the
+platform admins get an alert saying why, and Issue License on the subscription does it by hand.
+
 ## Configuration (admin site `site_config.json`)
 
 | Key | Default | Purpose |
@@ -75,6 +99,11 @@ Three things cover that:
 **Backups:** `scripts/restore_check.py <admin site> <school site>` proves a school's backup restores (see its header).
 Keep each school's `encryption_key` (in its `site_config.json`) somewhere other than its server: the backup does not
 contain it, and without it a restored school's stored passwords and secrets are unreadable.
+
+## Schools' own domains (production)
+
+A verified custom domain is set up on the server by `stemic-domains-sync` (no hand-edited nginx), checked live from
+the Control Center, and can become the school's main address. One-time install and certificates: `server/README.md`.
 
 ## Secrets (production)
 

@@ -1,0 +1,234 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "ATT-.YYYY.-.#####",
+ "creation": "2026-11-05 18:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "attendance_date",
+  "stream",
+  "school_class",
+  "cb_main",
+  "school_term",
+  "marked_by",
+  "teacher",
+  "sb_students",
+  "students",
+  "sb_summary",
+  "total_students",
+  "present",
+  "absent",
+  "cb_summary",
+  "late",
+  "excused",
+  "attendance_percent",
+  "notes"
+ ],
+ "fields": [
+  {
+   "default": "Today",
+   "fieldname": "attendance_date",
+   "fieldtype": "Date",
+   "idx": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "stream",
+   "fieldtype": "Link",
+   "idx": 2,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Stream",
+   "options": "Stream",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "stream.school_class",
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "idx": 3,
+   "in_standard_filter": 1,
+   "label": "Class",
+   "options": "School Class",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_main",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "school_term",
+   "fieldtype": "Link",
+   "idx": 5,
+   "in_standard_filter": 1,
+   "label": "Term",
+   "options": "School Term",
+   "read_only": 1
+  },
+  {
+   "fieldname": "marked_by",
+   "fieldtype": "Link",
+   "idx": 6,
+   "label": "Taken By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "teacher",
+   "fieldtype": "Link",
+   "idx": 7,
+   "label": "Teacher",
+   "options": "Teacher",
+   "read_only": 1
+  },
+  {
+   "description": "Tip: the Class Register page (sidebar) is quicker on a phone.",
+   "fieldname": "sb_students",
+   "fieldtype": "Section Break",
+   "idx": 8,
+   "label": "Students"
+  },
+  {
+   "fieldname": "students",
+   "fieldtype": "Table",
+   "idx": 9,
+   "label": "Students",
+   "options": "Class Attendance Student"
+  },
+  {
+   "fieldname": "sb_summary",
+   "fieldtype": "Section Break",
+   "idx": 10,
+   "label": "Summary"
+  },
+  {
+   "fieldname": "total_students",
+   "fieldtype": "Int",
+   "idx": 11,
+   "label": "Students",
+   "read_only": 1
+  },
+  {
+   "fieldname": "present",
+   "fieldtype": "Int",
+   "idx": 12,
+   "in_list_view": 1,
+   "label": "Present",
+   "read_only": 1
+  },
+  {
+   "fieldname": "absent",
+   "fieldtype": "Int",
+   "idx": 13,
+   "in_list_view": 1,
+   "label": "Absent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_summary",
+   "fieldtype": "Column Break",
+   "idx": 14
+  },
+  {
+   "fieldname": "late",
+   "fieldtype": "Int",
+   "idx": 15,
+   "label": "Late",
+   "read_only": 1
+  },
+  {
+   "fieldname": "excused",
+   "fieldtype": "Int",
+   "idx": 16,
+   "label": "Excused",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attendance_percent",
+   "fieldtype": "Percent",
+   "idx": 17,
+   "in_list_view": 1,
+   "label": "Attendance %",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "idx": 18,
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-05 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Class Attendance",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Teacher",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Teacher",
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "School Viewer"
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "stream,attendance_date",
+ "sort_field": "attendance_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "stream",
+ "track_changes": 1
+}

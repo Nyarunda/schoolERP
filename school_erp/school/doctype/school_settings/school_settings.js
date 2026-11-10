@@ -69,7 +69,7 @@ function setup_mpesa(frm) {
 				frappe.msgprint({
 					title: __("Test payment {0}", [m.name]),
 					indicator: m.status === "Posted" ? "green" : "orange",
-					message: `${__("Status")}: <b>${m.status}</b>${m.student ? `<br>${__("Student")}: ${m.student}` : ""}${m.fee_payment ? `<br>${__("Fee Payment")}: <a href="/app/fee-payment/${m.fee_payment}">${m.fee_payment}</a>` : ""}${m.error ? `<br>${frappe.utils.escape_html(m.error)}` : ""}`,
+					message: `${__("Status")}: <b>${m.status}</b>${m.student ? `<br>${__("Student")}: ${m.student}` : ""}${m.fee_payment ? `<br>${__("Fee Payment")}: <a href="${frappe.utils.get_form_link("Fee Payment", m.fee_payment)}">${m.fee_payment}</a>` : ""}${m.error ? `<br>${frappe.utils.escape_html(m.error)}` : ""}`,
 				});
 			}),
 			till ? __("Simulate a parent paying the Till (no Safaricom involved)") : __("Simulate a parent paying the Paybill (no Safaricom involved)"),
@@ -126,6 +126,12 @@ const MODULE_HELP = {
 	transport_ops: __("Vehicles, fuel and drivers' daily logs"),
 	exams: __("Exams, mark sheets, merit lists and report cards"),
 	portal: __("Parent portal: balances, report cards and M-Pesa prompts to pay"),
+	health: __("Learner health records, sick bay visits with parent SMS, visitor book and gate passes"),
+	library: __("Book catalogue with copies, issue and return, renewals, overdue SMS and fines billed to fees"),
+	pocket_money: __("Learners' pocket money: deposits, canteen purchases, daily limits, balance on the parent portal"),
+	boarding: __("Dormitories, bed allocation, exeat passes with gate check-out/in and parent SMS"),
+	homework: __("Homework per stream and subject, hand-in tracking, on the parent portal"),
+	admissions: __("Online application form, interviews, offers and one-click admission"),
 };
 
 function render_license(frm) {

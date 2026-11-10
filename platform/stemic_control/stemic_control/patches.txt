@@ -4,3 +4,5 @@
 stemic_control.patches.backfill_payment_reference_keys
 stemic_control.patches.own_naming_series_counters
 stemic_control.patches.default_school_communications
+stemic_control.patches.link_school_subscriptions
+stemic_control.patches.default_onboarding_settings

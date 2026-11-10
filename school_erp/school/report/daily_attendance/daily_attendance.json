@@ -1,0 +1,34 @@
+{
+ "add_total_row": 0,
+ "creation": "2026-11-05 18:00:00.000000",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "is_standard": "Yes",
+ "modified": "2026-11-05 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Daily Attendance",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Class Attendance",
+ "report_name": "Daily Attendance",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "School Admin"
+  },
+  {
+   "role": "Head Teacher"
+  },
+  {
+   "role": "Teacher"
+  },
+  {
+   "role": "School Viewer"
+  }
+ ]
+}

@@ -72,13 +72,13 @@ frappe.provide("school_dash");
 		el.innerHTML = "";
 		return new frappe.Chart(el, {
 			type,
-			height: opts.height || 230,
+			height: opts.height || (window.innerWidth >= 1600 ? 300 : 250),
 			data: { labels, datasets },
 			colors: opts.colors || school_dash.series(),
 			axisOptions: { xIsSeries: type === "line" ? 1 : 0, shortenYAxisNumbers: 1, xAxisMode: "tick", yAxisMode: "span" },
 			lineOptions: { regionFill: 1, hideDots: 1, spline: 0 },
 			barOptions: { spaceRatio: 0.45 },
-			tooltipOptions: { formatTooltipY: (v) => (opts.money ? school_dash.money(v, opts.currency) : format_number(v)) },
+			tooltipOptions: { formatTooltipY: (v) => (opts.money ? school_dash.money(v, opts.currency) : opts.percent ? `${v}%` : format_number(v)) },
 		});
 	};
 
@@ -92,19 +92,36 @@ frappe.provide("school_dash");
 
 	// Used by forms on a Frappe Workflow: ask why before "Reject", store it, then let the workflow continue
 	school_dash.reason_before_reject = (frm, field) => {
-		if (frm.selected_workflow_action !== "Reject") return Promise.resolve();
+		if (!["Reject", "Return"].includes(frm.selected_workflow_action)) return Promise.resolve();
 		return new Promise((resolve, reject) => {
 			let done = false;
 			const d = frappe.prompt(
-				{ fieldname: "reason", label: __("Reason for rejecting"), fieldtype: "Small Text", reqd: 1, default: frm.doc[field] },
+				{ fieldname: "reason", label: frm.selected_workflow_action === "Return" ? __("What needs correcting?") : __("Reason for rejecting"), fieldtype: "Small Text", reqd: 1, default: frm.doc[field] },
 				(v) => frappe.call({
 					method: "school_erp.setup.workflows.save_rejection_reason",
 					args: { doctype: frm.doctype, name: frm.docname, reason: v.reason },
 				}).then(() => { done = true; frm.doc[field] = v.reason; resolve(); }, reject),
-				__("Reject"), __("Reject"),
+				__(frm.selected_workflow_action), __(frm.selected_workflow_action),
 			);
 			d.onhide = () => { if (!done) setTimeout(() => !done && reject(), 300); };
 		});
+	};
+
+	// Shared colour cues for School reports. Text keeps an icon or word with the colour, so it never relies on colour alone.
+	//   status: fields holding a status word   negative: red when below zero   alert: red when above zero
+	const TONE = {
+		Approved: "green", Matched: "green", Posted: "green", Resolved: "green", Closed: "green", Paid: "green", Active: "green",
+		"Pending Approval": "orange", "Pending Final Approval": "orange", "In Progress": "orange", Open: "orange", Draft: "orange", Unmatched: "red",
+		Rejected: "red", Cancelled: "gray", Failed: "red", Duplicate: "gray", Returned: "red",
+	};
+	school_dash.report_formatter = ({ status = [], negative = [], alert = [] } = {}) => (value, row, column, data, default_formatter) => {
+		const out = default_formatter(value, row, column, data);
+		if (!data || !column) return out;
+		const f = column.fieldname, v = data[f];
+		if (status.includes(f) && TONE[v]) return `<span class="indicator-pill no-indicator-dot ${TONE[v]}" style="font-size:11.5px">${out}</span>`;
+		if (negative.includes(f) && Number(v) < 0) return `<span style="color:var(--red-600);font-weight:600">${out}</span>`;
+		if (alert.includes(f) && Number(v) > 0) return `<span style="color:var(--red-600);font-weight:600">${out}</span>`;
+		return out;
 	};
 
 	school_dash.notices = (rows, { management = false } = {}) => {

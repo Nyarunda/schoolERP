@@ -43,7 +43,7 @@
       "label": "Event",
       "in_list_view": 1,
       "in_standard_filter": 1,
-      "options": "Welcome\nInvoice Issued\nPayment Received\nInvoice Overdue\nLicense Issued\nSuspended\nResumed\nSchool Registered\nAlert"
+      "options": "Welcome\nInvoice Issued\nPayment Received\nInvoice Overdue\nLicense Issued\nSuspended\nResumed\nSchool Registered\nTrial Ending\nAlert"
     },
     {
       "fieldname": "channel",

@@ -1,0 +1,10 @@
+# Apply schools' custom domains as soon as the Control Center changes them (install.sh fills in the bench path).
+[Unit]
+Description=Watch the Control Center's custom domains
+
+[Path]
+PathChanged=@BENCH@/config/stemic-domains.json
+Unit=stemic-domains.service
+
+[Install]
+WantedBy=multi-user.target

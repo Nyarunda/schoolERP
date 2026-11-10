@@ -15,7 +15,20 @@ frappe.ui.form.on("Exam Mark Sheet", {
 	refresh(frm) {
 		frm.set_df_property("marks", "cannot_add_rows", 1);
 		if (frm.doc.docstatus === 0) {
-			frm.set_intro(__("Type each student's marks (out of {0}). Tick Absent for anyone who missed the exam. Save as you go; Submit when the whole class is done.", [frm.doc.max_marks || 100]), "blue");
+			const st = frm.doc.approval_status;
+			const has_workflow = !!frappe.model.has_workflow(frm.doctype);
+			if (st === "Pending Approval") {
+				frm.set_intro(__("Waiting for approval by {0}. Approvers use the Actions menu to Approve or Return it.", [frm.doc.reviewer || __("the Head Teacher")]), "orange");
+			} else if (st === "Returned") {
+				frm.set_intro(__("Returned for correction: {0}. Fix the marks, Save, then Actions → Resend.", [frm.doc.review_comment || ""]), "red");
+			} else {
+				frm.set_intro(has_workflow
+					? __("Type each student's marks (out of {0}). Tick Absent for anyone who missed the exam. Save as you go; when the class is done choose Actions → Send for Approval.", [frm.doc.max_marks || 100])
+					: __("Type each student's marks (out of {0}). Tick Absent for anyone who missed the exam. Save as you go; Submit when the whole class is done.", [frm.doc.max_marks || 100]), "blue");
+			}
+		}
+		if (frm.doc.docstatus === 1 && frm.doc.approved_by) {
+			frm.dashboard.add_indicator(__("Approved by {0}", [frappe.user.full_name(frm.doc.approved_by)]), "green");
 		}
 		if (frm.doc.docstatus === 1) {
 			frm.dashboard.add_indicator(__("Average {0}", [frm.doc.average]), "blue");
@@ -29,6 +42,11 @@ frappe.ui.form.on("Exam Mark Sheet", {
 			const $next = $rows.eq(idx + 1).find('[data-fieldname="marks"]');
 			if ($next.length) $next.trigger("click").find("input").focus();
 		});
+	},
+
+	// Frappe Workflow hook: ask what needs correcting before "Return" (the Reject action)
+	before_workflow_action(frm) {
+		return school_dash.reason_before_reject(frm, "review_comment");
 	},
 
 	exam(frm) {

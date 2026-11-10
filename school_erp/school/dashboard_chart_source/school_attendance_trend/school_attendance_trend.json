@@ -1,0 +1,13 @@
+{
+ "creation": "2026-11-06 09:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart Source",
+ "idx": 0,
+ "modified": "2026-11-06 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "School Attendance Trend",
+ "owner": "Administrator",
+ "source_name": "School Attendance Trend",
+ "timeseries": 0
+}

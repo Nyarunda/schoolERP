@@ -9,7 +9,7 @@ frappe.query_reports["Fee Balances"] = {
 				return cls ? { filters: { school_class: cls } } : {};
 			},
 		},
-		{ fieldname: "status", label: __("Status"), fieldtype: "Select", options: "\nActive\nSuspended\nLeft\nGraduated", default: "Active" },
+		{ fieldname: "status", label: __("Status"), fieldtype: "Select", options: "\nActive\nSuspended\nTransferred\nLeft\nGraduated", default: "Active" },
 		{ fieldname: "only_with_balance", label: __("Only students who owe"), fieldtype: "Check", default: 1 },
 		{ fieldname: "min_balance", label: __("Minimum balance"), fieldtype: "Currency" },
 	],

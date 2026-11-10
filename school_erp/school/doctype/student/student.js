@@ -16,6 +16,17 @@ frappe.ui.form.on("Student", {
 		frm.toggle_display("sb_activities", school_has("activities"));
 		frm.toggle_display("sb_fees", school_has("fees"));
 
+		if (!frm.is_new() && ["Active", "Suspended"].includes(frm.doc.status)) {
+			frm.add_custom_button(__("Transfer Out"), () => frappe.prompt([
+				{ fieldname: "transferred_to", label: __("Transferred to (school)"), fieldtype: "Data", reqd: 1 },
+				{ fieldname: "leaving_date", label: __("Date left"), fieldtype: "Date", default: frappe.datetime.get_today(), reqd: 1 },
+				{ fieldname: "leaving_reason", label: __("Reason / notes"), fieldtype: "Small Text" },
+			], (v) => frm.set_value({ status: "Transferred", ...v }).then(() => frm.save()), __("Transfer {0} to another school", [frm.doc.first_name]), __("Transfer")), __("Status"));
+		}
+		if (!frm.is_new() && ["Transferred", "Left"].includes(frm.doc.status)) {
+			frm.add_custom_button(__("Re-admit"), () => frm.set_value("status", "Active").then(() => frm.save()), __("Status"));
+		}
+
 		if (frm.is_new() || !school_has("fees")) return;
 
 		frappe.call("school_erp.api.statement.get_balance", { student: frm.doc.name }).then((r) => {

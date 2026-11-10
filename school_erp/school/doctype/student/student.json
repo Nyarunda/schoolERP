@@ -33,6 +33,11 @@
   "cb_government_ids_2",
   "special_needs",
   "special_needs_details",
+  "sb_leaving",
+  "leaving_date",
+  "transferred_to",
+  "cb_leaving",
+  "leaving_reason",
   "sb_guardians",
   "guardians",
   "primary_guardian",
@@ -115,7 +120,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Active\nSuspended\nLeft\nGraduated"
+   "options": "Active\nSuspended\nTransferred\nLeft\nGraduated"
   },
   {
    "fieldname": "cb_school",
@@ -253,29 +258,60 @@
    "idx": 28
   },
   {
+   "fieldname": "sb_leaving",
+   "fieldtype": "Section Break",
+   "label": "Leaving",
+   "depends_on": "eval:['Transferred','Left','Graduated'].includes(doc.status)",
+   "idx": 29
+  },
+  {
+   "fieldname": "leaving_date",
+   "fieldtype": "Date",
+   "label": "Date Left",
+   "idx": 30
+  },
+  {
+   "fieldname": "transferred_to",
+   "fieldtype": "Data",
+   "label": "Transferred To (School)",
+   "depends_on": "eval:doc.status=='Transferred'",
+   "idx": 31
+  },
+  {
+   "fieldname": "cb_leaving",
+   "fieldtype": "Column Break",
+   "idx": 32
+  },
+  {
+   "fieldname": "leaving_reason",
+   "fieldtype": "Small Text",
+   "label": "Reason / Notes",
+   "idx": 33
+  },
+  {
    "fieldname": "sb_guardians",
    "fieldtype": "Section Break",
-   "idx": 29,
+   "idx": 34,
    "label": "Parents / Guardians"
   },
   {
    "fieldname": "guardians",
    "fieldtype": "Table",
-   "idx": 30,
+   "idx": 35,
    "label": "Guardians",
    "options": "Student Guardian"
   },
   {
    "fieldname": "primary_guardian",
    "fieldtype": "Data",
-   "idx": 31,
+   "idx": 36,
    "label": "Primary Guardian",
    "read_only": 1
   },
   {
    "fieldname": "primary_phone",
    "fieldtype": "Data",
-   "idx": 32,
+   "idx": 37,
    "label": "Primary Phone",
    "options": "Phone",
    "read_only": 1
@@ -283,7 +319,7 @@
   {
    "fieldname": "primary_email",
    "fieldtype": "Data",
-   "idx": 33,
+   "idx": 38,
    "label": "Primary Email",
    "options": "Email",
    "read_only": 1
@@ -292,13 +328,13 @@
    "collapsible": 0,
    "fieldname": "sb_services",
    "fieldtype": "Section Break",
-   "idx": 34,
+   "idx": 39,
    "label": "Services"
   },
   {
    "fieldname": "transport_route",
    "fieldtype": "Link",
-   "idx": 35,
+   "idx": 40,
    "in_standard_filter": 1,
    "label": "Transport Route",
    "options": "Transport Route"
@@ -307,68 +343,68 @@
    "depends_on": "transport_route",
    "fieldname": "pickup_point",
    "fieldtype": "Data",
-   "idx": 36,
+   "idx": 41,
    "label": "Pickup Point"
   },
   {
    "fieldname": "cb_services",
    "fieldtype": "Column Break",
-   "idx": 37
+   "idx": 42
   },
   {
    "fieldname": "takes_lunch",
    "fieldtype": "Check",
-   "idx": 38,
+   "idx": 43,
    "label": "Takes School Lunch"
   },
   {
    "fieldname": "sb_activities",
    "fieldtype": "Section Break",
-   "idx": 39,
+   "idx": 44,
    "label": "Games & Activities"
   },
   {
    "fieldname": "activities",
    "fieldtype": "Table",
-   "idx": 40,
+   "idx": 45,
    "label": "Activities",
    "options": "Student Activity Enrolment"
   },
   {
    "fieldname": "sb_fees",
    "fieldtype": "Section Break",
-   "idx": 41,
+   "idx": 46,
    "label": "Fees"
   },
   {
    "description": "Applied to fee types marked Discountable",
    "fieldname": "scholarship_percent",
    "fieldtype": "Percent",
-   "idx": 42,
+   "idx": 47,
    "label": "Scholarship / Discount %"
   },
   {
    "fieldname": "scholarship_note",
    "fieldtype": "Data",
-   "idx": 43,
+   "idx": 48,
    "label": "Scholarship Note"
   },
   {
    "fieldname": "cb_fees",
    "fieldtype": "Column Break",
-   "idx": 44
+   "idx": 49
   },
   {
    "fieldname": "fee_notes",
    "fieldtype": "Small Text",
-   "idx": 45,
+   "idx": 50,
    "label": "Fee Notes"
   }
  ],
  "image_field": "photo",
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-11-10 12:00:00.000000",
+ "modified": "2026-11-10 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Student",

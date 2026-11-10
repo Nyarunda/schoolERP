@@ -126,6 +126,7 @@ const MODULE_HELP = {
 	transport_ops: __("Vehicles, fuel and drivers' daily logs"),
 	exams: __("Exams, mark sheets, merit lists and report cards"),
 	portal: __("Parent portal: balances, report cards and M-Pesa prompts to pay"),
+	admissions: __("Online application form, interviews, offers and one-click admission"),
 };
 
 function render_license(frm) {

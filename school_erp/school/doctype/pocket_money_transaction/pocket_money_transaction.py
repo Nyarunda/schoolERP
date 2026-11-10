@@ -31,10 +31,20 @@ class PocketMoneyTransaction(Document):
 		self.posting_datetime = self.posting_datetime or now_datetime()
 		self.recorded_by = frappe.session.user
 
+	def before_submit(self):
+		from school_erp.api.pocket_money import check_post
+
+		check_post(self)
+
 	def on_submit(self):
 		from school_erp.api.pocket_money import post
 
 		post(self)
+
+	def before_cancel(self):
+		from school_erp.api.pocket_money import check_unpost
+
+		check_unpost(self)
 
 	def on_cancel(self):
 		from school_erp.api.pocket_money import unpost

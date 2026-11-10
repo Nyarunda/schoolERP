@@ -32,8 +32,9 @@ def spent_on(student, day, exclude=None) -> float:
 		{"s": student, "types": SPENDING, "ex": exclude or "", "start": start, "end": add_days(start, 1)})[0][0])
 
 
-def post(doc):
-	"""on_submit: the account row is locked so two tills can't spend the same shilling."""
+def check_post(doc):
+	"""before_submit: lock the account row (held until the transaction ends, so two tills can't spend the same
+	shilling) and refuse what the balance, daily limit or a freeze doesn't allow. Nothing is written if this fails."""
 	licensing.require("pocket_money")
 	account = ensure_account(doc.student, create=doc.transaction_type in CREDIT)
 	if not account:
@@ -44,9 +45,15 @@ def post(doc):
 						   daily_limit=flt(row.daily_limit), frozen=bool(cint(row.is_frozen)))
 	if problem:
 		frappe.throw(_(problem), title=_("Can't record this"))
+	return row
+
+
+def post(doc):
+	"""on_submit: move the balance (the row is already locked by check_post in this transaction)."""
+	row = check_post(doc)
 	before = flt(row.balance)
 	after = round(before + signed(doc.transaction_type, doc.amount), 2)
-	frappe.db.set_value("Pocket Money Account", account, {"balance": after, "last_transaction": doc.posting_datetime},
+	frappe.db.set_value("Pocket Money Account", doc.student, {"balance": after, "last_transaction": doc.posting_datetime},
 						update_modified=False)
 	doc.db_set({"balance_before": before, "balance_after": after})
 	if doc.transaction_type == "Deposit":
@@ -55,11 +62,17 @@ def post(doc):
 		_queue_sms(doc.name, "low")
 
 
-def unpost(doc):
+def check_unpost(doc):
+	"""before_cancel: a deposit that has already been spent can't be taken back."""
 	row = _lock(doc.student)
 	problem = cancel_problem(flt(row.balance), doc.transaction_type, doc.amount)
 	if problem:
 		frappe.throw(_(problem))
+	return row
+
+
+def unpost(doc):
+	row = check_unpost(doc)
 	after = round(flt(row.balance) - signed(doc.transaction_type, doc.amount), 2)
 	frappe.db.set_value("Pocket Money Account", doc.student, "balance", after, update_modified=False)
 

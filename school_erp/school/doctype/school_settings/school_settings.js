@@ -126,6 +126,7 @@ const MODULE_HELP = {
 	transport_ops: __("Vehicles, fuel and drivers' daily logs"),
 	exams: __("Exams, mark sheets, merit lists and report cards"),
 	portal: __("Parent portal: balances, report cards and M-Pesa prompts to pay"),
+	health: __("Learner health records, sick bay visits with parent SMS, visitor book and gate passes"),
 };
 
 function render_license(frm) {

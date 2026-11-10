@@ -1,0 +1,238 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:student",
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "school_class",
+  "cb_1",
+  "blood_group",
+  "immunisation_up_to_date",
+  "cb_2",
+  "sha_number",
+  "insurer",
+  "sb_3",
+  "allergies",
+  "chronic_conditions",
+  "cb_4",
+  "regular_medication",
+  "notes",
+  "sb_5",
+  "doctor_name",
+  "doctor_phone",
+  "cb_6",
+  "emergency_contact_name",
+  "emergency_contact_phone"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Learner",
+   "options": "Student",
+   "reqd": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "fetch_from": "student.student_name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "label": "Class",
+   "options": "School Class",
+   "fetch_from": "student.school_class",
+   "read_only": 1,
+   "in_standard_filter": 1,
+   "idx": 3
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "blood_group",
+   "fieldtype": "Select",
+   "label": "Blood Group",
+   "options": "\nA+\nA-\nB+\nB-\nAB+\nAB-\nO+\nO-",
+   "idx": 5
+  },
+  {
+   "fieldname": "immunisation_up_to_date",
+   "fieldtype": "Check",
+   "label": "Immunisation Up to Date",
+   "idx": 6
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 7
+  },
+  {
+   "fieldname": "sha_number",
+   "fieldtype": "Data",
+   "label": "SHA / Insurance No.",
+   "idx": 8
+  },
+  {
+   "fieldname": "insurer",
+   "fieldtype": "Data",
+   "label": "Insurer",
+   "idx": 9
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "label": "Medical",
+   "idx": 10
+  },
+  {
+   "fieldname": "allergies",
+   "fieldtype": "Small Text",
+   "label": "Allergies",
+   "in_list_view": 1,
+   "idx": 11
+  },
+  {
+   "fieldname": "chronic_conditions",
+   "fieldtype": "Small Text",
+   "label": "Chronic Conditions (asthma, epilepsy, diabetes...)",
+   "idx": 12
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break",
+   "idx": 13
+  },
+  {
+   "fieldname": "regular_medication",
+   "fieldtype": "Small Text",
+   "label": "Regular Medication",
+   "idx": 14
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Other Notes",
+   "idx": 15
+  },
+  {
+   "fieldname": "sb_5",
+   "fieldtype": "Section Break",
+   "label": "Contacts",
+   "idx": 16
+  },
+  {
+   "fieldname": "doctor_name",
+   "fieldtype": "Data",
+   "label": "Family Doctor / Clinic",
+   "idx": 17
+  },
+  {
+   "fieldname": "doctor_phone",
+   "fieldtype": "Data",
+   "label": "Doctor Phone",
+   "options": "Phone",
+   "idx": 18
+  },
+  {
+   "fieldname": "cb_6",
+   "fieldtype": "Column Break",
+   "idx": 19
+  },
+  {
+   "fieldname": "emergency_contact_name",
+   "fieldtype": "Data",
+   "label": "Emergency Contact",
+   "idx": 20
+  },
+  {
+   "fieldname": "emergency_contact_phone",
+   "fieldtype": "Data",
+   "label": "Emergency Phone",
+   "options": "Phone",
+   "idx": 21
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Student Health Record",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Staff"
+  },
+  {
+   "role": "Teacher",
+   "read": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "student_name,school_class",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

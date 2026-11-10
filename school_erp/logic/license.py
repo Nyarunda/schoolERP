@@ -30,6 +30,7 @@ MODULES = {
 	"transport_ops": "Driver Daily Logs & Vehicles",
 	"exams": "Exams & Report Cards",
 	"portal": "Parent Portal & Online Fee Payment",
+	"health": "Sick Bay & Visitors",
 }
 
 # Which module each DocType belongs to
@@ -62,6 +63,10 @@ DOCTYPE_MODULE = {
 	"Exam Mark Sheet": "exams",
 	"Report Card": "exams",
 	"STK Push Request": "portal",
+	"Student Health Record": "health",
+	"Sick Bay Visit": "health",
+	"Visitor Log": "health",
+	"Gate Pass": "health",
 }
 
 # DocTypes another module's forms link to: still readable when that module is licensed, so its forms keep working

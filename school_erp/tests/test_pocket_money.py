@@ -1,7 +1,5 @@
 """Framework-free tests for pocket money rules (no bench needed)."""
 
-import pytest
-
 from school_erp.logic.pocket_money import (
 	balance_of,
 	cancel_problem,
@@ -15,8 +13,11 @@ from school_erp.logic.pocket_money import (
 def test_signed_and_balance():
 	assert signed("Deposit", 500) == 500
 	assert signed("Purchase", 120.5) == -120.5
-	with pytest.raises(ValueError):
+	try:
 		signed("Gift", 1)
+		raise AssertionError("an unknown type must be refused")
+	except ValueError:
+		pass
 	assert balance_of([{"transaction_type": "Deposit", "amount": 1000}, {"transaction_type": "Purchase", "amount": 250},
 					   {"transaction_type": "Refund", "amount": 50}, {"transaction_type": "Adjustment Out", "amount": 100}]) == 700
 

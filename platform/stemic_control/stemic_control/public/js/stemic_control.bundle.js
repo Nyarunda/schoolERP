@@ -90,6 +90,7 @@ Object.assign(stemic_control, {
         transport_ops: __("Vehicles, fuel and drivers' daily logs"),
         exams: __("Exams, mark sheets, merit lists and report cards"),
         portal: __("Parent portal and M-Pesa prompts to pay"),
+        admissions: __("Online application form, interviews, offers and one-click admission"),
     },
     hero(color, icon, title, text, extra = "") {
         return `<div class="scx-hero ${color}"><div class="scx-ic">${frappe.utils.icon(icon, "md")}</div>

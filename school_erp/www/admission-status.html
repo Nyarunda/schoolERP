@@ -1,0 +1,58 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ _("Admission Status") }}{% endblock %}
+
+{% block page_content %}
+<style>
+	.cs-wrap { max-width: 520px; margin: 32px auto; }
+	.cs-card { border: 1px solid var(--border-color, #e3e7ec); border-radius: 12px; padding: 24px; }
+	.cs-card h1 { font-size: 22px; margin-bottom: 4px; }
+	.cs-muted { color: var(--text-muted, #6b7280); font-size: 14px; }
+	.cs-field { margin-top: 14px; }
+	.cs-field label { font-weight: 600; font-size: 13px; display: block; margin-bottom: 4px; }
+	.cs-field input { width: 100%; padding: 10px 12px; border: 1px solid #d0d5dd; border-radius: 8px; font-size: 15px; }
+	.cs-btn { margin-top: 18px; width: 100%; padding: 11px; border: 0; border-radius: 8px; background: #1f6f5c; color: #fff; font-weight: 600; font-size: 15px; }
+	.cs-result { margin-top: 20px; padding: 16px; border-radius: 10px; background: #f4f6f8; display: none; }
+	.cs-status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 13px; }
+	.cs-status { background: #fff6e5; color: #7a4b00; }
+	.cs-Offered, .cs-Accepted, .cs-Admitted { background: #e8f5ee; color: #17633b; }
+	.cs-Rejected, .cs-Withdrawn { background: #f1f2f4; color: #4b5563; }
+</style>
+<div class="cs-wrap">
+	<div class="cs-card">
+		<h1>{{ _("Track your application") }}</h1>
+		<div class="cs-muted">{{ _("Enter the reference number from your SMS and the phone number you applied with.") }}</div>
+		<form id="cs-form">
+			<div class="cs-field"><label>{{ _("Reference number") }}</label><input name="ref" placeholder="APP-2026-00001" required></div>
+			<div class="cs-field"><label>{{ _("Phone number") }}</label><input name="phone" placeholder="07XX XXX XXX" required></div>
+			<button class="cs-btn" type="submit">{{ _("Check status") }}</button>
+		</form>
+		<div class="cs-result" id="cs-result"></div>
+		<p class="cs-muted" style="margin-top:18px">{{ _("Not applied yet?") }} <a href="/admission-application">{{ _("Apply here") }}</a></p>
+	</div>
+</div>
+<script>
+document.getElementById("cs-form").addEventListener("submit", async (e) => {
+	e.preventDefault();
+	const f = new FormData(e.target), box = document.getElementById("cs-result");
+	const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+	box.style.display = "block";
+	box.textContent = "{{ _('Checking...') }}";
+	try {
+		const r = await fetch("/api/method/school_erp.api.admissions.application_status", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", "X-Frappe-CSRF-Token": (window.frappe && frappe.csrf_token) || "" },
+			body: JSON.stringify({ ref: f.get("ref"), phone: f.get("phone") }),
+		});
+		const m = (await r.json()).message;
+		if (!m || !m.found) { box.textContent = "{{ _('No application found with that reference and phone number.') }}"; return; }
+		box.innerHTML = `<div><b>${esc(m.ref)}</b> &middot; ${esc(m.applicant)} &middot; ${esc(m.class_name)}</div>
+			<div style="margin-top:8px"><span class="cs-status cs-${esc(m.status).replace(/ /g, "-")}">${esc(m.status_label)}</span> <span class="cs-muted">{{ _("applied") }} ${esc(m.received)}</span></div>
+			${m.interview ? `<div style="margin-top:10px"><b>{{ _("Interview") }}:</b> ${esc(m.interview)}</div>` : ""}
+			${m.open ? `<div class="cs-muted" style="margin-top:10px">{{ _("We will send you an SMS when there is news.") }}</div>` : ""}`;
+	} catch (err) {
+		box.textContent = "{{ _('Could not check right now. Please try again.') }}";
+	}
+});
+</script>
+{% endblock %}

@@ -25,6 +25,7 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 | `welfare` | **Discipline incidents** (SMS parent) and **complaints** (staff + public web form with SMS tracking) |
 | `exams` | **Exams & report cards**: marks entry per stream/subject, **Head of Department approval of marks** ([how](docs/ATTENDANCE_AND_MARKS_APPROVAL.md#marks-approval-exams-module)), CBC and 8-4-4 grading, positions, remarks, PDF report cards sent to parents, merit list and subject analysis. **CBC competency assessment**: strands and sub-strands per learning area, formative assessments on the EE/ME/AE/BE rubric (or the 8-level EE1–BE2), termly learner progress reports with no ranking, on the parent portal. See [docs/EXAMS_PORTAL_PROMOTION.md](docs/EXAMS_PORTAL_PROMOTION.md) and [docs/CBC_ASSESSMENT.md](docs/CBC_ASSESSMENT.md) |
 | `portal` | **Parent portal**: parents log in with their phone number to see balances, statements, receipts, report cards and notices, and **pay with an M-Pesa prompt (STK Push)** |
+| `admissions` | **Online admissions**: a public application form at `/admission-application`, SMS reference and status tracking at `/admission-status`, review → interview → offer → admit, and **Admit as Student** in one click. See [docs/ADMISSIONS.md](docs/ADMISSIONS.md) |
 | `mpesa` | **M-Pesa Paybill auto-posting**: parents pay with the Student ID as account number and the payment is posted to the student automatically. See [docs/MPESA.md](docs/MPESA.md) |
 
 ---

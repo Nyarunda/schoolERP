@@ -226,6 +226,12 @@
    "role": "Teacher",
    "read": 1,
    "print": 1
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
   }
  ],
  "row_format": "Dynamic",

@@ -352,6 +352,7 @@
 				<button class="pp-tab on" data-tab="overview" role="tab">{{ icon("home") }}{{ _("Overview") }}</button>
 				<button class="pp-tab" data-tab="fees" role="tab">{{ icon("wallet") }}{{ _("Fees") }}{% if due %}<span class="n red">!</span>{% endif %}</button>
 				{% if c.report_cards %}<button class="pp-tab" data-tab="results" role="tab">{{ icon("award") }}{{ _("Results") }}<span class="n">{{ c.report_cards|length }}</span></button>{% endif %}
+				{% if c.cbc_reports %}<button class="pp-tab" data-tab="progress" role="tab">{{ icon("doc") }}{{ _("CBC Progress") }}<span class="n">{{ c.cbc_reports|length }}</span></button>{% endif %}
 				{% if att %}<button class="pp-tab" data-tab="attendance" role="tab">{{ icon("check") }}{{ _("Attendance") }}</button>{% endif %}
 				{% if c.lessons %}<button class="pp-tab" data-tab="timetable" role="tab">{{ icon("calendar") }}{{ _("Timetable") }}</button>{% endif %}
 				<button class="pp-tab" data-tab="messages" role="tab">{{ icon("chat") }}{{ _("Messages") }}{% if notices %}<span class="n">{{ notices|length }}</span>{% endif %}</button>
@@ -495,6 +496,24 @@
 				</div>
 			</div>
 			{% endif %}
+		</div>
+		{% endif %}
+
+		{# ---------------------------------------------------------------- CBC progress #}
+		{% if c.cbc_reports %}
+		<div class="pp-panel" data-panel="progress">
+			{% for r in c.cbc_reports %}
+			<div class="pp-card">
+				<div class="pp-h"><h3>{{ icon("doc") }}{{ _("CBC progress report") }} · {{ r.term|e }}</h3><a class="pp-link" href="{{ r.url }}" target="_blank">{{ _("PDF") }}{{ icon("chev") }}</a></div>
+				{% for a in r.areas %}
+				<div class="pp-subj-row"><span>{{ a.subject_name|e }}</span><span class="pp-sub">{{ (a.descriptor or "")|e }}</span>
+					<span class="g">{{ a.level or "–" }}</span>{% if a.teacher_comment %}<small>{{ a.teacher_comment|e }}</small>{% endif %}</div>
+				{% endfor %}
+				{% if r.strengths %}<div class="pp-remark"><span class="pp-lbl">{{ _("Strongest") }}</span>{{ r.strengths|e }}</div>{% endif %}
+				{% if r.areas_to_improve %}<div class="pp-remark"><span class="pp-lbl">{{ _("To work on") }}</span>{{ r.areas_to_improve|e }}</div>{% endif %}
+				{% if r.class_teacher_remark %}<div class="pp-remark"><span class="pp-lbl">{{ _("Class teacher") }}</span>{{ r.class_teacher_remark|e }}</div>{% endif %}
+			</div>
+			{% endfor %}
 		</div>
 		{% endif %}
 

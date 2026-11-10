@@ -61,6 +61,10 @@ DOCTYPE_MODULE = {
 	"Exam": "exams",
 	"Exam Mark Sheet": "exams",
 	"Report Card": "exams",
+	"CBC Settings": "exams",
+	"CBC Strand": "exams",
+	"Competency Assessment": "exams",
+	"CBC Progress Report": "exams",
 	"STK Push Request": "portal",
 }
 

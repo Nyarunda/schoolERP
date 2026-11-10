@@ -30,6 +30,7 @@ MODULES = {
 	"transport_ops": "Driver Daily Logs & Vehicles",
 	"exams": "Exams & Report Cards",
 	"portal": "Parent Portal & Online Fee Payment",
+	"boarding": "Boarding & Exeat",
 	"homework": "Homework & Assignments",
 	"admissions": "Online Admissions",
 }
@@ -68,6 +69,9 @@ DOCTYPE_MODULE = {
 	"Competency Assessment": "exams",
 	"CBC Progress Report": "exams",
 	"STK Push Request": "portal",
+	"Dormitory": "boarding",
+	"Boarding Allocation": "boarding",
+	"Exeat": "boarding",
 	"Homework": "homework",
 	"Admission Application": "admissions",
 	"Admission Settings": "admissions",

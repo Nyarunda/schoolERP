@@ -90,6 +90,7 @@ Object.assign(stemic_control, {
         transport_ops: __("Vehicles, fuel and drivers' daily logs"),
         exams: __("Exams, mark sheets, merit lists and report cards"),
         portal: __("Parent portal and M-Pesa prompts to pay"),
+        boarding: __("Dormitories, bed allocation, exeat passes with gate check-out/in and parent SMS"),
         homework: __("Homework per stream and subject, hand-in tracking, on the parent portal"),
         admissions: __("Online application form, interviews, offers and one-click admission"),
     },

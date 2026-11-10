@@ -21,6 +21,7 @@ A simple school management app on top of ERPNext. Students are ERPNext **Custome
 | `homework` | **Homework & assignments**: teachers set homework per stream and subject (with a worksheet), parents get one SMS when it is published and see it on the parent portal's Homework tab, teachers tick who handed it in; Homework Register report |
 | `messaging` | SMS and email to parents: billing notices, payment receipts, reminders, PDF statements |
 | `staff` | Staff members (teachers, drivers, support), **leave** with types, balances, workflow approvals, approval + **reliever notifications** and live toasts, **duty roster & daily Teacher-on-Duty reports**. See [docs/STAFF_AND_OPERATIONS.md](docs/STAFF_AND_OPERATIONS.md) |
+| `boarding` | **Boarding & exeat**: dormitories with beds and house parents, bed allocation (boys/girls, capacity and bed clashes checked), **exeat passes**: request → approve → gate check-out (who collected the learner) → check-in, with parent SMS at each gate step and an hourly alert when a learner is overdue; Dormitory Occupancy and Exeat Register reports |
 | `expenses` | **Expense posting with amount-based approvals** (one or two levels, on a Frappe Workflow), posted to the accounts automatically |
 | `transport_ops` | **Driver morning check-in** (safety checklist, fitness, odometer, fuel), alerts for failed checks and missed check-ins, vehicles and document expiry |
 | `welfare` | **Discipline incidents** (SMS parent) and **complaints** (staff + public web form with SMS tracking) |

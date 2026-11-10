@@ -97,20 +97,21 @@ TEXTS = {
 }
 
 
-def _queue_sms(transaction, event):
+def _queue_sms(transaction, kind):
+	# not "event": frappe.enqueue has its own keyword of that name and would swallow it
 	if licensing.is_enabled("messaging"):
-		frappe.enqueue("school_erp.api.pocket_money.send_sms", queue="short", transaction=transaction, event=event,
+		frappe.enqueue("school_erp.api.pocket_money.send_sms", queue="short", transaction=transaction, kind=kind,
 					   enqueue_after_commit=True, now=bool(frappe.flags.in_test))
 
 
-def send_sms(transaction, event):
+def send_sms(transaction, kind):
 	from school_erp.api.messaging import sms_student
 
 	t = frappe.db.get_value("Pocket Money Transaction", transaction, ["student", "amount", "balance_after"], as_dict=True)
 	currency = frappe.db.get_single_value("School Settings", "currency")
 	try:
 		student = frappe.get_doc("Student", t.student)
-		sms_student(student, TEXTS[event], {"student_name": student.first_name, "amount": fmt_money(t.amount, currency=currency),
+		sms_student(student, TEXTS[kind], {"student_name": student.first_name, "amount": fmt_money(t.amount, currency=currency),
 											"balance": fmt_money(t.balance_after, currency=currency),
 											"school_name": frappe.db.get_single_value("School Settings", "school_name") or ""})
 	except Exception:

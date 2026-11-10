@@ -29,6 +29,7 @@ class Student(Document):
 				self.set(f, " ".join(self.get(f).split()).title())
 		self.student_name = " ".join(filter(None, [self.first_name, self.middle_name, self.last_name]))
 		self.validate_admission_number()
+		self.validate_government_ids()
 		self.set_primary_guardian()
 		self.validate_services()
 
@@ -37,6 +38,26 @@ class Student(Document):
 			"Student", {"admission_number": self.admission_number, "name": ("!=", self.name)}
 		):
 			frappe.throw(_("Admission number {0} belongs to another student").format(self.admission_number))
+
+	def validate_government_ids(self):
+		"""UPI, birth certificate and KNEC numbers are stored clean (no spaces, upper case) and never shared by two learners."""
+		from school_erp.logic.nemis import clean_id, id_problem
+
+		labels = {"upi_number": _("UPI number"), "birth_certificate_no": _("Birth certificate number"),
+				  "assessment_number": _("KNEC assessment number")}
+		for field, label in labels.items():
+			value = clean_id(self.get(field))
+			self.set(field, value or None)
+			if not value:
+				continue
+			problem = id_problem(value, label)
+			if problem:
+				frappe.throw(_(problem))
+			other = frappe.db.get_value("Student", {field: value, "name": ("!=", self.name)}, ["name", "student_name"], as_dict=True)
+			if other:
+				frappe.throw(_("{0} {1} already belongs to {2} ({3})").format(label, value, other.student_name, other.name))
+		if not self.special_needs:
+			self.special_needs_details = None
 
 	def set_primary_guardian(self):
 		if not self.guardians:

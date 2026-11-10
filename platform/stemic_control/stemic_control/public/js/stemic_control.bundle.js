@@ -90,6 +90,7 @@ Object.assign(stemic_control, {
         transport_ops: __("Vehicles, fuel and drivers' daily logs"),
         exams: __("Exams, mark sheets, merit lists and report cards"),
         portal: __("Parent portal and M-Pesa prompts to pay"),
+        health: __("Learner health records, sick bay visits with parent SMS, visitor book and gate passes"),
         library: __("Book catalogue with copies, issue and return, renewals, overdue SMS and fines billed to fees"),
         pocket_money: __("Learners' pocket money: deposits, canteen purchases, daily limits, balance on the parent portal"),
         boarding: __("Dormitories, bed allocation, exeat passes with gate check-out/in and parent SMS"),

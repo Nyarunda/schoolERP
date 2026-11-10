@@ -1,0 +1,279 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "SBV-.YYYY.-.#####",
+ "creation": "2026-11-10 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "student_name",
+  "school_class",
+  "cb_1",
+  "visit_datetime",
+  "attended_by",
+  "cb_2",
+  "allergies",
+  "chronic_conditions",
+  "sb_3",
+  "symptoms",
+  "temperature",
+  "cb_4",
+  "assessment",
+  "treatment",
+  "medication_given",
+  "sb_5",
+  "outcome",
+  "referred_to",
+  "cb_6",
+  "left_at",
+  "parent_notified",
+  "parent_notified_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Learner",
+   "options": "Student",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "idx": 1
+  },
+  {
+   "fieldname": "student_name",
+   "fieldtype": "Data",
+   "label": "Name",
+   "fetch_from": "student.student_name",
+   "read_only": 1,
+   "in_list_view": 1,
+   "idx": 2
+  },
+  {
+   "fieldname": "school_class",
+   "fieldtype": "Link",
+   "label": "Class",
+   "options": "School Class",
+   "fetch_from": "student.school_class",
+   "read_only": 1,
+   "in_standard_filter": 1,
+   "idx": 3
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break",
+   "idx": 4
+  },
+  {
+   "fieldname": "visit_datetime",
+   "fieldtype": "Datetime",
+   "label": "Seen At",
+   "default": "now",
+   "reqd": 1,
+   "in_list_view": 1,
+   "idx": 5
+  },
+  {
+   "fieldname": "attended_by",
+   "fieldtype": "Link",
+   "label": "Attended By",
+   "options": "User",
+   "read_only": 1,
+   "idx": 6
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break",
+   "idx": 7
+  },
+  {
+   "fieldname": "allergies",
+   "fieldtype": "Small Text",
+   "label": "Known Allergies",
+   "read_only": 1,
+   "idx": 8
+  },
+  {
+   "fieldname": "chronic_conditions",
+   "fieldtype": "Small Text",
+   "label": "Known Conditions",
+   "read_only": 1,
+   "idx": 9
+  },
+  {
+   "fieldname": "sb_3",
+   "fieldtype": "Section Break",
+   "label": "Assessment",
+   "idx": 10
+  },
+  {
+   "fieldname": "symptoms",
+   "fieldtype": "Small Text",
+   "label": "Complaint / Symptoms",
+   "reqd": 1,
+   "idx": 11
+  },
+  {
+   "fieldname": "temperature",
+   "fieldtype": "Float",
+   "label": "Temperature (°C)",
+   "precision": "1",
+   "idx": 12
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break",
+   "idx": 13
+  },
+  {
+   "fieldname": "assessment",
+   "fieldtype": "Small Text",
+   "label": "Assessment",
+   "idx": 14
+  },
+  {
+   "fieldname": "treatment",
+   "fieldtype": "Small Text",
+   "label": "Treatment / First Aid",
+   "idx": 15
+  },
+  {
+   "fieldname": "medication_given",
+   "fieldtype": "Data",
+   "label": "Medication Given",
+   "idx": 16
+  },
+  {
+   "fieldname": "sb_5",
+   "fieldtype": "Section Break",
+   "label": "Outcome",
+   "idx": 17
+  },
+  {
+   "fieldname": "outcome",
+   "fieldtype": "Select",
+   "label": "Outcome",
+   "options": "Returned to class\nRested in sick bay\nSent home\nReferred to hospital",
+   "default": "Returned to class",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "idx": 18
+  },
+  {
+   "fieldname": "referred_to",
+   "fieldtype": "Data",
+   "label": "Referred To (hospital / clinic)",
+   "depends_on": "eval:doc.outcome=='Referred to hospital'",
+   "idx": 19
+  },
+  {
+   "fieldname": "cb_6",
+   "fieldtype": "Column Break",
+   "idx": 20
+  },
+  {
+   "fieldname": "left_at",
+   "fieldtype": "Datetime",
+   "label": "Left Sick Bay At",
+   "idx": 21
+  },
+  {
+   "fieldname": "parent_notified",
+   "fieldtype": "Check",
+   "label": "Parent Notified",
+   "read_only": 1,
+   "idx": 22
+  },
+  {
+   "fieldname": "parent_notified_on",
+   "fieldtype": "Datetime",
+   "label": "Parent Notified On",
+   "read_only": 1,
+   "idx": 23
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-10 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "School",
+ "name": "Sick Bay Visit",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "School Admin"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Head Teacher"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Staff"
+  },
+  {
+   "create": 1,
+   "delete": 0,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Teacher"
+  },
+  {
+   "role": "School Viewer",
+   "read": 1,
+   "report": 1,
+   "print": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "student,student_name",
+ "sort_field": "visit_datetime",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "student_name",
+ "track_changes": 1
+}

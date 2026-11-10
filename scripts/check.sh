@@ -33,7 +33,7 @@ $PY -m pytest -q \
   school_erp/tests/test_logic.py \
   school_erp/tests/test_document_verification_policy.py \
   school_erp/tests/test_verified_document_integrity.py \
-  school_erp/tests/test_library.py || fail "unit tests"
+  school_erp/tests/test_library.py \
   school_erp/tests/test_pocket_money.py \
   school_erp/tests/test_boarding.py \
   school_erp/tests/test_homework.py \

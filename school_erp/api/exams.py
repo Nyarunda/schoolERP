@@ -144,12 +144,75 @@ def approve_sheets(names):
 
 
 # ----------------------------------------------------------------------------- report cards
+RESULTS_MANAGERS = {"System Manager", "School Admin", "Head Teacher"}
+
+
+def _manages_results(user=None) -> bool:
+	return bool(RESULTS_MANAGERS & set(frappe.get_roles(user)))
+
+
+def my_class_streams(user=None) -> list[str]:
+	"""Streams whose class teacher is this login."""
+	user = user or frappe.session.user
+	teachers = frappe.get_all("Teacher", filters={"user": user}, pluck="name")
+	return frappe.get_all("Stream", filters={"class_teacher": ("in", teachers)}, pluck="name") if teachers else []
+
+
+def report_card_scope(exam, stream=None, school_class=None) -> list[str] | None:
+	"""The streams a request covers: None = the whole exam. A class teacher may only cover their own streams;
+	the Head Teacher and School Admin anything."""
+	doc = frappe.get_cached_doc("Exam", exam) if isinstance(exam, str) else exam
+	if stream:
+		streams = [stream]
+	elif school_class:
+		streams = frappe.get_all("Stream", filters={"school_class": school_class}, pluck="name")
+		if not streams:
+			frappe.throw(_("{0} has no streams").format(school_class))
+	else:
+		streams = None
+	if _manages_results():
+		return streams
+	mine = set(my_class_streams())
+	if streams is None:
+		frappe.throw(_("Only the Head Teacher or a School Admin can generate the whole exam at once. Choose your stream."),
+					 frappe.PermissionError)
+	others = [s for s in streams if s not in mine]
+	if others:
+		frappe.throw(_("You are not the class teacher of {0}").format(", ".join(others)), frappe.PermissionError)
+	classes = {c.school_class for c in doc.classes}
+	if classes and any(frappe.db.get_value("Stream", s, "school_class") not in classes for s in streams):
+		frappe.throw(_("That stream does not sit {0}").format(doc.name))
+	return streams
+
+
 @frappe.whitelist()
-def generate_report_cards(exam):
-	"""Build (or rebuild) a report card per student from the submitted mark sheets, with positions."""
+def report_card_options(exam):
+	"""For the Generate / Print dialogs: the streams this person may choose, with how many cards each has."""
+	licensing.require("exams")
+	doc = frappe.get_doc("Exam", exam)
+	frappe.has_permission("Exam", "read", doc, throw=True)
+	streams = exam_streams(doc)
+	manager = _manages_results()
+	if not manager:
+		mine = set(my_class_streams())
+		streams = [s for s in streams if s in mine]
+	rows = []
+	for s in streams:
+		rows.append({"stream": s, "school_class": frappe.db.get_value("Stream", s, "school_class"),
+					 "cards": frappe.db.count("Report Card", {"exam": exam, "stream": s}),
+					 "waiting": frappe.db.count("Exam Mark Sheet", {"exam": exam, "stream": s, "docstatus": 0})})
+	return {"manager": manager, "streams": rows}
+
+
+@frappe.whitelist()
+def generate_report_cards(exam, stream=None, school_class=None):
+	"""Build (or rebuild) report cards from the submitted mark sheets, with positions: for the whole exam, one class or
+	one stream. Positions in the class are always worked out across all its streams; cards of other streams only get
+	their class position refreshed."""
 	licensing.require("exams")
 	doc = frappe.get_doc("Exam", exam)
 	frappe.has_permission("Report Card", "create", throw=True)
+	scope = report_card_scope(doc, stream, school_class)
 	bands = scale_bands(doc.grading_scale)
 	sheets = frappe.get_all("Exam Mark Sheet", filters={"exam": exam, "docstatus": 1},
 							fields=["name", "stream", "school_class", "subject", "teacher", "max_marks"])
@@ -180,9 +243,13 @@ def generate_report_cards(exam):
 	for stream, members in by_stream.items():
 		sub_pos[stream] = subject_positions({st: results[st] for st in members})
 
-	previous = _previous_means(doc, list(results))
+	targets = [st for st in results if scope is None or student_stream[st][0] in scope]
+	if scope is not None and not targets:
+		frappe.throw(_("No submitted mark sheets yet for {0} in {1}").format(", ".join(scope), exam))
+	previous = _previous_means(doc, targets)
 	created = 0
-	for st, r in results.items():
+	for st in targets:
+		r = results[st]
 		stream, cls = student_stream[st]
 		name = frappe.db.get_value("Report Card", {"student": st, "exam": exam})
 		rc = frappe.get_doc("Report Card", name) if name else frappe.new_doc("Report Card")
@@ -213,9 +280,18 @@ def generate_report_cards(exam):
 		rc.flags.ignore_permissions = True
 		rc.save()
 		created += 1
+	if scope is not None:  # other streams' cards: their class position moves with this stream's results
+		done = set(targets)
+		for cls in {student_stream[st][1] for st in targets}:
+			for name, st in frappe.get_all("Report Card", filters={"exam": exam, "school_class": cls},
+										   fields=["name", "student"], as_list=True):
+				if st not in done and st in class_rank[cls]:
+					frappe.db.set_value("Report Card", name, {"class_position": class_rank[cls][st],
+															  "class_size": len(class_rank[cls])}, update_modified=False)
 	doc.db_set("status", "Results Ready" if doc.status != "Published" else "Published")
-	waiting = frappe.db.count("Exam Mark Sheet", {"exam": exam, "docstatus": 0})
-	return {"report_cards": created, "not_included": waiting}
+	waiting = frappe.db.count("Exam Mark Sheet", {"exam": exam, "docstatus": 0,
+												  **({"stream": ("in", scope)} if scope is not None else {})})
+	return {"report_cards": created, "not_included": waiting, "streams": scope}
 
 
 def _previous_means(exam, students):
@@ -316,6 +392,38 @@ def report_card_context(name):
 def render_report_card(name):
 	"""Jinja helper used by the 'Report Card' print format."""
 	return frappe.render_template("school_erp/templates/report_card/body.html", report_card_context(name))
+
+
+def report_cards_pdf(names):
+	"""Several report cards in one PDF, one per page, for printing a whole stream."""
+	from frappe.utils.pdf import get_pdf
+
+	bodies = [frappe.render_template("school_erp/templates/report_card/body.html", report_card_context(n)) for n in names]
+	html = "".join(f'<div style="page-break-after: always">{b}</div>' if i < len(bodies) - 1 else f"<div>{b}</div>"
+				   for i, b in enumerate(bodies))
+	page = frappe.render_template("school_erp/templates/fee_statement/page.html", {"body": html, "title": "Report Cards"})
+	return get_pdf(page, {"page-size": "A4", "margin-top": "10mm", "margin-bottom": "10mm", "margin-left": "10mm", "margin-right": "10mm"})
+
+
+def bulk_report_card_names(exam, stream=None, school_class=None) -> list[str]:
+	frappe.has_permission("Report Card", "read", throw=True)
+	scope = report_card_scope(exam, stream, school_class)
+	filters = {"exam": exam, **({"stream": ("in", scope)} if scope is not None else {})}
+	names = frappe.get_all("Report Card", filters=filters, pluck="name", order_by="stream, student_name")
+	if not names:
+		frappe.throw(_("No report cards yet: generate them first"))
+	return names
+
+
+@frappe.whitelist()
+def download_report_cards(exam, stream=None, school_class=None):
+	"""All report cards of a stream (or class, or the whole exam for the Head Teacher) as one PDF."""
+	licensing.require("exams")
+	names = bulk_report_card_names(exam, stream, school_class)
+	label = stream or school_class or exam
+	frappe.local.response.filename = f"Report Cards {exam} {label}.pdf".replace("/", "-")
+	frappe.local.response.filecontent = report_cards_pdf(names)
+	frappe.local.response.type = "pdf"
 
 
 @frappe.whitelist()

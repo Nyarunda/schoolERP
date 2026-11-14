@@ -12,17 +12,8 @@ frappe.ui.form.on("Exam", {
 		const colors = { "Marks Entry": "orange", "Results Ready": "blue", Published: "green" };
 		frm.page.set_indicator(__(frm.doc.status), colors[frm.doc.status]);
 		frm.add_custom_button(__("Enter Marks"), () => frappe.new_doc("Exam Mark Sheet", { exam: frm.doc.name }));
-		frm.add_custom_button(__("Generate Report Cards"), () =>
-			frappe.call({ method: "school_erp.api.exams.generate_report_cards", args: { exam: frm.doc.name }, freeze: true, freeze_message: __("Calculating results and positions...") })
-				.then(({ message }) => {
-					frappe.show_alert({ message: __("{0} report cards ready", [message.report_cards]), indicator: "green" });
-					if (message.not_included) {
-						frappe.msgprint({ title: __("Some marks are not in yet"), indicator: "orange",
-							message: __("{0} mark sheet(s) are not approved yet, so their marks are not on the report cards. Generate again once they are approved.", [message.not_included]) });
-					}
-					frm.reload_doc();
-				}),
-			__("Results"));
+		frm.add_custom_button(__("Generate Report Cards"), () => report_card_dialog(frm, "generate"), __("Results"));
+		frm.add_custom_button(__("Print Report Cards"), () => report_card_dialog(frm, "print"), __("Results"));
 		frm.add_custom_button(__("Report Cards"), () => frappe.set_route("List", "Report Card", { exam: frm.doc.name }), __("Results"));
 		frm.add_custom_button(__("Merit List"), () => frappe.set_route("query-report", "Exam Merit List", { exam: frm.doc.name }), __("Results"));
 		frm.add_custom_button(__("Subject Analysis"), () => frappe.set_route("query-report", "Exam Subject Analysis", { exam: frm.doc.name }), __("Results"));
@@ -110,6 +101,59 @@ function approve_dialog(frm) {
 		d.fields_dict.list.$wrapper.html(`<p class="text-muted small">${__("Check the averages, open any sheet that looks wrong to return it with a reason, then approve the rest.")}</p>${html}`);
 		d.$wrapper.on("change", "input[data-class]", function () {
 			d.$wrapper.find(`input[data-in="${CSS.escape(this.dataset.class)}"]`).prop("checked", this.checked);
+		});
+		d.show();
+	});
+}
+
+// Generate or print report cards for one stream, one class, or (Head Teacher / Admin) the whole exam.
+function report_card_dialog(frm, mode) {
+	frappe.call("school_erp.api.exams.report_card_options", { exam: frm.doc.name }).then(({ message: o }) => {
+		if (!o.streams.length) {
+			frappe.msgprint(o.manager ? __("No streams sit this exam.")
+				: __("You are not the class teacher of any stream in this exam. Ask the Head Teacher to set you as class teacher on your stream."));
+			return;
+		}
+		const choices = [];
+		if (o.manager) choices.push({ value: "all:", label: __("Whole exam (every class)") });
+		if (o.manager) {
+			[...new Set(o.streams.map((r) => r.school_class))].forEach((c) =>
+				choices.push({ value: `class:${c}`, label: __("Class {0} (all streams)", [c]) }));
+		}
+		o.streams.forEach((r) => {
+			const extra = mode === "print" ? __("{0} cards", [r.cards])
+				: r.waiting ? __("{0} mark sheet(s) not approved yet", [r.waiting]) : __("all marks in");
+			choices.push({ value: `stream:${r.stream}`, label: `${r.stream} · ${extra}` });
+		});
+		const d = new frappe.ui.Dialog({
+			title: mode === "print" ? __("Print Report Cards") : __("Generate Report Cards"),
+			fields: [
+				{ fieldname: "scope", fieldtype: "Select", label: __("For"), reqd: 1,
+					options: choices.map((c) => ({ value: c.value, label: c.label })), default: choices[o.manager ? 0 : 0].value },
+				{ fieldtype: "HTML", options: `<p class="text-muted small">${mode === "print"
+					? __("Downloads one PDF with every report card, one per page, ready to print.")
+					: __("Positions in the class are worked out across all its streams. Remarks already written are kept.")}</p>` },
+			],
+			primary_action_label: mode === "print" ? __("Download PDF") : __("Generate"),
+			primary_action({ scope }) {
+				const [kind, value] = [scope.split(":")[0], scope.slice(scope.indexOf(":") + 1)];
+				const args = { exam: frm.doc.name, stream: kind === "stream" ? value : null, school_class: kind === "class" ? value : null };
+				d.hide();
+				if (mode === "print") {
+					const q = Object.entries(args).filter(([, v]) => v).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&");
+					window.open(`/api/method/school_erp.api.exams.download_report_cards?${q}`);
+					return;
+				}
+				frappe.call({ method: "school_erp.api.exams.generate_report_cards", args, freeze: true,
+					freeze_message: __("Calculating results and positions...") }).then(({ message }) => {
+					frappe.show_alert({ message: __("{0} report cards ready", [message.report_cards]), indicator: "green" });
+					if (message.not_included) {
+						frappe.msgprint({ title: __("Some marks are not in yet"), indicator: "orange",
+							message: __("{0} mark sheet(s) are not approved yet, so their marks are not on the report cards. Generate again once they are approved.", [message.not_included]) });
+					}
+					frm.reload_doc();
+				});
+			},
 		});
 		d.show();
 	});

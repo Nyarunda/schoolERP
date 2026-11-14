@@ -27,7 +27,11 @@ def get_state(refresh: bool = False) -> dict:
 
 
 def clear_cache():
+	"""Forget the license state and every user's cached desk boot. The boot carries the licensed modules and the
+	DocTypes they hide, and Frappe keeps it in Redis per user, so without this a new key only shows after a
+	`bench clear-cache`."""
 	frappe.cache.delete_value(CACHE_KEY)
+	frappe.cache.delete_key("bootinfo")
 
 
 def is_enabled(module: str) -> bool:
@@ -200,7 +204,10 @@ def get_desktop_page(page):
 
 
 def daily_license_check():
-	get_state(refresh=True)
+	before = (frappe.cache.get_value(CACHE_KEY) or {}).get("modules")
+	after = get_state(refresh=True)["modules"]
+	if before is not None and before != after:  # a key expired or its grace ran out: rebuild the desk boot
+		frappe.cache.delete_key("bootinfo")
 
 
 @frappe.whitelist(methods=["POST"])

@@ -63,7 +63,7 @@ from school_erp.logic.license import DOCTYPE_MODULE as _DOCTYPE_MODULE  # noqa: 
 _licensed = "school_erp.licensing.enforce_on_doc"
 doc_events = {dt: {"validate": _licensed, "before_submit": _licensed} for dt in _DOCTYPE_MODULE}
 # Bursars and school admins get the ERPNext accounting roles behind Finance (school_erp.setup.finance)
-doc_events["User"] = {"validate": "school_erp.setup.finance.sync_user_roles"}
+doc_events["User"] = {"validate": ["school_erp.setup.role_profiles.keep_derived_roles", "school_erp.setup.finance.sync_user_roles"]}
 doc_events["Customer"] = {"validate": "school_erp.setup.finance.keep_students_apart"}
 # Outbound webhook events (school_erp.api.webhooks): recorded with the document, sent after commit
 doc_events.setdefault("Student", {})["after_insert"] = "school_erp.api.webhooks.on_student_insert"

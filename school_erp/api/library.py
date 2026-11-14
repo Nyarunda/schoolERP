@@ -110,9 +110,11 @@ def bill_fine(name):
 	what = _("Lost book") if doc.status == "Lost" else _("Late return, {0} day(s)").format(doc.days_overdue)
 	line = {"fee_type": FINE_FEE_TYPE, "amount": flt(doc.fine_amount), "discount_percent": 0,
 			"description": f"{what}: {doc.book_title} ({doc.accession_no})"}
+	student = frappe.get_doc("Student", doc.student)
 	# No term on the invoice: term billing skips a learner who already has an invoice for the term, and a fine must
 	# never stop the learner's fees from being billed.
-	si = make_invoice(frappe.get_doc("Student", doc.student), None, [line], _fee_types(), nowdate(), add_days(nowdate(), 14))
+	si = make_invoice(student, None, [line], _fee_types(), nowdate(), add_days(nowdate(), 14),
+					  remarks=f"{_('Library fine')} - {student.student_name} ({student.name}): {line['description']}")
 	doc.db_set("fine_invoice", si.name)
 	return {"invoice": si.name}
 

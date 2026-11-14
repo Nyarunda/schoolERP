@@ -94,7 +94,7 @@ def existing_invoice(student, term):
 	)
 
 
-def make_invoice(student_doc, term, lines, fee_types, posting_date, due_date, run=None, submit=True):
+def make_invoice(student_doc, term, lines, fee_types, posting_date, due_date, run=None, submit=True, remarks=None):
 	settings = frappe.get_cached_doc("School Settings")
 	si = frappe.new_doc("Sales Invoice")
 	si.company = settings.company
@@ -107,7 +107,7 @@ def make_invoice(student_doc, term, lines, fee_types, posting_date, due_date, ru
 	si.due_date = due_date
 	si.disable_rounded_total = 1
 	si.ignore_pricing_rule = 1
-	si.remarks = f"{term} fees - {student_doc.student_name} ({student_doc.name})"
+	si.remarks = remarks or f"{term or _('School')} fees - {student_doc.student_name} ({student_doc.name})"
 	for line in lines:
 		ft = fee_types[line["fee_type"]]
 		row = {

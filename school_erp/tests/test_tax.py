@@ -59,7 +59,7 @@ class TestTax(TestCase):
 	def supplier(self, pin="P051111111A"):
 		name = "Tax Test Supplier"
 		if not frappe.db.exists("Supplier", name):
-			frappe.get_doc({"doctype": "Supplier", "supplier_name": name, "supplier_group": frappe.get_all("Supplier Group", pluck="name", limit=1)[0],
+			frappe.get_doc({"doctype": "Supplier", "supplier_name": name, "supplier_group": frappe.get_all("Supplier Group", filters={"is_group": 0}, pluck="name", limit=1)[0],
 							"tax_id": pin}).insert()
 		return name
 

@@ -91,7 +91,7 @@ class TestFinance(TestCase):
 		self.assertTrue(vat_template)
 
 		supplier = frappe.get_doc({"doctype": "Supplier", "supplier_name": f"Auditors {frappe.generate_hash(length=4)}",
-								   "supplier_group": frappe.get_all("Supplier Group", pluck="name", limit=1)[0], "tax_id": "P051999999Z",
+								   "supplier_group": frappe.get_all("Supplier Group", filters={"is_group": 0}, pluck="name", limit=1)[0], "tax_id": "P051999999Z",
 								   "tax_withholding_category": "Professional or Management Fees"}).insert()
 		expense_account = frappe.db.get_value("Account", {"company": s.company, "root_type": "Expense", "is_group": 0})
 		pi = frappe.get_doc({

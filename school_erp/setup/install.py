@@ -17,6 +17,7 @@ def after_install():
 	make_workflows()
 	setup_finance()
 	setup_viewer()
+	make_role_profiles()
 
 
 def after_migrate():
@@ -26,6 +27,13 @@ def after_migrate():
 	make_workflows()
 	setup_finance()
 	setup_viewer()
+	make_role_profiles()
+
+
+def make_role_profiles():
+	from school_erp.setup.role_profiles import make_role_profiles as _make
+
+	_make()
 
 
 def setup_viewer():

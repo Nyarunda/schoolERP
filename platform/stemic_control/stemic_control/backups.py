@@ -364,6 +364,12 @@ def prune(now=None):
 	return removed
 
 
+def last_backup_time(tenant):
+	rows = frappe.get_all("SaaS Backup", filters={"tenant": tenant, "status": "Available"}, fields=["taken_on"],
+						  order_by="taken_on desc", limit=1)
+	return get_datetime(rows[0].taken_on) if rows and rows[0].taken_on else None
+
+
 def watchdog(now=None):
 	"""Alert when a live school has had no successful backup for 26 hours (once nightly backups have started)."""
 	from stemic_control.alerts import notify_admins
@@ -374,8 +380,7 @@ def watchdog(now=None):
 	now = now or now_datetime()
 	late = []
 	for t in _live_tenants():
-		last = frappe.db.get_value("SaaS Backup", {"tenant": t.name, "status": "Available"}, "max(taken_on)")
-		last = get_datetime(last) if last else None
+		last = last_backup_time(t.name)
 		if rules.stale(last, now):
 			since = last.strftime("%Y-%m-%d %H:%M") if last else "ever"
 			notify_admins(f"No backup of {t.canonical_site} since {since}",
@@ -446,7 +451,13 @@ def perform_restore(operation):
 	site_runtime._set(operation, {"status": "Running", "started_on": now_datetime()})
 	doc = frappe.get_doc("SaaS Backup", backup)
 	root = config.secret("stemic_db_root_password")[0]
-	secrets = tuple(filter(None, (site_runtime._config(site).get("db_password"), root)))
+	try:
+		root_args = provisioner._root_args()
+	except Exception:
+		root_args = []
+	# every password that can reach a command line or its output is scrubbed, including the one actually passed
+	passed = [root_args[i + 1] for i, a in enumerate(root_args[:-1]) if a == "--db-root-password"]
+	secrets = tuple(filter(None, (site_runtime._config(site).get("db_password"), root, *passed)))
 	log, maintenance_on, safety = [], False, None
 	workdir = os.path.join(_backups_dir(site), f"restore-{operation}")
 
@@ -478,7 +489,9 @@ def perform_restore(operation):
 			args += ["--with-public-files", paths["public_file"]]
 		if paths.get("private_file"):
 			args += ["--with-private-files", paths["private_file"]]
-		cli(*args, *provisioner._root_args(), "--force", timeout=2 * 60 * 60)
+		if not root_args:
+			root_args = provisioner._root_args()  # raises the readable "set the root password" error
+		cli(*args, *root_args, "--force", timeout=2 * 60 * 60)
 		cli("migrate", timeout=60 * 60)
 		failed = None
 	except Exception as e:

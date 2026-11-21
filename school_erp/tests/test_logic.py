@@ -420,3 +420,12 @@ def test_attendance_rate_and_newly_absent():
 	old = {"A": "Absent", "B": "Present"}
 	new = {"A": "Absent", "B": "Absent", "C": "Absent", "D": "Late"}
 	assert sorted(newly_absent(old, new)) == ["B", "C"]  # A was already absent: the parent was told once
+
+
+def test_move_kind():
+	from school_erp.logic.promotion import move_kind
+
+	assert move_kind(5, 4) == "back"
+	assert move_kind(4, 5) == "up"
+	assert move_kind(4, 4) == "same class"
+	assert move_kind(None, 4) == "same class"

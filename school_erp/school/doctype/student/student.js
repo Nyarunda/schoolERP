@@ -23,7 +23,13 @@ frappe.ui.form.on("Student", {
 				{ fieldname: "leaving_reason", label: __("Reason / notes"), fieldtype: "Small Text" },
 			], (v) => frm.set_value({ status: "Transferred", ...v }).then(() => frm.save()), __("Transfer {0} to another school", [frm.doc.first_name]), __("Transfer")), __("Status"));
 		}
-		if (!frm.is_new() && ["Transferred", "Left"].includes(frm.doc.status)) {
+		if (!frm.is_new() && ["Active", "Suspended"].includes(frm.doc.status) && frm.perm[0] && frm.perm[0].write) {
+			frm.add_custom_button(__("Graduate"), () => school_erp.graduate_dialog([frm.doc.name], frm.doc.first_name, () => frm.reload_doc()),
+				__("Status"));
+			frm.add_custom_button(__("Move Class"), () => school_erp.move_class_dialog([frm.doc.name], frm.doc, () => frm.reload_doc()),
+				__("Status"));
+		}
+		if (!frm.is_new() && ["Transferred", "Left", "Graduated"].includes(frm.doc.status)) {
 			frm.add_custom_button(__("Re-admit"), () => frm.set_value("status", "Active").then(() => frm.save()), __("Status"));
 		}
 
@@ -138,3 +144,4 @@ frappe.ui.form.on("Student", {
 				}), __("Fees"));
 	},
 });
+

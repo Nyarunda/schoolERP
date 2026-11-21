@@ -7,6 +7,7 @@
 
 | # | Feature | Spec | Done when |
 |---|---|---|---|
+| 6 | **Clearer sidebar; graduate a learner; move a learner back** | `specs/features/students-sidebar-and-class-moves/` | Acceptance passes on the test site |
 | 1 | Spec-driven development: constitution, feature template, CHANGELOG, sidebar guard | `AGENTS.md`, `specs/` | Merged; next feature starts from `specs/features/_template` |
 
 ## Next (in order)

@@ -159,9 +159,10 @@ class TestMoneyThroughGL(TestCase):
 			self.assertEqual(ledger.post_pocket_money_opening(), je)  # once only
 			self.assertEqual(frappe.db.count("Journal Entry", {"cheque_no": "PM-OPENING", "docstatus": 1}), 1)
 		finally:
-			ledger.cancel_journal(self.setting("pocket_money_opening_entry"))
+			opening = self.setting("pocket_money_opening_entry")
 			self.set_setting("ledger_start", None)
 			self.set_setting("pocket_money_opening_entry", None)
+			ledger.cancel_journal(opening)
 
 	def test_unposted_money(self):
 		s = self.kid()

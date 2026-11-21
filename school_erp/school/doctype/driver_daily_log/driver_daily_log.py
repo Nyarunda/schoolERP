@@ -70,7 +70,8 @@ class DriverDailyLog(Document):
 
 	def on_update_after_submit(self):
 		self.set_distance()
-		self.db_set("distance_km", self.distance_km, update_modified=False)
+		if self.distance_km is not None:  # blank until the end odometer is entered (fuel can come first)
+			self.db_set("distance_km", self.distance_km, update_modified=False)
 		self.update_vehicle_odometer()
 		before = self.get_doc_before_save()
 		if self.fuel_expense:

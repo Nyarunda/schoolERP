@@ -63,6 +63,12 @@ if [ -n "$base" ]; then
 	done
 fi
 
+step "Desk-wide JS and CSS are hashed bundles"
+# A plain /assets/... path is cached by browsers for a year, so a deploy stays invisible until a hard refresh.
+if grep -hE '^(app|web)_include_(js|css)' school_erp/hooks.py platform/*/*/hooks.py | grep -q '/assets/'; then
+	fail "app_include_js/css must name *.bundle.js / *.bundle.css files, not /assets/ paths"
+fi
+
 step "No private keys staged"
 if git rev-parse --git-dir >/dev/null 2>&1; then
 	if git diff --cached --name-only | grep -Ei '\.key$|vendor_private' ; then fail "private key staged"; fi

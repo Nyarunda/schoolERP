@@ -5,6 +5,8 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Fixed: new buttons (Graduate, Move Class, list actions) showed only after a hard refresh, because the desk-wide
+  script was cached by browsers for a year; it is now a versioned bundle that updates on every deploy (#85).
 - Sidebar regrouped by what people do (Students, Welfare & Discipline, Boarding, Academics, Exams & CBC, Library, Fees,
   Pocket Money, Finance, Staff, Transport, Parents & Messages, Accounts, Setup), each area with its own reports (#84).
 - Students: **Graduate** and **Move Class** (back, up or to another stream, with a reason kept on the timeline), also

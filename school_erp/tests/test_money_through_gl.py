@@ -21,6 +21,11 @@ class TestMoneyThroughGL(TestCase):
 		settings = frappe.get_doc("School Settings")
 		settings.save()  # fills in the ledger accounts
 		bank = frappe.db.get_value("Account", {"company": cls.company, "account_type": "Bank", "is_group": 0})
+		if not bank:
+			group = (frappe.db.get_value("Account", {"company": cls.company, "account_name": "Bank Accounts", "is_group": 1})
+					 or frappe.db.get_value("Account", {"company": cls.company, "account_name": "Current Assets", "is_group": 1}))
+			bank = frappe.get_doc({"doctype": "Account", "account_name": "_Test PM Bank Account", "parent_account": group,
+								   "company": cls.company, "account_type": "Bank"}).insert().name
 		if not frappe.db.exists("Mode of Payment", "_Test PM Bank"):
 			frappe.get_doc({"doctype": "Mode of Payment", "mode_of_payment": "_Test PM Bank", "type": "Bank",
 							"accounts": [{"company": cls.company, "default_account": bank}]}).insert()

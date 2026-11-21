@@ -58,7 +58,7 @@ LAYOUT = [
         "Pocket Money|Pocket Money Account", "Pocket Money Transactions|Pocket Money Transaction",
         "Pocket Money Balances|Pocket Money Balances", "Pocket Money Statement|Pocket Money Statement"]),
     ("Finance", "landmark", 0, [
-        "Dashboard|Finance", "School Expense|School Expense", "Expense Category|Expense Category",
+        "Dashboard|Finance", "Chart of Accounts|Account", "School Expense|School Expense", "Expense Category|Expense Category",
         "Suppliers|Supplier", "Supplier Bills|Purchase Invoice", "Customers|Customer",
         "Customer Invoices|Sales Invoice", "Payments|Payment Entry", "Bank Reconciliation|Bank Reconciliation Tool",
         "Journal Entry|Journal Entry", "Withholding Tax Types|Withholding Tax Type",

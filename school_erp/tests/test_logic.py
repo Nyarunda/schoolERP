@@ -427,3 +427,12 @@ def test_phone_variants():
 	for raw in ("0712 345 678", "254712345678", "+254712345678", "712345678"):
 		assert set(phone_variants(raw)) == forms
 	assert phone_variants("") == [] and phone_variants(None) == [] and phone_variants("12") == []
+
+
+def test_move_kind():
+	from school_erp.logic.promotion import move_kind
+
+	assert move_kind(5, 4) == "back"
+	assert move_kind(4, 5) == "up"
+	assert move_kind(4, 4) == "same class"
+	assert move_kind(None, 4) == "same class"

@@ -37,3 +37,11 @@ def summarize(items: list[dict]) -> dict:
 			out["balance"] += float(i["balance"])
 	out["balance"] = round(out["balance"], 2)
 	return out
+
+
+def move_kind(old_level, new_level) -> str:
+	"""A learner moved between classes: "back" (a lower class), "up" (a higher one) or "same class" (another stream).
+	Levels are School Class.level; an unknown level counts as the same class."""
+	if old_level is None or new_level is None or int(old_level) == int(new_level):
+		return "same class"
+	return "back" if int(new_level) < int(old_level) else "up"

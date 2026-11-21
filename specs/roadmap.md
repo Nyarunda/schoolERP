@@ -9,18 +9,20 @@
 |---|---|---|---|
 | 2 | **Auto-link guardians to parent logins** | `specs/features/auto-link-parent-logins/` | Acceptance passes on the test site |
 | 3 | **Several platform domains** | `specs/features/platform-domains/` | Acceptance passes on admin.stemicschools.com |
+| 6 | **Clearer sidebar; graduate a learner; move a learner back** | `specs/features/students-sidebar-and-class-moves/` | Acceptance passes on the test site |
 
 ## Next (in order)
 
 | # | Feature | Why | Done when |
 |---|---|---|---|
-| 4 | **Guide screenshots for the 6 newer modules** | Guide sections 5 and 8 are text only | Homework, admissions, exeat, pocket money, library, sick bay screenshots in the guide; PDF/Word re-exported |
-| 5 | **Sales kit** | No first client yet | Lead tracker, first email + WhatsApp follow-up, one-page brochure, demo script on test.stemicschools.com |
+| — | (nothing queued: add the next feature here) | | |
 
 ## Done
 
 | Date | Feature | PR |
 |---|---|---|
+| 2026-11-21 | Sales kit: sales kit doc, School leads tracker sheet, one-page brochure | (artifacts) |
+| 2026-11-21 | Guide screenshots for the 6 newer modules; PDF/Word re-exported | (user guide) |
 | 2026-11-21 | Spec-driven development: constitution, feature template, CHANGELOG, sidebar guard | #80 |
 | 2026-11-14 | Report cards per stream/class by each class teacher; bulk PDF | #79 |
 | 2026-11-14 | Default job role profiles (14) and Setup → Job Roles | #77, #78 |

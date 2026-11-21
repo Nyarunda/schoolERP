@@ -21,8 +21,39 @@ frappe.ui.form.on("Student Promotion", {
 				frm.set_intro(__("Choose the years and (optionally) classes, then click Get Students. Make sure each class's 'Next Class' is set."), "blue");
 			}
 		}
+		if (frm.doc.docstatus === 1 && frappe.model.can_write("Student")) {
+			frm.add_custom_button(__("Move a Student Back"), () => move_back_dialog(frm));
+		}
 	},
 });
+
+// A learner promoted by mistake (or who must repeat): back to the stream they were promoted from
+function move_back_dialog(frm) {
+	frappe.call("school_erp.api.students.promoted_students", { promotion: frm.doc.name }).then(({ message: rows }) => {
+		if (!rows.length) return frappe.msgprint(__("No promoted learner left to move back."));
+		const d = new frappe.ui.Dialog({
+			title: __("Move a student back"),
+			fields: [
+				{ fieldname: "student", label: __("Learner"), fieldtype: "Select", reqd: 1,
+					options: rows.map((r) => ({ value: r.student, label: `${r.student_name} (${r.new_stream} → ${r.current_stream})` })) },
+				{ fieldname: "reason", label: __("Reason"), fieldtype: "Select", reqd: 1,
+					options: ["Repeating the class", "Promoted by mistake"].join("\n"), default: "Repeating the class" },
+				{ fieldname: "note", label: __("Note"), fieldtype: "Small Text" },
+			],
+			primary_action_label: __("Move Back"),
+			primary_action(v) {
+				d.hide();
+				frappe.call({ method: "school_erp.api.students.move_back_from_promotion", freeze: true,
+					args: { promotion: frm.doc.name, ...v } }).then(({ message: r }) => {
+					frappe.show_alert({ message: __("Moved back to {0}", [r.to]), indicator: "green" });
+					if (r.warning) frappe.msgprint({ title: __("Check the fees"), indicator: "orange", message: frappe.utils.escape_html(r.warning) });
+					frm.reload_doc();
+				});
+			},
+		});
+		d.show();
+	});
+}
 
 frappe.ui.form.on("Student Promotion Item", {
 	action(frm) {

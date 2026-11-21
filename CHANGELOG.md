@@ -8,7 +8,7 @@ Add your line in the PR that makes the change.
 - Finance: every shilling now reaches the General Ledger. Pocket money (deposits, shop sales, withdrawals) posts to
   Pocket Money Held and Tuck Shop Sales; unmatched M-Pesa goes to Unidentified Receipts until assigned; library fines
   paid at the library post to Library Fines; driver fuel raises a Fuel expense for approval; **Check Ledger** shows
-  anything left out (#PR).
+  anything left out (#86).
 - Sidebar regrouped by what people do (Students, Welfare & Discipline, Boarding, Academics, Exams & CBC, Library, Fees,
   Pocket Money, Finance, Staff, Transport, Parents & Messages, Accounts, Setup), each area with its own reports (#84).
 - Students: **Graduate** and **Move Class** (back, up or to another stream, with a reason kept on the timeline), also

@@ -7,7 +7,7 @@ Add your line in the PR that makes the change.
 
 - Control Center: **Update All Schools** (also automatic after a code change), bulk Back Up / Update / Clear Cache and
   maintenance emails from the Schools list, a 15-minute health watch (site answering, disk, certificates) with alerts,
-  and a **Service Health** screen (#PR).
+  and a **Service Health** screen (#90).
 - Control Center: nightly backups of every school, an optional off-server copy (any S3-compatible storage),
   retention, a **Backups** list per school (download, pin) and a strict **Restore** (typed site name, safety backup
   first, maintenance mode, school emailed); alerts for failed or missing backups (#89).

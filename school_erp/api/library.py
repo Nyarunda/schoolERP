@@ -102,6 +102,8 @@ def bill_fine(name):
 	licensing.require("fees")
 	if doc.fine_invoice:
 		return {"invoice": doc.fine_invoice, "existing": True}
+	if doc.fine_paid_entry:
+		frappe.throw(_("This fine was already paid at the library"))
 	if not doc.student or flt(doc.fine_amount) <= 0 or doc.fine_waived:
 		frappe.throw(_("There is no fine to bill"))
 	from school_erp.api.billing import _fee_types, make_invoice
@@ -117,6 +119,27 @@ def bill_fine(name):
 					  remarks=f"{_('Library fine')} - {student.student_name} ({student.name}): {line['description']}")
 	doc.db_set("fine_invoice", si.name)
 	return {"invoice": si.name}
+
+
+@frappe.whitelist(methods=["POST"])
+def fine_paid(name, mode="Cash", reference=None):
+	"""A fine paid at the library (cash or M-Pesa) instead of through fees: posted to Library Fines income."""
+	from school_erp.api import ledger
+	from school_erp.logic.ledger import can_mark_fine_paid
+
+	doc = _loan(name)
+	if mode not in ("Cash", "M-Pesa"):
+		frappe.throw(_("Choose Cash or M-Pesa"))
+	reference = (reference or "").replace(" ", "").upper() or None
+	if mode == "M-Pesa" and not reference:
+		frappe.throw(_("Enter the M-Pesa code so the payment can be traced"))
+	doc = frappe.get_doc("Library Loan", name, for_update=True)
+	problem = can_mark_fine_paid(doc.fine_amount, doc.fine_waived, doc.fine_invoice, doc.fine_paid_entry)
+	if problem:
+		frappe.throw(_(problem))
+	entry = ledger.post_fine_paid(doc, mode, reference)
+	doc.db_set({"fine_paid_entry": entry, "fine_paid_mode": mode, "fine_paid_reference": reference})
+	return {"entry": entry, "message": _("Fine recorded as paid and posted to Library Fines ({0}).").format(entry)}
 
 
 def remind_overdue():

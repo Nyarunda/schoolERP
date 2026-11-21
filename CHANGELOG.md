@@ -5,6 +5,10 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Finance: every shilling now reaches the General Ledger. Pocket money (deposits, shop sales, withdrawals) posts to
+  Pocket Money Held and Tuck Shop Sales; unmatched M-Pesa goes to Unidentified Receipts until assigned; library fines
+  paid at the library post to Library Fines; driver fuel raises a Fuel expense for approval; **Check Ledger** shows
+  anything left out (#86).
 - Fixed: new buttons (Graduate, Move Class, list actions) showed only after a hard refresh, because the desk-wide
   script was cached by browsers for a year; it is now a versioned bundle that updates on every deploy (#85).
 - Sidebar regrouped by what people do (Students, Welfare & Discipline, Boarding, Academics, Exams & CBC, Library, Fees,

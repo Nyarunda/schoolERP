@@ -28,6 +28,19 @@
   "use_admission_number_as_id",
   "customer_group",
   "territory",
+  "ledger_section",
+  "pocket_money_account",
+  "tuck_shop_income_account",
+  "pocket_money_adjustment_account",
+  "pocket_money_bank_mode",
+  "pocket_money_purchase_posting",
+  "cb_ledger",
+  "unidentified_receipts_account",
+  "library_fines_account",
+  "raise_fuel_expenses",
+  "fuel_expense_category",
+  "ledger_start",
+  "pocket_money_opening_entry",
   "billing_tab",
   "sb_auto_bill",
   "auto_bill_terms",
@@ -307,6 +320,89 @@
    "idx": 23,
    "label": "Territory",
    "options": "Territory"
+  },
+  {
+   "fieldname": "ledger_section",
+   "fieldtype": "Section Break",
+   "label": "Ledger accounts",
+   "collapsible": 1,
+   "description": "Where pocket money, unmatched M-Pesa payments, library fines and fuel post in the General Ledger. Filled in automatically; change them if your chart of accounts uses other names."
+  },
+  {
+   "fieldname": "pocket_money_account",
+   "fieldtype": "Link",
+   "options": "Account",
+   "label": "Pocket Money Held (liability)"
+  },
+  {
+   "fieldname": "tuck_shop_income_account",
+   "fieldtype": "Link",
+   "options": "Account",
+   "label": "Tuck Shop Sales (income)"
+  },
+  {
+   "fieldname": "pocket_money_adjustment_account",
+   "fieldtype": "Link",
+   "options": "Account",
+   "label": "Pocket Money Adjustments"
+  },
+  {
+   "fieldname": "pocket_money_bank_mode",
+   "fieldtype": "Link",
+   "options": "Mode of Payment",
+   "label": "Pocket Money Bank Deposits Mode",
+   "description": "Blank: the default mode of payment."
+  },
+  {
+   "fieldname": "pocket_money_purchase_posting",
+   "fieldtype": "Select",
+   "options": "Daily summary\nEach purchase",
+   "default": "Daily summary",
+   "label": "Post Shop Purchases",
+   "description": "Daily summary: one journal entry per day per till, posted overnight."
+  },
+  {
+   "fieldname": "cb_ledger",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "unidentified_receipts_account",
+   "fieldtype": "Link",
+   "options": "Account",
+   "label": "Unidentified Receipts (M-Pesa suspense)"
+  },
+  {
+   "fieldname": "library_fines_account",
+   "fieldtype": "Link",
+   "options": "Account",
+   "label": "Library Fines (income)"
+  },
+  {
+   "fieldname": "raise_fuel_expenses",
+   "fieldtype": "Check",
+   "default": "1",
+   "label": "Raise a Fuel expense from driver logs",
+   "description": "Stop entering fuel expenses by hand when this is on, or fuel is counted twice."
+  },
+  {
+   "fieldname": "fuel_expense_category",
+   "fieldtype": "Link",
+   "options": "Expense Category",
+   "label": "Fuel Expense Category",
+   "depends_on": "raise_fuel_expenses"
+  },
+  {
+   "fieldname": "ledger_start",
+   "fieldtype": "Datetime",
+   "label": "Pocket Money Posting Started",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pocket_money_opening_entry",
+   "fieldtype": "Link",
+   "options": "Journal Entry",
+   "label": "Pocket Money Opening Entry",
+   "read_only": 1
   },
   {
    "fieldname": "billing_tab",
@@ -1160,7 +1256,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-11-05 18:00:00.000000",
+ "modified": "2026-11-21 14:30:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Settings",

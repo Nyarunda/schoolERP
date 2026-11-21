@@ -7,9 +7,8 @@
 
 | # | Feature | Spec | Done when |
 |---|---|---|---|
-| 2 | **Auto-link guardians to parent logins** | `specs/features/auto-link-parent-logins/` | Acceptance passes on the test site |
-| 3 | **Several platform domains** | `specs/features/platform-domains/` | Acceptance passes on admin.stemicschools.com |
-| 6 | **Clearer sidebar; graduate a learner; move a learner back** | `specs/features/students-sidebar-and-class-moves/` | Acceptance passes on the test site |
+| 7 | **Every shilling through the General Ledger** (pocket money, unmatched M-Pesa, library fines, fuel) | `specs/features/money-through-gl/` | Acceptance passes on the test site |
+| 6 | **Clearer sidebar; graduate a learner; move a learner back** | `specs/features/students-sidebar-and-class-moves/` | Server checks passed on the test site; buttons wait for #85 (browser cache fix) |
 
 ## Next (in order)
 
@@ -21,6 +20,8 @@
 
 | Date | Feature | PR |
 |---|---|---|
+| 2026-11-21 | Auto-link guardians to parent logins (checked live on the test site) | #81 |
+| 2026-11-21 | Several platform domains (Check Domains: stemicschools.com ready, 3 schools) | #82 |
 | 2026-11-21 | Sales kit: sales kit doc, School leads tracker sheet, one-page brochure | (artifacts) |
 | 2026-11-21 | Guide screenshots for the 6 newer modules; PDF/Word re-exported | (user guide) |
 | 2026-11-21 | Spec-driven development: constitution, feature template, CHANGELOG, sidebar guard | #80 |

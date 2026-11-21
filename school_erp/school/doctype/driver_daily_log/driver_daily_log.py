@@ -59,6 +59,7 @@ class DriverDailyLog(Document):
 
 	def on_submit(self):
 		self.update_vehicle_odometer()
+		transport_ops.raise_fuel_expense(self)
 		problems = self.problems() + ([f"Driver notes: {self.issues}"] if self.issues else [])
 		if problems:
 			notify(
@@ -69,8 +70,17 @@ class DriverDailyLog(Document):
 
 	def on_update_after_submit(self):
 		self.set_distance()
-		self.db_set("distance_km", self.distance_km, update_modified=False)
+		if self.distance_km is not None:  # blank until the end odometer is entered (fuel can come first)
+			self.db_set("distance_km", self.distance_km, update_modified=False)
 		self.update_vehicle_odometer()
+		before = self.get_doc_before_save()
+		if self.fuel_expense:
+			transport_ops.fuel_cost_changed(self, before.fuel_cost if before else self.fuel_cost)
+		else:
+			transport_ops.raise_fuel_expense(self)
+
+	def on_cancel(self):
+		transport_ops.drop_fuel_expense(self)
 
 	def update_vehicle_odometer(self):
 		reading = max(flt(self.odometer_start), flt(self.odometer_end))

@@ -436,3 +436,49 @@ def test_move_kind():
 	assert move_kind(4, 5) == "up"
 	assert move_kind(4, 4) == "same class"
 	assert move_kind(None, 4) == "same class"
+
+
+# ----------------------------------------------------------------------------- ledger (money through the GL)
+def test_pocket_money_lines():
+	from school_erp.logic.ledger import balanced, pocket_money_lines
+
+	assert pocket_money_lines("Deposit", 500) == [("mode", 500.0, 0.0), ("held", 0.0, 500.0)]
+	assert pocket_money_lines("Withdrawal", 200) == [("held", 200.0, 0.0), ("mode", 0.0, 200.0)]
+	assert pocket_money_lines("Purchase", 50.5) == [("held", 50.5, 0.0), ("shop", 0.0, 50.5)]
+	assert pocket_money_lines("Refund", 20) == [("shop", 20.0, 0.0), ("held", 0.0, 20.0)]
+	assert pocket_money_lines("Adjustment In", 5) == [("adjust", 5.0, 0.0), ("held", 0.0, 5.0)]
+	assert pocket_money_lines("Adjustment Out", 5) == [("held", 5.0, 0.0), ("adjust", 0.0, 5.0)]
+	for kind in ("Deposit", "Purchase", "Adjustment Out"):
+		assert balanced(pocket_money_lines(kind, 33.3))
+	for bad in (("Gift", 10), ("Deposit", 0), ("Deposit", -5)):
+		try:
+			pocket_money_lines(*bad)
+			raise AssertionError(bad)
+		except ValueError:
+			pass
+
+
+def test_purchases_wait_for_daily_summary():
+	from school_erp.logic.ledger import posts_alone, summarise_purchases
+
+	assert not posts_alone("Purchase", "Daily summary")
+	assert posts_alone("Purchase", "Each purchase")
+	assert posts_alone("Deposit", "Daily summary")
+	rows = [{"day": "2026-11-20", "recorded_by": "till1", "amount": 50}, {"day": "2026-11-20", "recorded_by": "till1", "amount": 70.5},
+			{"day": "2026-11-20", "recorded_by": "till2", "amount": 30}, {"day": "2026-11-21", "recorded_by": "till1", "amount": 10}]
+	assert summarise_purchases(rows) == {("2026-11-20", "till1"): 120.5, ("2026-11-20", "till2"): 30.0, ("2026-11-21", "till1"): 10.0}
+
+
+def test_suspense_fine_opening_and_reconciliation():
+	from school_erp.logic.ledger import can_mark_fine_paid, fine_lines, opening_lines, reconciliation_gap, suspense_lines
+
+	assert suspense_lines(700) == [("mode", 700.0, 0.0), ("suspense", 0.0, 700.0)]
+	assert fine_lines(50) == [("mode", 50.0, 0.0), ("fines", 0.0, 50.0)]
+	assert opening_lines(3000) == [("opening", 3000.0, 0.0), ("held", 0.0, 3000.0)]
+	assert reconciliation_gap(3000, 3000) == 0
+	assert reconciliation_gap(2950, 3000) == -50
+	assert can_mark_fine_paid(50, 0, None, None) is None
+	assert "already" in can_mark_fine_paid(50, 0, None, "ACC-JV-1")
+	assert "fee account" in can_mark_fine_paid(50, 0, "SINV-1", None)
+	assert "waived" in can_mark_fine_paid(50, 1, None, None)
+	assert "no fine" in can_mark_fine_paid(0, 0, None, None)

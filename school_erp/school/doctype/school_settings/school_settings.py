@@ -17,6 +17,17 @@ class SchoolSettings(Document):
 		self.refresh_license_fields()
 		self.validate_mpesa()
 		self.validate_tax()
+		self.fill_ledger_accounts()
+
+	def fill_ledger_accounts(self):
+		"""Pocket money, M-Pesa suspense, fines and fuel accounts: created if missing. Never blocks saving settings."""
+		from school_erp.api import ledger
+
+		try:
+			ledger.ensure_accounts(self)
+		except (frappe.ValidationError, frappe.PermissionError) as e:
+			frappe.clear_last_message()
+			frappe.msgprint(str(e), title=_("Ledger accounts"), indicator="orange")
 
 	def validate_tax(self):
 		from school_erp.api import tax

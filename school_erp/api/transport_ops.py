@@ -133,10 +133,12 @@ def _raise_fuel_expense(log):
 		"mode_of_payment": settings.default_mode_of_payment,
 		"requested_by": frappe.session.user,
 		"description": f"Fuel for {log.vehicle}{litres} ({log.trip}, {log.log_date}), driver log {log.name}",
-		"status": "Pending Approval",
 	})
 	exp.flags.ignore_permissions = True
 	exp.insert()
+	from school_erp.api.expenses import request_approval
+
+	request_approval(exp.name)  # the workflow's own "Send for Approval", as the driver
 	log.db_set("fuel_expense", exp.name, update_modified=False)
 	frappe.msgprint(_("Fuel expense {0} sent for approval.").format(exp.name), indicator="green", alert=True)
 	return exp.name

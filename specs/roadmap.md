@@ -14,7 +14,7 @@
 
 | # | Feature | Why | Done when |
 |---|---|---|---|
-| — | (nothing queued: add the next feature here) | | |
+| 9 | **Control Center automation, phase 2**: Update all schools, health watch, bulk actions | Owner: "more controls and automation to improve service delivery" | Spec written and agreed |
 
 ## Done
 

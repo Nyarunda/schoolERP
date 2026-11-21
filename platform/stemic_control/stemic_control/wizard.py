@@ -36,14 +36,18 @@ def suggest_slug(school_name: str) -> str:
 
 
 @frappe.whitelist(methods=["GET"])
-def check_slug(slug=None, school_name=None):
-    """Is this address free? Suggests one from the school's name when no slug is given, and a free variant if taken."""
+def check_slug(slug=None, school_name=None, domain=None):
+    """Is this address free on `domain` (default: the platform's default domain)? Suggests one from the school's name
+    when no slug is given, and a free variant if taken."""
     _admin()
-    from stemic_control.api import platform_domain
+    from stemic_control.api import offered_domains
 
+    domain = (domain or "").strip().lower().rstrip(".") or offered_domains()[0]
     slug = (slug or suggest_slug(school_name or "")).strip().lower()
     problem = None
-    if not slug:
+    if domain not in offered_domains():
+        problem = f"{domain} is not one of the domains offered for new schools"
+    elif not slug:
         problem = "Type the school's name or an address"
     elif not policy.SLUG.fullmatch(slug):
         problem = "Use 3 to 49 lower-case letters, digits or hyphens, starting with a letter"
@@ -51,7 +55,7 @@ def check_slug(slug=None, school_name=None):
         problem = "That name is reserved for the platform"
     elif frappe.db.exists("SaaS Tenant", slug):
         problem = f"Already used by {frappe.db.get_value('SaaS Tenant', slug, 'school_name')}"
-    elif frappe.db.exists("SaaS Domain", f"{slug}.{platform_domain()}"):
+    elif frappe.db.exists("SaaS Domain", f"{slug}.{domain}"):
         problem = "That address is already claimed"
     alternative = None
     if problem and slug and policy.SLUG.fullmatch(slug + "-2"):
@@ -60,8 +64,8 @@ def check_slug(slug=None, school_name=None):
             if not frappe.db.exists("SaaS Tenant", candidate):
                 alternative = candidate
                 break
-    return {"slug": slug, "ok": not problem, "problem": problem, "alternative": alternative,
-            "host": f"{slug}.{platform_domain()}" if slug else None}
+    return {"slug": slug, "ok": not problem, "problem": problem, "alternative": alternative, "domain": domain,
+            "host": f"{slug}.{domain}" if slug else None}
 
 
 @frappe.whitelist(methods=["GET"])
@@ -69,7 +73,7 @@ def options():
     """What the Onboard a School form offers, and what it should warn about before anyone presses Save."""
     _admin()
     from stemic_control import licensing, onboarding
-    from stemic_control.api import platform_domain
+    from stemic_control.api import offered_domains, platform_domain
     from stemic_control.billing import settings
 
     s = settings()
@@ -79,6 +83,7 @@ def options():
         p.modules = [policy.MODULES[m] for m in licensing.plan_modules(p.name)]
     return {
         "platform_domain": platform_domain(),
+        "platform_domains": offered_domains(),
         "plans": plans,
         "agents": frappe.get_all("SaaS Agent", filters={"status": "Active"}, fields=["name", "agent_name", "commission_rate"],
                                  order_by="agent_name"),
@@ -109,12 +114,12 @@ def _step(steps, label, fn, *args, **kwargs):
 @frappe.whitelist(methods=["POST"])
 def onboard_school(school_name, admin_email, plan, start="Free trial", slug=None, contact_phone=None, agent=None,
                    trial_days=None, months=None, amount=None, payment_mode="M-Pesa", payment_ref=None, note=None,
-                   custom_domain=None, when="build"):
+                   custom_domain=None, when="build", platform_domain=None):
     """Register a school and take it as far as `when` says, in one transaction. Returns what was done and what is next."""
     _admin()
     from stemic_control import api, onboarding
-    from stemic_control.api import platform_domain
 
+    domain = (platform_domain or "").strip().lower().rstrip(".") or api.platform_domain()
     school_name = (school_name or "").strip()
     if start not in STARTS:
         frappe.throw(f"Start must be one of {', '.join(STARTS)}", frappe.ValidationError)
@@ -123,7 +128,7 @@ def onboard_school(school_name, admin_email, plan, start="Free trial", slug=None
     if not plan or not frappe.db.get_value("SaaS Plan", plan, "enabled"):
         frappe.throw("Choose an enabled plan", frappe.ValidationError)
     slug = (slug or suggest_slug(school_name)).strip().lower()
-    free = check_slug(slug)
+    free = check_slug(slug, domain=domain)
     if not free["ok"]:
         frappe.throw(f"Address {slug}: {free['problem']}", frappe.ValidationError)
     if start == "Paid" and not (payment_ref or "").strip():
@@ -138,7 +143,8 @@ def onboard_school(school_name, admin_email, plan, start="Free trial", slug=None
     # 1. the school and its own address
     tenant = _step(steps, "Register the school", api.register_tenant, school_name, slug, (admin_email or "").strip(),
                    agent or None, contact_phone)
-    _step(steps, f"Claim {slug}.{platform_domain()}", api.request_domain, tenant, f"{slug}.{platform_domain()}")
+    frappe.db.set_value("SaaS Tenant", tenant, "platform_domain", domain, update_modified=False)
+    _step(steps, f"Claim {slug}.{domain}", api.request_domain, tenant, f"{slug}.{domain}")
 
     # 2. its subscription, linked to the school so every screen shows it
     days = max(1, cint(trial_days) or 30)
@@ -196,4 +202,4 @@ def onboard_school(school_name, admin_email, plan, start="Free trial", slug=None
 
     return {"tenant": tenant, "subscription": sub.name, "invoice": invoice, "payment": payment, "job": job,
             "domain": domain, "status": frappe.db.get_value("SaaS Tenant", tenant, "status"),
-            "host": f"{slug}.{platform_domain()}", "steps": steps, "warnings": warnings}
+            "host": f"{slug}.{domain}", "steps": steps, "warnings": warnings}

@@ -175,6 +175,9 @@ stemic_control.onboard_school = function (defaults = {}) {
                 { fieldtype: "Column Break" },
                 { fieldname: "slug", fieldtype: "Data", label: __("Address"), description: "&nbsp;",
                   onchange: () => { state.slug_touched = !!d.get_value("slug"); check_slug(); } },
+                { fieldname: "platform_domain", fieldtype: "Select", label: __("On domain"),
+                  options: (o.platform_domains || [o.platform_domain]).join("\n"), default: o.platform_domain,
+                  hidden: (o.platform_domains || []).length < 2, onchange: () => check_slug() },
                 { fieldname: "contact_phone", fieldtype: "Data", options: "Phone", label: __("Phone"),
                   description: __("For SMS notices, if SMS is on.") },
                 { fieldtype: "Section Break", label: __("Plan") },
@@ -214,7 +217,8 @@ stemic_control.onboard_school = function (defaults = {}) {
             state.timer = setTimeout(() => {
                 const typed = d.get_value("slug"), name = d.get_value("school_name");
                 if (!typed && !name) return;
-                frappe.xcall("stemic_control.wizard.check_slug", { slug: state.slug_touched ? typed : null, school_name: name }, "GET")
+                frappe.xcall("stemic_control.wizard.check_slug", { slug: state.slug_touched ? typed : null, school_name: name,
+                    domain: d.get_value("platform_domain") || o.platform_domain }, "GET")
                     .then((r) => {
                         state.slug = r.slug; state.slug_ok = r.ok;
                         if (!state.slug_touched && d.get_value("slug") !== r.slug) d.fields_dict.slug.set_input(r.slug);
@@ -252,7 +256,8 @@ stemic_control.onboard_school = function (defaults = {}) {
 
         function summary() {
             const plan = o.plans.find((p) => p.name === state.plan) || {};
-            const host = state.slug ? `${state.slug}.${o.platform_domain}` : `<${__("address")}>.${o.platform_domain}`;
+            const dom = d.get_value("platform_domain") || o.platform_domain;
+            const host = state.slug ? `${state.slug}.${dom}` : `<${__("address")}>.${dom}`;
             const steps = [__("Register the school and reserve {0}", [`<b>${esc(host)}</b>`])];
             if (state.start === "Free trial") steps.push(__("Start a {0}-day free trial of {1}", [cint(d.get_value("trial_days")) || 30, esc(plan.name || "")]));
             else if (state.start === "Paid") {

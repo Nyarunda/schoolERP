@@ -242,18 +242,24 @@ def run(job: str) -> str:
         frappe.db.commit()
         return "Closed by operator"
 
-    base = config.get("stemic_platform_domain")
-    subdomain = f"{tenant.slug}.{base}"
+    from stemic_control.api import tenant_domain
+
+    subdomain = f"{tenant.slug}.{tenant_domain(tenant)}"
+    # direct: the site folder answers to this name itself (or a development site, which cannot be checked live);
+    # otherwise nginx routes the name to the site (domains.routes) and it goes live once the check passes
+    direct = subdomain == site or site.endswith(".localhost")
     _set_job(job, "Succeeded")
     _set_tenant(tenant.name, "Active", canonical_site=site, database_name=database_name(tenant.slug),
                 site_admin_password=password,  # Password field: saved encrypted
-                primary_domain=tenant.primary_domain or (subdomain if frappe.db.exists("SaaS Domain", subdomain) else None))
-    if frappe.db.get_value("SaaS Domain", subdomain, "status") == "Verified":
+                primary_domain=tenant.primary_domain or (subdomain if direct and frappe.db.exists("SaaS Domain", subdomain) else None))
+    if direct and frappe.db.get_value("SaaS Domain", subdomain, "status") == "Verified":
         frappe.db.set_value("SaaS Domain", subdomain, {"status": "Active", "is_primary": 1})
     frappe.db.commit()
     from stemic_control import domains
 
     domains.refresh()  # a custom domain verified before the site existed is routed now
+    if not direct and frappe.db.exists("SaaS Domain", subdomain):
+        domains.try_activate(subdomain)  # an address on another Stemic domain: live-checked, then the main address
     from stemic_control import welcome
 
     welcome.after_provisioning(tenant.name)  # the school's contact gets the address and a set-password link

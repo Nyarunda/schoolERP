@@ -85,8 +85,17 @@ def subdomain_of(host: str, platform_domain: str) -> bool:
     return host.endswith("." + platform_domain)
 
 
-def reserved_hosts(platform_domain: str) -> set[str]:
-    return {platform_domain} | {f"{name}.{platform_domain}" for name in RESERVED}
+def reserved_hosts(*platform_domains: str) -> set[str]:
+    out = set()
+    for d in platform_domains:
+        out |= {d} | {f"{name}.{d}" for name in RESERVED}
+    return out
+
+
+def managed_base(host: str, platform_domains) -> str | None:
+    """The Stemic domain `host` is a subdomain of (the longest match), or None for a school's own domain."""
+    matches = [d for d in platform_domains if d and subdomain_of(host, d)]
+    return max(matches, key=len) if matches else None
 
 
 def txt_values(doh_answer: dict) -> list[str]:

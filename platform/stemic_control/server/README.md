@@ -42,6 +42,21 @@ A domain in a zone that is **not** in Stemic's Cloudflare account (a school's ow
 Certificate from us, and the firewall only lets Cloudflare reach this server. Either the school delegates that
 hostname to Stemic's Cloudflare, or Stemic sets up Cloudflare for SaaS (Custom Hostnames) on stemicschools.com.
 
+## Adding another platform domain (e.g. `stemic.cloud` for new schools)
+
+A platform domain is one of Stemic's own domains that school addresses live under (`<school>.stemic.cloud`). Each new
+one needs, once:
+
+1. The domain added to Stemic's Cloudflare account, SSL/TLS mode **Full (strict)**.
+2. A DNS record `*` (wildcard) for it pointing at this server, **Proxied** (the orange cloud).
+3. Its Origin Certificate (`stemic.cloud, *.stemic.cloud`) saved in `/etc/ssl/cloudflare` as above.
+4. In the Control Center, **Stemic Settings > Platform Domains**: add it (tick **Offered for new schools**; tick
+   **Default** if new schools should get it by default), save, then **Check Domains**: it should say *Ready*.
+
+Onboard a School then offers the domain next to the address. A school on it is verified at once (no TXT record),
+routed by the sync like a custom domain, checked live, and made the school's main address when it passes. Schools
+already on another domain stay where they are; untick **Offered** to stop offering a domain without affecting them.
+
 ## From the Control Center
 
 1. **Claim** the domain on the school (Actions > Claim a Domain) and have the school publish the TXT record shown.

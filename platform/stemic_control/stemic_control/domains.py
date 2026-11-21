@@ -41,11 +41,18 @@ def routes_file() -> str:
     return frappe.conf.get("stemic_domains_file") or os.path.join(provisioner._bench(), "config", "stemic-domains.json")
 
 
+# A school's address on a Stemic domain other than the one its site folder is named after is routed like a custom
+# domain. Development sites (*.localhost) are never routed or checked live.
+ROUTED = """(d.domain_type = 'Custom Domain'
+    OR (d.hostname != t.canonical_site AND t.canonical_site NOT LIKE '%%.localhost'))"""
+
+
 def routes() -> dict:
-    """{hostname: site} for every verified custom domain of a school that has a site."""
-    rows = frappe.db.sql("""SELECT d.hostname, t.canonical_site FROM `tabSaaS Domain` d
+    """{hostname: site} for every verified custom domain, and every address on another Stemic domain, of a school
+    that has a site."""
+    rows = frappe.db.sql(f"""SELECT d.hostname, t.canonical_site FROM `tabSaaS Domain` d
         JOIN `tabSaaS Tenant` t ON t.name = d.tenant
-        WHERE d.domain_type = 'Custom Domain' AND d.status IN %(serving)s AND IFNULL(t.canonical_site, '') != ''
+        WHERE {ROUTED} AND d.status IN %(serving)s AND IFNULL(t.canonical_site, '') != ''
         ORDER BY d.hostname""", {"serving": SERVING}, as_dict=True)
     return {r.hostname: r.canonical_site for r in rows}
 
@@ -170,7 +177,7 @@ def _custom(hostname):
     _admin()
     doc = frappe.get_doc("SaaS Domain", hostname)
     doc.check_permission("write")
-    if doc.domain_type != "Custom Domain":
+    if doc.domain_type != "Custom Domain" and doc.hostname not in routes():  # the site's own name, or not routed
         frappe.throw("The school's own subdomain is managed by provisioning", frappe.ValidationError)
     return doc
 
@@ -238,23 +245,85 @@ def public_host(tenant) -> str | None:
     """Where people should go: the school's main custom domain once it is live, else its site."""
     t = frappe.db.get_value("SaaS Tenant", tenant, ["primary_domain", "canonical_site"], as_dict=True) or {}
     primary = t.get("primary_domain")
-    if primary and frappe.db.get_value("SaaS Domain", primary, ["domain_type", "status"]) == ("Custom Domain", "Active"):
+    if primary and frappe.db.get_value("SaaS Domain", primary, "status") == "Active":
         return primary
     return t.get("canonical_site")
 
 
 # ----------------------------------------------------------------------------- scheduler
+def try_activate(name) -> bool:
+    """Verified -> Active when the domain serves its school. A school's address on its chosen Stemic domain then
+    becomes its main address by itself (its links stayed on the site address until it was live)."""
+    if frappe.db.get_value("SaaS Domain", name, "status") != "Verified" or not check(name)["ok"]:
+        return False
+    frappe.db.set_value("SaaS Domain", name, "status", "Active")
+    doc = frappe.db.get_value("SaaS Domain", name, ["tenant", "domain_type"], as_dict=True)
+    t = frappe.db.get_value("SaaS Tenant", doc.tenant, ["slug", "platform_domain", "primary_domain", "canonical_site"],
+                            as_dict=True)
+    chosen = doc.domain_type == "Stemic Subdomain" and t.platform_domain and name == f"{t.slug}.{t.platform_domain}"
+    if chosen and t.primary_domain in (None, "", t.canonical_site):
+        _set_primary(doc.tenant, name)
+    frappe.db.commit()
+    from stemic_control.alerts import notify_admins
+
+    notify_admins(f"{name} is live", "It is now the school's main address." if chosen else
+                  "The domain now serves its school. Use Make Primary on the domain if the school's emails and links "
+                  "should use it.", "SaaS Domain", name)
+    return True
+
+
 def hourly():
     """Keep the routes current and activate verified domains as soon as they serve their school."""
     publish()
-    for name in frappe.get_all("SaaS Domain", filters={"domain_type": "Custom Domain", "status": "Verified"}, pluck="name"):
+    waiting = frappe.db.sql(f"""SELECT d.name FROM `tabSaaS Domain` d JOIN `tabSaaS Tenant` t ON t.name = d.tenant
+        WHERE d.status = 'Verified' AND {ROUTED} ORDER BY d.name""", pluck=True)
+    for name in waiting:
         try:
-            if check(name)["ok"]:
-                frappe.db.set_value("SaaS Domain", name, "status", "Active")
-                frappe.db.commit()
-                from stemic_control.alerts import notify_admins
-
-                notify_admins(f"{name} is live", "The domain now serves its school. Use Make Primary on the domain if "
-                              "the school's emails and links should use it.", "SaaS Domain", name)
+            try_activate(name)
         except Exception:
-            frappe.log_error(title=f"Checking custom domain {name} failed")
+            frappe.log_error(title=f"Checking domain {name} failed")
+
+
+# ----------------------------------------------------------------------------- platform domains
+HEALTH = {
+    "ready": "Ready: DNS points at Stemic and the server has a certificate for it.",
+    "no_dns": "No wildcard DNS: add a record *.{d} pointing at the server (Proxied, the orange cloud) in Cloudflare.",
+    "no_certificate": "No certificate on the server for *.{d}: create a Cloudflare Origin Certificate for {d} and "
+                      "*.{d} and save it in /etc/ssl/cloudflare (server/README.md).",
+    "no_connection": "Cloudflare cannot reach the server for {d} (error {code}). Is the zone's SSL mode Full (strict)?",
+    "unexpected": "https://<school>.{d} answered HTTP {code}: check the zone's redirect and page rules.",
+}
+
+
+def domain_health(domain) -> dict:
+    """Can schools live on `domain`? Looks up a made-up school name under it and fetches it over https."""
+    import socket
+
+    probe = f"stemic-check-{secrets.token_hex(4)}.{domain}"
+    try:
+        socket.getaddrinfo(probe, 443)
+    except OSError:
+        return {"domain": domain, "state": "no_dns", "message": HEALTH["no_dns"].format(d=domain)}
+    try:
+        code = _get(f"https://{probe}/").status_code
+    except Exception:
+        code = 0
+    state = ("ready" if code in (404, 444, 200, 301, 302) else "no_certificate" if code == 526
+             else "no_connection" if code in (0, 521, 522, 523, 525) else "unexpected")
+    return {"domain": domain, "state": state, "code": code, "message": HEALTH[state].format(d=domain, code=code)}
+
+
+@frappe.whitelist(methods=["GET"])
+def platform_domain_health():
+    """For Stemic Settings > Check Domains: every listed domain, offered or not, with how many schools use it."""
+    _admin()
+    from stemic_control.api import known_domains, offered_domains, platform_domain
+
+    offered, default = offered_domains(), platform_domain()
+    out = []
+    for d in known_domains():
+        row = domain_health(d)
+        row.update(offered=d in offered, default=d == default,
+                   schools=frappe.db.count("SaaS Tenant", {"platform_domain": d}))
+        out.append(row)
+    return out

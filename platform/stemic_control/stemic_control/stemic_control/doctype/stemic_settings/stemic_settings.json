@@ -86,6 +86,7 @@
   "accounting_html",
   "platform_tab",
   "platform_domain",
+  "platform_domains",
   "dns_over_https",
   "cb_platform",
   "local_provisioner",
@@ -562,7 +563,14 @@
    "fieldname": "platform_domain",
    "fieldtype": "Data",
    "label": "Platform Domain",
-   "description": "Schools' default addresses are <school>.<this domain>, e.g. stemicschools.com."
+   "description": "The default when the list below is empty. Schools' addresses are <school>.<this domain>, e.g. stemicschools.com."
+  },
+  {
+   "fieldname": "platform_domains",
+   "fieldtype": "Table",
+   "label": "Platform Domains",
+   "options": "Stemic Platform Domain",
+   "description": "Stemic's own domains for school addresses. One is the Default; each needs a wildcard DNS record and a certificate on the server (server/README.md). Use Check Domains to see which are ready."
   },
   {
    "fieldname": "dns_over_https",
@@ -627,7 +635,7 @@
   }
  ],
  "creation": "2026-10-26 18:00:00.000000",
- "modified": "2026-11-06 10:00:00.000000",
+ "modified": "2026-11-21 11:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "issingle": 1

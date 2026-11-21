@@ -28,6 +28,7 @@ def _term_invoice(student):
 	from school_erp.school.doctype.school_term.school_term import get_current_term
 
 	term = get_current_term()
+	term = getattr(term, "name", term)  # the term's record, or its name
 	if not term:
 		return None
 	return frappe.db.get_value("Sales Invoice", {"student": student, "school_term": term, "docstatus": 1, "is_return": 0},

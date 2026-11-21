@@ -9,6 +9,7 @@
 |---|---|---|---|
 | 8 | **Control Center backups and restore** (schedule, off-server copy, retention, list/download, strict restore, alerts) | `specs/features/control-center-backups/` | Acceptance passes on admin.stemicschools.com |
 | 9 | **Control Center automation, phase 2**: Update All Schools, health watch, bulk actions, Service Health | `specs/features/control-center-automation/` | Acceptance passes on admin.stemicschools.com |
+| 10 | **Delete a school** (7-day grace, final copy 90 days, site/database/backups/records removed; tax records kept) | `specs/features/delete-school/` | Acceptance passes on admin.stemicschools.com |
 
 ## Next (in order)
 

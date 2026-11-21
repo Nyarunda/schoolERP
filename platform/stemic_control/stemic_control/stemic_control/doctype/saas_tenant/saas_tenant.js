@@ -6,6 +6,7 @@ frappe.ui.form.on("SaaS Tenant", {
         frm.page.set_indicator(__(frm.doc.status), TENANT_COLORS_FORM[frm.doc.status] || "gray");
         if (frm.doc.canonical_site) frm.add_custom_button(__("Open Site"), () => open_site(frm));
         if (frm.doc.canonical_site) frm.add_custom_button(__("Backups"), () => school_backups(frm));
+        if (frm.doc.status !== "Deleted" && stemic_control.is_platform_admin()) school_deletion_buttons(frm);
         if (frm.doc.canonical_site && frm.doc.status === "Active") frm.add_custom_button(__("Send Welcome Email"), () =>
             frappe.confirm(__("Email {0} the school's address and a new link to set their password?", [frappe.utils.escape_html(frm.doc.admin_email || "")]), () =>
                 frappe.call({ method: "stemic_control.welcome.resend", args: { tenant: frm.doc.name }, freeze: true,
@@ -387,4 +388,56 @@ function restore_backup(frm, backup, when, list_dialog) {
     } });
     d.get_primary_btn().removeClass("btn-primary").addClass("btn-danger");
     d.show();
+}
+
+// Deleting a school: typed confirmation, 7-day grace (school suspended), then site, database, backups and records go
+function school_deletion_buttons(frm) {
+    const esc = frappe.utils.escape_html;
+    frappe.db.get_value("SaaS Deletion", { slug: frm.doc.name, status: ["in", ["Scheduled", "Running", "Failed"]] },
+        ["name", "status", "scheduled_for", "error"]).then(({ message: d }) => {
+        if (!d || !d.name) {
+            frm.add_custom_button(__("Delete School"), () => delete_school(frm), __("Actions"));
+            return;
+        }
+        const when = frappe.datetime.str_to_user(d.scheduled_for);
+        frm.dashboard.set_headline(d.status === "Failed"
+            ? `<span style="color:var(--red-600)">${__("Deleting this school failed: {0}", [esc((d.error || "").split("\n")[0])])}</span>`
+            : `<span style="color:var(--red-600)">${__("This school will be deleted on {0} ({1}).", [esc(when), esc(d.name)])}</span>`);
+        if (d.status !== "Running") {
+            frm.add_custom_button(__("Cancel Deletion"), () => frappe.confirm(__("Keep this school? It is put back as it was before (resumed if it was active)."),
+                () => frappe.xcall("stemic_control.deletion.cancel", { tenant: frm.doc.name }).then(() => frm.reload_doc())), __("Actions"));
+            frm.add_custom_button(d.status === "Failed" ? __("Retry Deletion") : __("Delete Now"), () =>
+                frappe.confirm(__("Delete {0} now? This cannot be undone.", [esc(frm.doc.school_name)]), () =>
+                    frappe.xcall("stemic_control.deletion.delete_now", { deletion: d.name }).then(() => {
+                        frappe.show_alert({ message: __("Deletion started"), indicator: "red" }); frm.reload_doc(); })), __("Actions"));
+        }
+    });
+}
+
+function delete_school(frm) {
+    const esc = frappe.utils.escape_html;
+    frappe.xcall("stemic_control.deletion.preview", { tenant: frm.doc.name }, "GET").then((p) => {
+        const li = (n, label) => n ? `<li>${n} ${label}</li>` : "";
+        const kept = p.tax_records ? `<div class="alert alert-warning" style="margin-top:8px">${__("Kept: {0} tax record(s) (eTIMS){1}. Tax invoices are fiscal records and cannot be deleted; the school record stays, marked Deleted.",
+            [p.tax_records, p.filed_with_kra ? __(", and {0} invoice(s) already with KRA with their payments", [p.filed_with_kra]) : ""])}</div>` : "";
+        const d = new frappe.ui.Dialog({ title: __("Delete {0}", [p.school]), fields: [
+            { fieldtype: "HTML", options: `<div class="alert alert-danger"><b>${__("This permanently deletes")}</b><ul style="margin:6px 0 0">
+                ${p.site ? `<li>${__("the site {0} and its database", [esc(p.site)])}${p.database_mb ? ` (${p.database_mb} MB${p.students != null ? ", " + __("{0} students", [p.students]) : ""})` : ""}</li>` : ""}
+                ${li(p.backups, __("backup(s), on this server and off-server"))}${li(p.domains, __("domain(s)"))}${li(p.invoices, __("invoice(s)"))}
+                ${li(p.payments, __("payment(s)"))}${li(p.commissions, __("commission(s)"))}${li(p.licenses, __("licence(s)"))}
+                <li>${__("the school record and its history")}</li></ul></div>${kept}
+                <p>${__("The school is suspended now and deleted in {0} days; until then you can cancel. One final copy is kept for {1} days.", [p.grace_days, p.final_copy_days])}</p>` },
+            { fieldname: "reason", fieldtype: "Small Text", label: __("Reason") },
+            { fieldname: "confirm", fieldtype: "Data", reqd: 1, label: __("Type {0} to confirm", [p.confirm_words]) },
+        ], primary_action_label: __("Schedule Deletion"), primary_action: (v) => {
+            if (v.confirm.trim() !== p.confirm_words) return frappe.msgprint(__("Type {0} exactly", [esc(p.confirm_words)]));
+            frappe.xcall("stemic_control.deletion.schedule", { tenant: frm.doc.name, confirm: v.confirm, reason: v.reason }).then((r) => {
+                d.hide();
+                frappe.msgprint({ title: __("Deletion scheduled"), indicator: "red", message: __("{0} is suspended and will be deleted on {1}.", [esc(p.school), frappe.datetime.str_to_user(r.scheduled_for)]) });
+                frm.reload_doc();
+            });
+        } });
+        d.get_primary_btn().removeClass("btn-primary").addClass("btn-danger");
+        d.show();
+    });
 }

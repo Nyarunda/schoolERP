@@ -102,7 +102,7 @@
       "fieldtype": "Select",
       "fieldname": "status",
       "label": "Status",
-      "options": "Draft\nPending Approval\nApproved\nRejected\nPending\nProvisioning\nActive\nSuspended\nFailed",
+      "options": "Draft\nPending Approval\nApproved\nRejected\nPending\nProvisioning\nActive\nSuspended\nFailed\nDeleted",
       "default": "Draft",
       "read_only": 1,
       "hidden": 1
@@ -238,7 +238,7 @@
     }
   ],
   "creation": "2026-10-25 20:00:00.000000",
-  "modified": "2026-11-21 11:00:00.000000",
+  "modified": "2026-11-21 22:00:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator",
   "title_field": "school_name",

@@ -1,0 +1,162 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Deletion",
+  "module": "Stemic Control",
+  "custom": 0,
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "autoname": "DEL-.#####",
+  "naming_rule": "Expression (old style)",
+  "title_field": "school_name",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "in_create": 1,
+  "description": "A school scheduled for deletion, and the record of what was removed. Kept after the school is gone.",
+  "field_order": [
+    "school_name",
+    "slug",
+    "site",
+    "status",
+    "scheduled_for",
+    "cb1",
+    "requested_by",
+    "requested_on",
+    "previous_status",
+    "reason",
+    "reminded",
+    "result_section",
+    "done_on",
+    "final_backup",
+    "removed",
+    "kept",
+    "error"
+  ],
+  "fields": [
+    {
+      "fieldname": "school_name",
+      "label": "School",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "slug",
+      "label": "School ID",
+      "fieldtype": "Data",
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "site",
+      "label": "Site",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Scheduled\nRunning\nDone\nFailed\nCancelled",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "scheduled_for",
+      "label": "Delete On",
+      "fieldtype": "Date",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "cb1",
+      "label": "",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "requested_by",
+      "label": "Requested By",
+      "fieldtype": "Link",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "requested_on",
+      "label": "Requested On",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "previous_status",
+      "label": "Status Before",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reason",
+      "label": "Reason",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reminded",
+      "label": "Reminder Sent",
+      "fieldtype": "Check",
+      "read_only": 1
+    },
+    {
+      "fieldname": "result_section",
+      "label": "Result",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "done_on",
+      "label": "Done On",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "final_backup",
+      "label": "Final Copy (SaaS Backup)",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "removed",
+      "label": "What Was Removed",
+      "fieldtype": "Long Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "kept",
+      "label": "What Was Kept",
+      "fieldtype": "Long Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "error",
+      "label": "Error",
+      "fieldtype": "Long Text",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    }
+  ],
+  "creation": "2026-11-21 22:00:00.000000",
+  "modified": "2026-11-21 22:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator"
+}

@@ -72,6 +72,22 @@ Each school's site is backed up from here; settings in **Stemic Settings > Backu
 - **Service Health** (Schools list > Service): workers/scheduler/queues, disk, and per school: site check,
   certificate days, last backup, last operation; batches running.
 
+## Deleting a school
+
+**Actions > Delete School** on the school (platform admins). The dialog lists what goes and asks for `DELETE <slug>`.
+
+- The school is **suspended at once** and deleted after **7 days** (a **SaaS Deletion** record, under Deletions);
+  **Cancel Deletion** puts it back as it was until then. Admins are reminded the day before; **Delete Now** after the
+  grace period, **Retry Deletion** after a failure.
+- On the day: one **final copy** (database + files) is kept **90 days** (off-server when set up, else in the bench's
+  `stemic-final-copies/<site>/`), then removed by itself; the **site and database are dropped** (and Frappe's archived
+  copy of the folder removed); every other **backup** (server and off-server), the **domains**, **invoices and payments**
+  (cancelled first, so their ERPNext entries are reversed), commissions, licences, subscriptions, messages, jobs and
+  operations are deleted, then the **school record**.
+- **Tax records are kept**: eTIMS records cannot be deleted (fiscal records; KRA keeps its copy and expects a credit
+  note), nor an invoice already with KRA and its payments. Such a school stays, marked **Deleted**.
+- The SaaS Deletion record stays as the audit trail: who, when, what was removed and kept.
+
 ## Status model
 
 - **Tenant:** Draft -> Pending Approval -> Approved (or Rejected) -> Pending (job queued) -> Provisioning (job running) -> Active, or Failed; Active <-> Suspended. A rejected school only goes back to Draft. Any other change is refused when the tenant is saved.

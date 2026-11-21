@@ -8,6 +8,8 @@ frappe.ui.form.on("Stemic Settings", {
     refresh(frm) {
         frm.add_custom_button(__("Re-check Setup"), () => render_setup(frm));
         frm.add_custom_button(__("Check Domains"), () => check_platform_domains());
+        frm.add_custom_button(__("Service Health"), () => stemic_control.service_health(), __("Service"));
+        frm.add_custom_button(__("Update All Schools"), () => stemic_control.update_all_schools(), __("Service"));
         frm.add_custom_button(__("Test Destination"), () => frappe.call({ method: "stemic_control.backups.test_destination", freeze: true,
             freeze_message: __("Testing...") }).then(({ message: r }) => frappe.msgprint({ title: __("Backup destination"),
                 indicator: r.ok ? "green" : "red", message: frappe.utils.escape_html(r.message) })), __("Backups"));

@@ -311,3 +311,49 @@ stemic_control.onboard_school = function (defaults = {}) {
         if (defaults.school_name) check_slug();
     });
 };
+
+// ----------------------------------------------------------------------------- service: batches and health
+stemic_control.batch_started = function (r) {
+    const esc = frappe.utils.escape_html;
+    const skipped = (r.skipped || []).map((s) => `<li>${esc(s.site)}: ${esc(s.why)}</li>`).join("");
+    const elsewhere = (r.not_here || []).length ? `<p class="text-muted">${__("Not on this server (skipped): {0}", [esc(r.not_here.join(", "))])}</p>` : "";
+    frappe.msgprint({ title: __("Started"), indicator: r.queued ? "blue" : "orange",
+        message: `<p>${__("{0} school(s) queued, one at a time (batch {1}).", [r.queued, esc(r.batch)])}</p>`
+            + (skipped ? `<p>${__("Skipped")}:</p><ul>${skipped}</ul>` : "") + elsewhere
+            + (r.queued ? `<p><a href="#" class="sc-batch">${__("Follow this batch")}</a></p>` : "") });
+    $(".sc-batch").on("click", (e) => { e.preventDefault(); stemic_control.batch_report(r.batch); });
+};
+
+stemic_control.batch_report = function (batch) {
+    const esc = frappe.utils.escape_html;
+    frappe.xcall("stemic_control.service.batch_status", { batch }, "GET").then((rows) => frappe.msgprint({ title: __("Batch {0}", [esc(batch)]),
+        wide: true, message: `<table class="table table-sm table-bordered"><tr><th>${__("School")}</th><th>${__("Action")}</th><th>${__("Status")}</th><th>${__("Result")}</th></tr>`
+            + rows.map((o) => `<tr><td>${esc(o.site)}</td><td>${esc(__(o.action))}</td><td>${esc(__(o.status))}</td><td class="small">${esc(o.summary || "")}</td></tr>`).join("")
+            + "</table>" }));
+};
+
+stemic_control.update_all_schools = function () {
+    frappe.confirm(__("Update (migrate) every live school on this server now, one at a time?"), () =>
+        frappe.xcall("stemic_control.service.update_all_schools").then(stemic_control.batch_started));
+};
+
+stemic_control.service_health = function () {
+    const esc = frappe.utils.escape_html;
+    frappe.xcall("stemic_control.service.service_health", {}, "GET").then((h) => {
+        const pill = (ok, yes, no) => `<span class="indicator-pill ${ok ? "green" : ok === false ? "red" : "gray"}">${ok ? yes : ok === false ? no : __("Not checked yet")}</span>`;
+        const machinery = h.machinery.length
+            ? `<ul>${h.machinery.map((p) => `<li style="color:var(--red-600)">${esc(p.message)} <span class="text-muted">${esc(p.fix)}</span></li>`).join("")}</ul>`
+            : `<p style="color:var(--green-600)">${__("Workers, scheduler and queues are running.")}</p>`;
+        const disk = `<p>${__("Disk")}: ${__("{0} GB free of {1} GB", [h.disk.free_gb, h.disk.total_gb])} ${h.disk.problem ? `<span style="color:var(--red-600)">(${esc(h.disk.problem)})</span>` : ""}</p>`;
+        const rows = h.schools.map((s) => `<tr><td>${esc(s.site)}</td><td>${pill(s.answering, __("Answering"), __("Not answering"))}</td>
+            <td>${s.cert_days == null ? "–" : `<span style="color:var(--${s.cert_days < 14 ? "red" : "green"}-600)">${__("{0} days", [s.cert_days])}</span>`}</td>
+            <td>${s.last_backup ? esc(frappe.datetime.str_to_user(s.last_backup)) : `<span style="color:var(--orange-600)">${__("None")}</span>`}</td>
+            <td class="small">${s.last_operation ? esc(__(s.last_operation.action) + ": " + __(s.last_operation.status)) : "–"}</td></tr>`).join("");
+        frappe.msgprint({ title: __("Service Health"), wide: true, indicator: h.machinery.length || h.disk.problem ? "orange" : "green",
+            message: `<h5>${__("Machinery")}</h5>${machinery}${disk}`
+                + (h.batches_running.length ? `<p>${__("Batches running")}: ${h.batches_running.map(esc).join(", ")}</p>` : "")
+                + `<h5>${__("Schools")}</h5><table class="table table-sm table-bordered"><tr><th>${__("Site")}</th><th>${__("Site check")}</th>`
+                + `<th>${__("Certificate")}</th><th>${__("Last backup")}</th><th>${__("Last operation")}</th></tr>${rows}</table>`
+                + `<p class="text-muted small">${__("Sites are checked every 15 minutes and certificates daily. Code version {0}.", [esc(h.code_version || "?")])}</p>` });
+    });
+};

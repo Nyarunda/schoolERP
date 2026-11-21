@@ -29,7 +29,7 @@ jobs:
       - name: Control plane checks (no bench)
         run: |
           python -m compileall -q platform/stemic_control/stemic_control
-          PYTHONPATH=platform/stemic_control python -m pytest -q platform/stemic_control/stemic_control/tests/test_billing_integrity_contract.py platform/stemic_control/stemic_control/tests/test_tax_rules.py platform/stemic_control/stemic_control/tests/test_etims_integration_contract.py platform/stemic_control/stemic_control/tests/test_backup_rules.py
+          PYTHONPATH=platform/stemic_control python -m pytest -q platform/stemic_control/stemic_control/tests/test_billing_integrity_contract.py platform/stemic_control/stemic_control/tests/test_tax_rules.py platform/stemic_control/stemic_control/tests/test_etims_integration_contract.py platform/stemic_control/stemic_control/tests/test_backup_rules.py platform/stemic_control/stemic_control/tests/test_service_rules.py
 
   bench-tests:
     name: Integration tests (Frappe + ERPNext v16)

@@ -21,6 +21,7 @@
     "requested_by",
     "trigger",
     "backup",
+    "batch",
     "started_on",
     "finished_on",
     "result_section",
@@ -85,10 +86,18 @@
       "description": "Restore: the backup restored. Backup: the backup taken."
     },
     {
+      "fieldname": "batch",
+      "label": "Batch",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_standard_filter": 1,
+      "description": "Operations started together (Update All Schools, bulk actions) share a batch and run one after another."
+    },
+    {
       "fieldname": "trigger",
       "label": "Trigger",
       "fieldtype": "Select",
-      "options": "Manual\nScheduled\nBefore restore",
+      "options": "Manual\nScheduled\nBefore restore\nBulk\nAfter update",
       "default": "Manual",
       "read_only": 1
     },
@@ -138,7 +147,7 @@
     }
   ],
   "creation": "2026-10-27 15:00:00.000000",
-  "modified": "2026-11-21 18:00:00.000000",
+  "modified": "2026-11-21 20:00:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator"
 }

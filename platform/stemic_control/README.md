@@ -58,6 +58,20 @@ Each school's site is backed up from here; settings in **Stemic Settings > Backu
   **Site Operation** with its output (secrets removed).
 - **Alerts**: failed backup or off-server copy, failed restore, and any live school without a backup for 26 hours.
 
+## Service automation
+
+- **Update All Schools** (Schools list > Service, or Stemic Settings): migrates every live school on this bench one at
+  a time in one background job (a *batch* of Site Operations); schools with an operation running are skipped and
+  listed. **After a code change** (Stemic Settings > Service, on by default) the same runs once by itself when the
+  School ERP commit on this bench changes.
+- **Bulk actions** (Schools list, tick schools > Actions): Back Up, Update (Migrate), Clear Cache as one batch;
+  **Tell About Maintenance** emails each school's admin the time and message.
+- **Health watch**: every 15 minutes each live school's `/api/method/ping` (public address in production; alert after
+  two failures in a row and again when it answers), and the disk (alert under the set % or 5 GB free); daily, each
+  school address's HTTPS certificate (alert within the set days).
+- **Service Health** (Schools list > Service): workers/scheduler/queues, disk, and per school: site check,
+  certificate days, last backup, last operation; batches running.
+
 ## Status model
 
 - **Tenant:** Draft -> Pending Approval -> Approved (or Rejected) -> Pending (job queued) -> Provisioning (job running) -> Active, or Failed; Active <-> Suspended. A rejected school only goes back to Draft. Any other change is refused when the tenant is saved.

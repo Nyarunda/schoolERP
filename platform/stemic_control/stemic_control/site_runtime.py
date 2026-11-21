@@ -218,11 +218,11 @@ def run_operation(tenant, action):
 
 
 def queue_operation(tenant, site, action, trigger="Manual", backup=None, timeout=None, method=None, enqueue=True,
-                    status="Queued", summary=None):
+                    status="Queued", summary=None, batch=None):
     """Record an operation and hand it to a background worker. Callers check permission and the one-at-a-time lock."""
     op = frappe.get_doc({"doctype": "SaaS Site Operation", "tenant": tenant, "site": site, "action": action,
                          "status": status, "requested_by": frappe.session.user, "trigger": trigger, "backup": backup,
-                         "summary": summary})
+                         "summary": summary, "batch": batch})
     op.flags.site_operation_service = True
     op.insert(ignore_permissions=True)
     if enqueue:

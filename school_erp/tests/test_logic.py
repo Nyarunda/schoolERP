@@ -7,7 +7,7 @@ from school_erp.logic import license as lic
 from school_erp.logic.allocation import allocate_payment, per_invoice_totals, split_invoice_paid
 from school_erp.logic.billing import compute_fee_lines, net_amount
 from school_erp.logic.statement import breakdown_rows, build_ledger
-from school_erp.logic.text import normalize_phone, render
+from school_erp.logic.text import normalize_phone, phone_variants, render
 from school_erp.logic.timetable import find_duplicate_slots, find_teacher_clashes, session_blocks, session_labels
 
 ALL = ["core", "fees", "transport", "lunch", "activities", "messaging", "timetable"]
@@ -420,3 +420,10 @@ def test_attendance_rate_and_newly_absent():
 	old = {"A": "Absent", "B": "Present"}
 	new = {"A": "Absent", "B": "Absent", "C": "Absent", "D": "Late"}
 	assert sorted(newly_absent(old, new)) == ["B", "C"]  # A was already absent: the parent was told once
+
+
+def test_phone_variants():
+	forms = {"254712345678", "+254712345678", "0712345678"}
+	for raw in ("0712 345 678", "254712345678", "+254712345678", "712345678"):
+		assert set(phone_variants(raw)) == forms
+	assert phone_variants("") == [] and phone_variants(None) == [] and phone_variants("12") == []

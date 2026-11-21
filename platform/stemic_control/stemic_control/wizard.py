@@ -119,7 +119,7 @@ def onboard_school(school_name, admin_email, plan, start="Free trial", slug=None
     _admin()
     from stemic_control import api, onboarding
 
-    domain = (platform_domain or "").strip().lower().rstrip(".") or api.platform_domain()
+    on_domain = (platform_domain or "").strip().lower().rstrip(".") or api.platform_domain()
     school_name = (school_name or "").strip()
     if start not in STARTS:
         frappe.throw(f"Start must be one of {', '.join(STARTS)}", frappe.ValidationError)
@@ -128,7 +128,7 @@ def onboard_school(school_name, admin_email, plan, start="Free trial", slug=None
     if not plan or not frappe.db.get_value("SaaS Plan", plan, "enabled"):
         frappe.throw("Choose an enabled plan", frappe.ValidationError)
     slug = (slug or suggest_slug(school_name)).strip().lower()
-    free = check_slug(slug, domain=domain)
+    free = check_slug(slug, domain=on_domain)
     if not free["ok"]:
         frappe.throw(f"Address {slug}: {free['problem']}", frappe.ValidationError)
     if start == "Paid" and not (payment_ref or "").strip():
@@ -143,8 +143,8 @@ def onboard_school(school_name, admin_email, plan, start="Free trial", slug=None
     # 1. the school and its own address
     tenant = _step(steps, "Register the school", api.register_tenant, school_name, slug, (admin_email or "").strip(),
                    agent or None, contact_phone)
-    frappe.db.set_value("SaaS Tenant", tenant, "platform_domain", domain, update_modified=False)
-    _step(steps, f"Claim {slug}.{domain}", api.request_domain, tenant, f"{slug}.{domain}")
+    frappe.db.set_value("SaaS Tenant", tenant, "platform_domain", on_domain, update_modified=False)
+    _step(steps, f"Claim {slug}.{on_domain}", api.request_domain, tenant, f"{slug}.{on_domain}")
 
     # 2. its subscription, linked to the school so every screen shows it
     days = max(1, cint(trial_days) or 30)
@@ -202,4 +202,4 @@ def onboard_school(school_name, admin_email, plan, start="Free trial", slug=None
 
     return {"tenant": tenant, "subscription": sub.name, "invoice": invoice, "payment": payment, "job": job,
             "domain": domain, "status": frappe.db.get_value("SaaS Tenant", tenant, "status"),
-            "host": f"{slug}.{domain}", "steps": steps, "warnings": warnings}
+            "host": f"{slug}.{on_domain}", "steps": steps, "warnings": warnings}

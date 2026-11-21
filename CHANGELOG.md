@@ -5,6 +5,7 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Sidebar: **Chart of Accounts** under Finance (#88).
 - Fixed: cash pocket money deposits and library fines paid in cash posted to the default payment mode's account (often
   M-Pesa); they now use the school's Cash mode (#87).
 - Finance: every shilling now reaches the General Ledger. Pocket money (deposits, shop sales, withdrawals) posts to

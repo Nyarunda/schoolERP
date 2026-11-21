@@ -247,6 +247,10 @@ class TestMoneyThroughGL(TestCase):
 		with patch(NOTIFY):
 			log.save()  # fuel is entered after the trip
 		log.reload()
+		if not log.fuel_expense:
+			err = frappe.get_all("Error Log", filters={"method": ("like", "Fuel expense%")}, fields=["error"],
+								 order_by="creation desc", limit=1)
+			self.fail("No fuel expense: " + (err[0].error[-1500:] if err else "no error logged"))
 		return log
 
 	def test_fuel_expense_raised(self):

@@ -6,6 +6,8 @@
 
 **Dashboards:** a Management Dashboard for leadership and a Staff Room for every teacher, with a notice board staff acknowledge. See [docs/DASHBOARDS.md](docs/DASHBOARDS.md).
 
+> **Changing the code?** Start with **[AGENTS.md](AGENTS.md)** and **[specs/](specs/)**: every feature is specced, built, tested, documented and logged in [CHANGELOG.md](CHANGELOG.md) the same way.
+
 > **New here? Running on Windows?** Follow **[docs/WSL_SETUP.md](docs/WSL_SETUP.md)**: install everything in WSL, run the app locally, and the test routine to follow before every push.
 
 A simple school management app on top of ERPNext. Students are ERPNext **Customers** whose ID is the **Student ID**, so every fee is a normal Sales Invoice, every payment a normal Payment Entry, and all ERPNext accounting reports keep working.

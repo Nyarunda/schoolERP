@@ -42,6 +42,24 @@ $PY -m pytest -q \
   school_erp/tests/test_cbc.py \
   school_erp/tests/test_nemis.py || fail "unit tests"
 
+step "Sidebar changes bump their modified date"
+# bench migrate re-syncs a sidebar JSON only when its "modified" is newer than the database's copy.
+base=""
+if git rev-parse --git-dir >/dev/null 2>&1; then
+	for ref in origin/main upstream/main main; do
+		if git rev-parse -q --verify "$ref" >/dev/null; then base=$(git merge-base HEAD "$ref" 2>/dev/null || true); break; fi
+	done
+	[ -n "$base" ] || base=$(git rev-parse -q --verify HEAD || true)
+fi
+if [ -n "$base" ]; then
+	for f in $(git diff --name-only "$base" -- 'school_erp/*/sidebar/*/*.json' 'platform/*/sidebar/*/*.json'); do
+		[ -f "$f" ] || continue
+		old_mod=$(git show "$base:$f" 2>/dev/null | grep -m1 '"modified"' || true)
+		new_mod=$(grep -m1 '"modified"' "$f" || true)
+		if [ -n "$old_mod" ] && [ "$old_mod" = "$new_mod" ]; then fail "$f changed but its \"modified\" did not: bump it or migrate will skip it"; fi
+	done
+fi
+
 step "No private keys staged"
 if git rev-parse --git-dir >/dev/null 2>&1; then
 	if git diff --cached --name-only | grep -Ei '\.key$|vendor_private' ; then fail "private key staged"; fi

@@ -5,6 +5,8 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Fixed: cash pocket money deposits and library fines paid in cash posted to the default payment mode's account (often
+  M-Pesa); they now use the school's Cash mode (#PR).
 - Finance: every shilling now reaches the General Ledger. Pocket money (deposits, shop sales, withdrawals) posts to
   Pocket Money Held and Tuck Shop Sales; unmatched M-Pesa goes to Unidentified Receipts until assigned; library fines
   paid at the library post to Library Fines; driver fuel raises a Fuel expense for approval; **Check Ledger** shows

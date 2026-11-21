@@ -111,7 +111,23 @@ def mode_of_payment(mode, settings=None):
 		return settings.mpesa_mode_of_payment or settings.default_mode_of_payment
 	if mode == "Bank":
 		return settings.get("pocket_money_bank_mode") or settings.default_mode_of_payment
+	if mode == "Cash":
+		return _cash_mode(settings) or settings.default_mode_of_payment
 	return settings.default_mode_of_payment
+
+
+def _cash_mode(settings):
+	"""The school's cash Mode of Payment: the default one if it is a cash mode, else an enabled cash mode with an
+	account for the company ("Cash" first). The default is often M-Pesa, and cash must not land in the M-Pesa account."""
+	default = settings.default_mode_of_payment
+	if default and frappe.db.get_value("Mode of Payment", default, "type") == "Cash":
+		return default
+	modes = frappe.get_all("Mode of Payment", filters={"type": "Cash", "enabled": 1}, pluck="name")
+	modes.sort(key=lambda m: (m != "Cash", m))
+	for m in modes:
+		if frappe.db.exists("Mode of Payment Account", {"parent": m, "company": settings.company, "default_account": ("is", "set")}):
+			return m
+	return None
 
 
 def mode_account(mode_of_payment_name, settings=None):

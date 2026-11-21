@@ -7,7 +7,7 @@ Add your line in the PR that makes the change.
 
 - Control Center: **Delete School**: suspended at once, deleted after a 7-day grace (cancellable): site, database,
   backups, domains, invoices, payments and the school record are removed; a final copy is kept 90 days; tax records
-  (eTIMS) and invoices filed with KRA are kept (#PR).
+  (eTIMS) and invoices filed with KRA are kept (#91).
 - Control Center: **Update All Schools** (also automatic after a code change), bulk Back Up / Update / Clear Cache and
   maintenance emails from the Schools list, a 15-minute health watch (site answering, disk, certificates) with alerts,
   and a **Service Health** screen (#90).

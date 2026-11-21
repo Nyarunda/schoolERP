@@ -337,9 +337,10 @@ def prune(now=None):
 	except Exception:
 		frappe.log_error(title="Backup storage could not be opened for retention")
 	removed = 0
-	for tenant in frappe.get_all("SaaS Backup", filters={"status": "Available"}, pluck="tenant", distinct=True):
-		rows = frappe.get_all("SaaS Backup", filters={"tenant": tenant, "status": "Available", "on_server": 1},
-							  fields=["name", "taken_on", "pinned"])
+	for tenant in frappe.get_all("SaaS Backup", filters={"status": "Available", "tenant": ("is", "set"),
+														   "kind": ("!=", "Final copy")}, pluck="tenant", distinct=True):
+		rows = frappe.get_all("SaaS Backup", filters={"tenant": tenant, "status": "Available", "on_server": 1,
+													  "kind": ("!=", "Final copy")}, fields=["name", "taken_on", "pinned"])
 		for name in rules.to_prune([{**r, "taken_on": get_datetime(r.taken_on)} for r in rows],
 									s.get("keep_daily") or 0, s.get("keep_weekly") or 0, s.get("keep_monthly") or 0):
 			doc = frappe.get_doc("SaaS Backup", name)
@@ -347,8 +348,8 @@ def prune(now=None):
 			_update(name, {"on_server": 0, **({} if doc.offsite_status == "Uploaded" else {"status": "Removed"})})
 			removed += 1
 	if store:
-		for r in frappe.get_all("SaaS Backup", filters={"status": "Available", "offsite_status": "Uploaded"},
-								fields=["name", "taken_on", "pinned", "on_server"]):
+		for r in frappe.get_all("SaaS Backup", filters={"status": "Available", "offsite_status": "Uploaded",
+														"kind": ("!=", "Final copy")}, fields=["name", "taken_on", "pinned", "on_server"]):
 			if rules.offsite_expired(get_datetime(r.taken_on), now, s.get("keep_offsite_days"), cint(r.pinned)):
 				doc = frappe.get_doc("SaaS Backup", r.name)
 				try:
@@ -360,7 +361,37 @@ def prune(now=None):
 					continue
 				_update(r.name, {"offsite_status": "Removed", **({} if r.on_server else {"status": "Removed"})})
 				removed += 1
+	removed += prune_final_copies(store)
 	frappe.db.commit()
+	return removed
+
+
+def prune_final_copies(store=None):
+	"""Final copies of deleted schools: removed (server and off-server) once their date has passed."""
+	from stemic_control import deletion
+
+	removed = 0
+	for r in frappe.get_all("SaaS Backup", filters={"status": "Available", "kind": "Final copy", "delete_after": ("<=", nowdate())},
+							pluck="name"):
+		doc = frappe.get_doc("SaaS Backup", r)
+		folder = deletion._final_dir(doc.site)
+		try:
+			if doc.offsite_status == "Uploaded" and store:
+				for field in FILE_FIELDS:
+					if doc.get(field):
+						store.delete(store.key(doc.site, doc.get(field)))
+			for field in FILE_FIELDS:
+				path = doc.get(field)
+				if path and path.startswith(folder + os.sep) and os.path.isfile(path):  # only its own final-copy folder
+					os.unlink(path)
+			if os.path.isdir(folder) and not os.listdir(folder):
+				os.rmdir(folder)
+		except Exception as e:
+			frappe.log_error(title=f"Final copy {r} not removed: {_readable(e)}"[:140])
+			continue
+		_update(r, {"status": "Removed", "on_server": 0,
+					"offsite_status": "Removed" if doc.offsite_status == "Uploaded" else doc.offsite_status})
+		removed += 1
 	return removed
 
 

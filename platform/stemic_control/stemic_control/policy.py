@@ -21,6 +21,7 @@ TENANT_TRANSITIONS = {
     "Suspended": {"Active"},
     "Failed": {"Pending", "Pending Approval", "Rejected", "Draft"},
     "Rejected": {"Draft"},
+    "Deleted": set(),  # only deletion.py sets it (a school kept for its tax records); nothing follows
 }
 JOB_TRANSITIONS = {
     "Queued": {"Running", "Failed"},

@@ -18,4 +18,4 @@
 ## Docs
 
 - [ ] User guide section 7 (parents): links happen by themselves; the button is for new logins
-- [ ] `CHANGELOG.md`
+- [x] `CHANGELOG.md`

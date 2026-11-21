@@ -151,8 +151,8 @@ class TestBackups(TestCase):
 		self.assertFalse(os.path.exists(frappe.db.get_value("SaaS Backup", names[2], "database_file")))
 		# off-server: copies older than N days go, pinned stay
 		self.set_settings(backup_destination="This server + S3-compatible storage", s3_bucket="b", keep_offsite_days=2)
-		for n in (names[3], names[4]):
-			frappe.db.set_value("SaaS Backup", n, "offsite_status", "Uploaded")
+		for n in (names[3], names[4]):  # copied off-server before the server copy went
+			frappe.db.set_value("SaaS Backup", n, {"offsite_status": "Uploaded", "status": "Available"})
 		store = FakeStore()
 		with patch.object(backups, "storage", return_value=store):
 			backups.prune()

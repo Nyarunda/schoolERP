@@ -6,9 +6,9 @@ Add your line in the PR that makes the change.
 ## Unreleased
 
 - Sidebar regrouped by what people do (Students, Welfare & Discipline, Boarding, Academics, Exams & CBC, Library, Fees,
-  Pocket Money, Finance, Staff, Transport, Parents & Messages, Accounts, Setup), each area with its own reports (#PR).
+  Pocket Money, Finance, Staff, Transport, Parents & Messages, Accounts, Setup), each area with its own reports (#84).
 - Students: **Graduate** and **Move Class** (back, up or to another stream, with a reason kept on the timeline), also
-  for several learners from the list; **Move a Student Back** on a completed Year-end Promotion (#PR).
+  for several learners from the list; **Move a Student Back** on a completed Year-end Promotion (#84).
 - Sidebar: the duplicate Students link at the top is gone; Students & Welfare lists Active, Transferred, Graduated and
   All Students together (#83).
 - Spec-driven development: `AGENTS.md`, `specs/` (brief, technical design, roadmap, feature template) and this changelog.

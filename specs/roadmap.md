@@ -7,8 +7,7 @@
 
 | # | Feature | Spec | Done when |
 |---|---|---|---|
-| 7 | **Every shilling through the General Ledger** (pocket money, unmatched M-Pesa, library fines, fuel) | `specs/features/money-through-gl/` | Acceptance passes on the test site |
-| 6 | **Clearer sidebar; graduate a learner; move a learner back** | `specs/features/students-sidebar-and-class-moves/` | Server checks passed on the test site; buttons wait for #85 (browser cache fix) |
+| — | (nothing in progress) | | |
 
 ## Next (in order)
 
@@ -20,6 +19,8 @@
 
 | Date | Feature | PR |
 |---|---|---|
+| 2026-11-21 | Every shilling through the General Ledger (checked live: opening entry, deposit, daily sales summary, Fine Paid, reconciliation) | #86 |
+| 2026-11-21 | Clearer sidebar; graduate a learner; move learners between classes (checked live, incl. Move Class dialog) | #84, #85 |
 | 2026-11-21 | Auto-link guardians to parent logins (checked live on the test site) | #81 |
 | 2026-11-21 | Several platform domains (Check Domains: stemicschools.com ready, 3 schools) | #82 |
 | 2026-11-21 | Sales kit: sales kit doc, School leads tracker sheet, one-page brochure | (artifacts) |

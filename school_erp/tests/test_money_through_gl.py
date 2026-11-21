@@ -86,6 +86,19 @@ class TestMoneyThroughGL(TestCase):
 		self.assertTrue(dep.journal_entry)
 		self.assertEqual(self.lines(dep.journal_entry), {self.cash: 500, self.setting("pocket_money_account"): -500})
 
+	def test_cash_deposit_uses_cash_mode_when_default_is_mpesa(self):
+		if not frappe.db.exists("Mode of Payment", "_Test PM Phone"):
+			frappe.get_doc({"doctype": "Mode of Payment", "mode_of_payment": "_Test PM Phone", "type": "Phone",
+							"accounts": [{"company": self.company, "default_account": self.bank}]}).insert()
+		default = self.setting("default_mode_of_payment")
+		self.set_setting("default_mode_of_payment", "_Test PM Phone")
+		try:
+			s = self.kid()
+			dep = self.txn(s, "Deposit", 120, mode="Cash")
+			self.assertEqual(self.lines(dep.journal_entry).get(self.cash), 120)  # not the phone/M-Pesa account
+		finally:
+			self.set_setting("default_mode_of_payment", default)
+
 	def test_deposit_bank_account(self):
 		s = self.kid()
 		dep = self.txn(s, "Deposit", 300, mode="Bank", reference="BNK" + frappe.generate_hash(length=6).upper())

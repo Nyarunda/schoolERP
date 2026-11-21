@@ -13,9 +13,53 @@ DEFAULT_PLATFORM_DOMAIN = "stemicschools.com"
 DEFAULT_DOH_URL = "https://cloudflare-dns.com/dns-query"
 
 
+def _clean(domain) -> str:
+    return (domain or "").strip().lower().rstrip(".")
+
+
+def _domain_rows() -> list:
+    """Stemic Settings > Platform Domains, as [{domain, enabled, is_default}]."""
+    if not frappe.db.exists("DocType", "Stemic Platform Domain"):
+        return []
+    return [r for r in frappe.get_all("Stemic Platform Domain", filters={"parenttype": "Stemic Settings"},
+                                      fields=["domain", "enabled", "is_default"], order_by="idx asc")
+            if _clean(r.domain)]
+
+
 def platform_domain() -> str:
-    """The domain school subdomains live under. Set `stemic_platform_domain` in site_config to change it."""
-    return (config.get("stemic_platform_domain") or DEFAULT_PLATFORM_DOMAIN).strip().lower().rstrip(".")
+    """The default domain school subdomains live under: `stemic_platform_domain` in site_config, else the Default in
+    Stemic Settings > Platform Domains, else the Platform Domain field, else stemicschools.com."""
+    if frappe.conf.get("stemic_platform_domain"):
+        return _clean(frappe.conf.get("stemic_platform_domain"))
+    for r in _domain_rows():
+        if r.enabled and r.is_default:
+            return _clean(r.domain)
+    return _clean(config.get("stemic_platform_domain") or DEFAULT_PLATFORM_DOMAIN)
+
+
+def offered_domains() -> list[str]:
+    """Domains a new school can be put on: the default first, then the other enabled ones."""
+    out = [platform_domain()]
+    for r in _domain_rows():
+        if r.enabled and _clean(r.domain) not in out:
+            out.append(_clean(r.domain))
+    return out
+
+
+def known_domains() -> list[str]:
+    """Every Stemic domain a school may already be on (disabled ones too, and the legacy single domain), so existing
+    schools keep their addresses."""
+    out = list(offered_domains())
+    for d in [r.domain for r in _domain_rows()] + [config.get("stemic_platform_domain"), DEFAULT_PLATFORM_DOMAIN]:
+        if _clean(d) and _clean(d) not in out:
+            out.append(_clean(d))
+    return out
+
+
+def tenant_domain(tenant) -> str:
+    """The Stemic domain this school's address is on."""
+    name = tenant if isinstance(tenant, str) else tenant.name
+    return _clean(frappe.db.get_value("SaaS Tenant", name, "platform_domain")) or platform_domain()
 
 
 def _admin():
@@ -44,7 +88,7 @@ def register_tenant(school_name, slug, admin_email, agent=None, contact_phone=No
         frappe.throw("Unknown agent", frappe.ValidationError)
     name = frappe.get_doc({"doctype": "SaaS Tenant", "school_name": school_name,
         "slug": slug, "admin_email": admin_email, "agent": agent, "contact_phone": (contact_phone or "").strip() or None,
-        "status": "Draft"}).insert().name
+        "platform_domain": platform_domain(), "status": "Draft"}).insert().name
     from stemic_control import communications
 
     communications.queue("School Registered", tenant=name)
@@ -59,10 +103,11 @@ def request_domain(tenant, hostname):
     school = frappe.get_doc("SaaS Tenant", tenant)
     school.check_permission("read")
     host = _hostname(hostname)
-    base = platform_domain()
-    if host in policy.reserved_hosts(base):
+    bases = known_domains()
+    if host in policy.reserved_hosts(*bases):
         frappe.throw("Reserved platform hostname", frappe.ValidationError)
-    managed = policy.subdomain_of(host, base)
+    base = policy.managed_base(host, bases)
+    managed = bool(base)
     if managed and host != f"{school.slug}.{base}":
         frappe.throw("Only the school's reserved subdomain is allowed", frappe.PermissionError)
     if frappe.db.exists("SaaS Domain", host):

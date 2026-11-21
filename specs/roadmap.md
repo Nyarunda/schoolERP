@@ -8,12 +8,12 @@
 | # | Feature | Spec | Done when |
 |---|---|---|---|
 | 2 | **Auto-link guardians to parent logins** | `specs/features/auto-link-parent-logins/` | Acceptance passes on the test site |
+| 3 | **Several platform domains** | `specs/features/platform-domains/` | Acceptance passes on admin.stemicschools.com |
 
 ## Next (in order)
 
 | # | Feature | Why | Done when |
 |---|---|---|---|
-| 3 | **Several platform domains** | Branding/country domains, spread risk | Stemic Settings lists domains (on/off, default, certificate + DNS check); onboarding picks one; no TXT step for Stemic's own domains; links follow the chosen domain |
 | 4 | **Guide screenshots for the 6 newer modules** | Guide sections 5 and 8 are text only | Homework, admissions, exeat, pocket money, library, sick bay screenshots in the guide; PDF/Word re-exported |
 | 5 | **Sales kit** | No first client yet | Lead tracker, first email + WhatsApp follow-up, one-page brochure, demo script on test.stemicschools.com |
 

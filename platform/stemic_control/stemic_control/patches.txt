@@ -6,3 +6,4 @@ stemic_control.patches.own_naming_series_counters
 stemic_control.patches.default_school_communications
 stemic_control.patches.link_school_subscriptions
 stemic_control.patches.default_onboarding_settings
+stemic_control.patches.set_school_platform_domains

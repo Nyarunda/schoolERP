@@ -36,7 +36,7 @@ platform admins get an alert saying why, and Issue License on the subscription d
 
 | Key | Default | Purpose |
 | --- | --- | --- |
-| `stemic_platform_domain` | `stemicschools.com` | Domain school subdomains live under (`<slug>.<domain>`); its reserved names (admin, www, api, ...) cannot be claimed |
+| `stemic_platform_domain` | `stemicschools.com` | The default domain school subdomains live under (`<slug>.<domain>`); its reserved names (admin, www, api, ...) cannot be claimed. Further domains: **Stemic Settings > Platform Domains** (see `server/README.md`, "Adding another platform domain") |
 | `stemic_dns_over_https` | `https://cloudflare-dns.com/dns-query` | DNS-over-HTTPS resolver used to verify custom domains (JSON API) |
 
 ## Status model

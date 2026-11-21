@@ -7,13 +7,13 @@
 
 | # | Feature | Spec | Done when |
 |---|---|---|---|
-| — | (nothing in progress) | | |
+| 8 | **Control Center backups and restore** (schedule, off-server copy, retention, list/download, strict restore, alerts) | `specs/features/control-center-backups/` | Acceptance passes on admin.stemicschools.com |
 
 ## Next (in order)
 
 | # | Feature | Why | Done when |
 |---|---|---|---|
-| — | (nothing queued: add the next feature here) | | |
+| 9 | **Control Center automation, phase 2**: Update all schools, health watch, bulk actions | Owner: "more controls and automation to improve service delivery" | Spec written and agreed |
 
 ## Done
 

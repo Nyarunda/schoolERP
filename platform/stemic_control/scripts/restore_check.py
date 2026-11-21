@@ -105,7 +105,7 @@ def main():
         cli(*args, timeout=3600)
         if key:
             # the copy needs the school's own encryption key (not part of the backup) to read its stored passwords
-            cli("--site", scratch, "set-config", "encryption_key", key, timeout=120)
+            cli("--site", scratch, "set-config", "--", "encryption_key", key, timeout=120)  # "--": a key may start with "-"
         print(f"  restored into {scratch} in {time.time() - t:.0f}s", flush=True)
 
         provisioner.check_ready(scratch)  # the copy answers on its own database with every app

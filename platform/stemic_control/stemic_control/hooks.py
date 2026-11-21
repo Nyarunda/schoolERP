@@ -21,6 +21,7 @@ add_to_apps_screen = [
 
 # Install only on admin.stemicschools.com, never on school tenant sites.
 after_install = "stemic_control.setup.install"
+after_migrate = "stemic_control.setup.after_migrate"
 
 # Agents only see the schools and subscriptions they brought in
 permission_query_conditions = {

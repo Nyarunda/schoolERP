@@ -72,3 +72,16 @@ class TestStemicSettings(TestCase):
     def test_previews_are_for_platform_admins(self):
         frappe.set_user("Guest")
         self.assertRaises(frappe.PermissionError, communications.preview, "Welcome")
+
+
+class TestSettingsDefaultsAfterUpgrade(TestCase):
+    def test_new_fields_get_their_defaults_once(self):
+        """An existing settings record gets defaults for fields an upgrade added; values already chosen are kept."""
+        from stemic_control.setup import fill_new_settings_defaults
+
+        frappe.db.delete("Singles", {"doctype": "Stemic Settings", "field": ("in", ["keep_daily", "nightly_backups", "watch_schools"])})
+        frappe.db.set_single_value("Stemic Settings", "keep_weekly", 2)
+        fill_new_settings_defaults()
+        get = lambda f: frappe.db.get_single_value("Stemic Settings", f)
+        self.assertEqual((get("keep_daily"), get("nightly_backups"), get("watch_schools")), (7, 1, 1))
+        self.assertEqual(get("keep_weekly"), 2)  # the operator's own value stays

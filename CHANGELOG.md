@@ -5,6 +5,8 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Fixed: after the upgrade, the Control Center's new settings read 0 (nightly backups off, keep 0/0/0, site watch off);
+  every migrate now stores the defaults of settings never set, without touching chosen values (#92).
 - Control Center: **Delete School**: suspended at once, deleted after a 7-day grace (cancellable): site, database,
   backups, domains, invoices, payments and the school record are removed; a final copy is kept 90 days; tax records
   (eTIMS) and invoices filed with KRA are kept (#91).

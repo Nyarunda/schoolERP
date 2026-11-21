@@ -8,6 +8,12 @@ frappe.ui.form.on("Stemic Settings", {
     refresh(frm) {
         frm.add_custom_button(__("Re-check Setup"), () => render_setup(frm));
         frm.add_custom_button(__("Check Domains"), () => check_platform_domains());
+        frm.add_custom_button(__("Test Destination"), () => frappe.call({ method: "stemic_control.backups.test_destination", freeze: true,
+            freeze_message: __("Testing...") }).then(({ message: r }) => frappe.msgprint({ title: __("Backup destination"),
+                indicator: r.ok ? "green" : "red", message: frappe.utils.escape_html(r.message) })), __("Backups"));
+        frm.add_custom_button(__("Back Up All Schools Now"), () => frappe.confirm(__("Queue a backup of every live school on this server now?"), () =>
+            frappe.xcall("stemic_control.backups.backup_all_now").then((r) =>
+                frappe.show_alert({ message: __("{0} backup(s) queued", [r.queued]), indicator: "blue" }))), __("Backups"));
         if (frm.doc.notify_schools_by_sms) frm.add_custom_button(__("Send Test SMS"), () =>
             frappe.prompt({ fieldname: "number", fieldtype: "Data", label: __("Phone number"), reqd: 1, default: frm.doc.sms_test_number },
                 ({ number }) => frappe.call({ method: "stemic_control.communications.send_test_sms", args: { number },

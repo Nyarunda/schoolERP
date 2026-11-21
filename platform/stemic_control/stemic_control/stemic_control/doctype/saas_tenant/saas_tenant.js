@@ -5,6 +5,7 @@ frappe.ui.form.on("SaaS Tenant", {
         if (frm.is_new()) return;
         frm.page.set_indicator(__(frm.doc.status), TENANT_COLORS_FORM[frm.doc.status] || "gray");
         if (frm.doc.canonical_site) frm.add_custom_button(__("Open Site"), () => open_site(frm));
+        if (frm.doc.canonical_site) frm.add_custom_button(__("Backups"), () => school_backups(frm));
         if (frm.doc.canonical_site && frm.doc.status === "Active") frm.add_custom_button(__("Send Welcome Email"), () =>
             frappe.confirm(__("Email {0} the school's address and a new link to set their password?", [frappe.utils.escape_html(frm.doc.admin_email || "")]), () =>
                 frappe.call({ method: "stemic_control.welcome.resend", args: { tenant: frm.doc.name }, freeze: true,
@@ -336,4 +337,54 @@ function load_operations(frm, d, $info) {
             </div>`).join("")}</div>`);
         if (busy) d._sc_ops = setTimeout(() => load_operations(frm, d, $info), 4000);
     });
+}
+
+// Backups of this school: list, download, pin, restore (strict: typed site name, safety backup first)
+function school_backups(frm) {
+    const esc = frappe.utils.escape_html, site = frm.doc.canonical_site;
+    const d = new frappe.ui.Dialog({ title: __("Backups of {0}", [site]), size: "extra-large",
+        fields: [{ fieldname: "list", fieldtype: "HTML" }],
+        primary_action_label: __("Back Up Now"),
+        primary_action: () => frappe.xcall("stemic_control.site_runtime.run_operation", { tenant: frm.doc.name, action: "Backup" })
+            .then(() => { frappe.show_alert({ message: __("Backup queued: it appears here when it is done"), indicator: "blue" }); }),
+    });
+    const where = (b) => [b.on_server ? __("This server") : null,
+        { Uploaded: __("Off-server"), Pending: __("Off-server: pending"), Failed: __("Off-server: failed") }[b.offsite_status]]
+        .filter(Boolean).join(" + ");
+    const link = (b, part, label) => `<a href="/api/method/stemic_control.backups.download?backup=${encodeURIComponent(b.name)}&part=${part}" target="_blank" rel="noopener">${label}</a>`;
+    const load = () => frappe.xcall("stemic_control.backups.list_backups", { tenant: frm.doc.name }, "GET").then((rows) => {
+        if (!rows.length) return d.fields_dict.list.$wrapper.html(`<p class="text-muted">${__("No backups yet. Back Up Now takes one; nightly backups run at the hour set in Stemic Settings > Backups.")}</p>`);
+        d.fields_dict.list.$wrapper.html(`<table class="table table-bordered table-sm"><thead><tr>
+            <th>${__("Taken")}</th><th>${__("Kind")}</th><th>${__("Size")}</th><th>${__("Where")}</th><th>${__("Download")}</th><th></th></tr></thead><tbody>` +
+            rows.map((b) => `<tr><td>${esc(frappe.datetime.str_to_user(b.taken_on))}${b.pinned ? ` <span class="indicator-pill blue">${__("Pinned")}</span>` : ""}</td>
+                <td>${esc(__(b.kind))}</td><td>${b.size_mb || 0} MB</td><td>${esc(where(b))}</td>
+                <td>${link(b, "database", __("Database"))}${b.public_file ? " · " + link(b, "public", __("Files")) : ""}${b.private_file ? " · " + link(b, "private", __("Private files")) : ""}</td>
+                <td style="white-space:nowrap"><button class="btn btn-xs btn-default sc-pin" data-name="${esc(b.name)}">${b.pinned ? __("Unpin") : __("Pin")}</button>
+                <button class="btn btn-xs btn-danger sc-restore" data-name="${esc(b.name)}" data-when="${esc(frappe.datetime.str_to_user(b.taken_on))}">${__("Restore")}</button></td></tr>`).join("") +
+            `</tbody></table><p class="text-muted small">${__("Pinned backups are never removed by the retention rules.")}</p>`);
+        d.$wrapper.find(".sc-pin").on("click", (e) => frappe.xcall("stemic_control.backups.toggle_pin", { backup: $(e.currentTarget).data("name") }).then(load));
+        d.$wrapper.find(".sc-restore").on("click", (e) => restore_backup(frm, $(e.currentTarget).data("name"), $(e.currentTarget).data("when"), d));
+    });
+    d.show();
+    load();
+}
+
+function restore_backup(frm, backup, when, list_dialog) {
+    const site = frm.doc.canonical_site, esc = frappe.utils.escape_html;
+    const d = new frappe.ui.Dialog({ title: __("Restore {0}", [site]), fields: [
+        { fieldtype: "HTML", options: `<div class="alert alert-danger">${__("This replaces everything in {0} with the backup of <b>{1}</b>. Anything entered after that time is lost.", [esc(site), esc(when)])}
+            <ul style="margin:8px 0 0"><li>${__("A safety backup of the site as it is now is taken first (and pinned).")}</li>
+            <li>${__("The school is in maintenance mode while it runs.")}</li>
+            <li>${__("The school's admin is emailed when it is done.")}</li></ul></div>` },
+        { fieldname: "confirm_site", fieldtype: "Data", label: __("Type the site name to confirm: {0}", [site]), reqd: 1 },
+    ], primary_action_label: __("Restore"), primary_action: ({ confirm_site }) => {
+        if ((confirm_site || "").trim().toLowerCase() !== site.toLowerCase()) return frappe.msgprint(__("Type {0} exactly", [esc(site)]));
+        frappe.xcall("stemic_control.backups.request_restore", { backup, confirm_site }).then((r) => {
+            d.hide(); list_dialog.hide();
+            frappe.msgprint({ title: __("Restore started"), indicator: "orange",
+                message: __("Restore {0} is running in the background. Follow it under Site Operations; platform admins are alerted when it finishes.", [esc(r.operation)]) });
+        });
+    } });
+    d.get_primary_btn().removeClass("btn-primary").addClass("btn-danger");
+    d.show();
 }

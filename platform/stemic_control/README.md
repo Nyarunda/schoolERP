@@ -39,6 +39,25 @@ platform admins get an alert saying why, and Issue License on the subscription d
 | `stemic_platform_domain` | `stemicschools.com` | The default domain school subdomains live under (`<slug>.<domain>`); its reserved names (admin, www, api, ...) cannot be claimed. Further domains: **Stemic Settings > Platform Domains** (see `server/README.md`, "Adding another platform domain") |
 | `stemic_dns_over_https` | `https://cloudflare-dns.com/dns-query` | DNS-over-HTTPS resolver used to verify custom domains (JSON API) |
 
+## Backups and restore
+
+Each school's site is backed up from here; settings in **Stemic Settings > Backups**.
+
+- **Nightly**: every live school on this bench (Active or Suspended) at the chosen hour (default 01:00), one at a time,
+  with or without uploaded files. **Back Up All Schools Now** queues them at once.
+- **Where**: *This server only*, or *This server + S3-compatible storage* (endpoint, region, bucket, folder, keys):
+  Backblaze B2, Wasabi, AWS S3, DigitalOcean Spaces, Cloudflare R2, MinIO. **Test Destination** writes and deletes a
+  test file. Each backup is copied right after it is taken; failed copies are alerted and retried next night.
+- **Retention**: on the server the newest of each of the last 7 days, 4 weeks and 6 months (settings); off-server
+  copies for 90 days (0 = forever). Pinned backups and the newest are never removed.
+- **The school's Backups button**: every backup (nightly, manual, before restore, or found in the site's backups
+  folder), download (from the server, or a 15-minute link to the off-server copy), pin, restore.
+- **Restore** (platform admins): type the site name; a pinned safety backup is taken first (nothing is touched if
+  it fails); maintenance mode on; `restore` with files; `migrate`; maintenance always off again; the school's admin
+  is emailed and platform admins alerted. Only a school's own backups can be restored to it. Each run is a
+  **Site Operation** with its output (secrets removed).
+- **Alerts**: failed backup or off-server copy, failed restore, and any live school without a backup for 26 hours.
+
 ## Status model
 
 - **Tenant:** Draft -> Pending Approval -> Approved (or Rejected) -> Pending (job queued) -> Provisioning (job running) -> Active, or Failed; Active <-> Suspended. A rejected school only goes back to Draft. Any other change is refused when the tenant is saved.

@@ -19,6 +19,8 @@
     "status",
     "column_break_run",
     "requested_by",
+    "trigger",
+    "backup",
     "started_on",
     "finished_on",
     "result_section",
@@ -49,7 +51,7 @@
       "fieldtype": "Select",
       "label": "Action",
       "read_only": 1,
-      "options": "Backup\nMigrate\nClear Cache\nReset Admin Password",
+      "options": "Backup\nMigrate\nClear Cache\nReset Admin Password\nRestore",
       "reqd": 1,
       "in_list_view": 1
     },
@@ -73,6 +75,22 @@
       "label": "Requested By",
       "read_only": 1,
       "options": "User"
+    },
+    {
+      "fieldname": "backup",
+      "label": "Backup",
+      "fieldtype": "Link",
+      "options": "SaaS Backup",
+      "read_only": 1,
+      "description": "Restore: the backup restored. Backup: the backup taken."
+    },
+    {
+      "fieldname": "trigger",
+      "label": "Trigger",
+      "fieldtype": "Select",
+      "options": "Manual\nScheduled\nBefore restore",
+      "default": "Manual",
+      "read_only": 1
     },
     {
       "fieldname": "started_on",
@@ -120,7 +138,7 @@
     }
   ],
   "creation": "2026-10-27 15:00:00.000000",
-  "modified": "2026-10-27 15:00:00.000000",
+  "modified": "2026-11-21 18:00:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator"
 }

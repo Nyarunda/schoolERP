@@ -24,5 +24,5 @@
 
 ## Docs
 
-- [ ] `platform/stemic_control/README.md`: Backups section
-- [ ] `CHANGELOG.md`
+- [x] `platform/stemic_control/README.md`: Backups section
+- [x] `CHANGELOG.md`

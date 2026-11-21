@@ -169,7 +169,10 @@ ACTIONS = {
     "Clear Cache": (("clear-cache",), 5 * 60),
     # a new random password, made in the worker, set on the site and stored (encrypted) on the school
     "Reset Admin Password": (("set-admin-password",), 5 * 60),
+    # only through backups.request_restore (typed confirmation, safety backup first); never from run_operation
+    "Restore": ((), 3 * 60 * 60),
 }
+NOT_FROM_DIALOG = {"Restore"}
 
 
 def _operable_site(doc):
@@ -202,8 +205,8 @@ def run_operation(tenant, action):
     from stemic_control.api import _admin
 
     _admin()
-    if action not in ACTIONS:
-        frappe.throw("Choose " + ", ".join(ACTIONS), frappe.ValidationError)
+    if action not in ACTIONS or action in NOT_FROM_DIALOG:
+        frappe.throw("Choose " + ", ".join(a for a in ACTIONS if a not in NOT_FROM_DIALOG), frappe.ValidationError)
     frappe.db.sql("SELECT name FROM `tabSaaS Tenant` WHERE name = %s FOR UPDATE", (tenant,))  # one request at a time
     doc = frappe.get_doc("SaaS Tenant", tenant)
     doc.check_permission("write")
@@ -211,13 +214,22 @@ def run_operation(tenant, action):
     busy = _active_operation(site)
     if busy:
         frappe.throw(f"{busy.action} ({busy.name}) is still running on {site}; wait for it to finish", frappe.ValidationError)
+    return {"operation": queue_operation(tenant, site, action), "status": "Queued"}
+
+
+def queue_operation(tenant, site, action, trigger="Manual", backup=None, timeout=None, method=None, enqueue=True,
+                    status="Queued", summary=None):
+    """Record an operation and hand it to a background worker. Callers check permission and the one-at-a-time lock."""
     op = frappe.get_doc({"doctype": "SaaS Site Operation", "tenant": tenant, "site": site, "action": action,
-                         "status": "Queued", "requested_by": frappe.session.user})
+                         "status": status, "requested_by": frappe.session.user, "trigger": trigger, "backup": backup,
+                         "summary": summary})
     op.flags.site_operation_service = True
     op.insert(ignore_permissions=True)
-    frappe.enqueue("stemic_control.site_runtime.perform_operation", queue="long", timeout=ACTIONS[action][1] + 120,
-                   operation=op.name, enqueue_after_commit=True, job_id=f"stemic-site-op-{op.name}", deduplicate=True)
-    return {"operation": op.name, "status": "Queued"}
+    if enqueue:
+        frappe.enqueue(method or "stemic_control.site_runtime.perform_operation", queue="long",
+                       timeout=(timeout or ACTIONS[action][1]) + 120, operation=op.name, enqueue_after_commit=True,
+                       job_id=f"stemic-site-op-{op.name}", deduplicate=True)
+    return op.name
 
 
 def _summary(action, output):
@@ -244,8 +256,13 @@ def perform_operation(operation):
     if not rows or rows[0].status != "Queued":
         return rows[0].status if rows else "missing"
     action, site, tenant = rows[0].action, rows[0].site, rows[0].tenant
+    if action in NOT_FROM_DIALOG:
+        return "refused"  # restores run only through backups.perform_restore
     _set(operation, {"status": "Running", "started_on": frappe.utils.now_datetime()})
     args, timeout = ACTIONS[action]
+    if action == "Backup" and not frappe.utils.cint(frappe.db.get_single_value("Stemic Settings", "backup_with_files") or 0) \
+            and frappe.db.get_value("SaaS Site Operation", operation, "trigger") == "Scheduled":
+        args = ("backup",)  # nightly, database only (Stemic Settings > Backups)
     password = random.token_urlsafe(14) if action == "Reset Admin Password" else None
     if password:
         args = (*args, password)
@@ -271,6 +288,13 @@ def perform_operation(operation):
         output = output.replace(secret, "********")
     _set(operation, {"status": "Succeeded", "finished_on": frappe.utils.now_datetime(), "summary": _summary(action, output),
                      "output": output[-20000:]})
+    if action == "Backup":
+        try:
+            from stemic_control import backups
+
+            backups.record_backup(operation, output)
+        except Exception:
+            frappe.log_error(title=f"Backup {operation} taken but not recorded")
     return "Succeeded"
 
 

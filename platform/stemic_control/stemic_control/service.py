@@ -218,8 +218,9 @@ def service_health():
 	schools = []
 	for t in _live():
 		row = state.get(t.name, {})
-		last_backup = frappe.db.get_value("SaaS Backup", {"tenant": t.name, "status": "Available"}, "max(taken_on)") \
-			if frappe.db.exists("DocType", "SaaS Backup") else None
+		from stemic_control.backups import last_backup_time
+
+		last_backup = last_backup_time(t.name)
 		last_op = frappe.get_all("SaaS Site Operation", filters={"tenant": t.name}, fields=["action", "status", "creation"],
 								 order_by="creation desc", limit=1)
 		certs = [d for d in (row.get("certs") or {}).values() if d is not None]

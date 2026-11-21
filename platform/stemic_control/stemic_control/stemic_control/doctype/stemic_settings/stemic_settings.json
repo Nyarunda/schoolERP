@@ -94,7 +94,27 @@
   "site_apps",
   "bench_path",
   "commission_tab",
-  "commission_basis"
+  "commission_basis",
+  "backups_tab",
+  "backups_html",
+  "nightly_backups",
+  "backup_hour",
+  "backup_with_files",
+  "cb_backup_keep",
+  "keep_daily",
+  "keep_weekly",
+  "keep_monthly",
+  "backup_destination_section",
+  "backup_destination",
+  "s3_endpoint_url",
+  "s3_region",
+  "s3_bucket",
+  "s3_prefix",
+  "cb_s3",
+  "s3_access_key",
+  "s3_secret_key",
+  "keep_offsite_days",
+  "last_nightly_run"
  ],
  "fields": [
   {
@@ -618,6 +638,133 @@
    "options": "Every payment\nFirst payment only",
    "default": "Every payment",
    "description": "Each agent's rate is on their agent record."
+  },
+  {
+   "fieldname": "backups_tab",
+   "label": "Backups",
+   "fieldtype": "Tab Break"
+  },
+  {
+   "fieldname": "backups_html",
+   "label": "",
+   "fieldtype": "HTML"
+  },
+  {
+   "fieldname": "nightly_backups",
+   "label": "Back up every school nightly",
+   "fieldtype": "Check",
+   "default": "1"
+  },
+  {
+   "fieldname": "backup_hour",
+   "label": "Hour (0-23, server time)",
+   "fieldtype": "Int",
+   "default": "1",
+   "depends_on": "nightly_backups"
+  },
+  {
+   "fieldname": "backup_with_files",
+   "label": "Include uploaded files",
+   "fieldtype": "Check",
+   "default": "1",
+   "description": "Attachments, photos and documents. Off: database only (smaller, faster)."
+  },
+  {
+   "fieldname": "cb_backup_keep",
+   "label": "",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "keep_daily",
+   "label": "Keep daily",
+   "fieldtype": "Int",
+   "default": "7",
+   "description": "On this server: the newest backup of each of this many days"
+  },
+  {
+   "fieldname": "keep_weekly",
+   "label": "Keep weekly",
+   "fieldtype": "Int",
+   "default": "4"
+  },
+  {
+   "fieldname": "keep_monthly",
+   "label": "Keep monthly",
+   "fieldtype": "Int",
+   "default": "6"
+  },
+  {
+   "fieldname": "backup_destination_section",
+   "label": "Where backups are kept",
+   "fieldtype": "Section Break",
+   "description": "Copies on another provider survive the loss of this server. S3-compatible covers Backblaze B2, Wasabi, AWS S3, DigitalOcean Spaces, Cloudflare R2 and MinIO."
+  },
+  {
+   "fieldname": "backup_destination",
+   "label": "Destination",
+   "fieldtype": "Select",
+   "options": "This server only\nThis server + S3-compatible storage",
+   "default": "This server only"
+  },
+  {
+   "fieldname": "s3_endpoint_url",
+   "label": "Endpoint URL",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.backup_destination!='This server only'",
+   "description": "e.g. https://s3.eu-central-003.backblazeb2.com, https://s3.wasabisys.com, https://fra1.digitaloceanspaces.com. Blank for AWS."
+  },
+  {
+   "fieldname": "s3_region",
+   "label": "Region",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.backup_destination!='This server only'"
+  },
+  {
+   "fieldname": "s3_bucket",
+   "label": "Bucket",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.backup_destination!='This server only'",
+   "mandatory_depends_on": "eval:doc.backup_destination!='This server only'"
+  },
+  {
+   "fieldname": "s3_prefix",
+   "label": "Folder in the bucket",
+   "fieldtype": "Data",
+   "default": "stemic-backups",
+   "depends_on": "eval:doc.backup_destination!='This server only'"
+  },
+  {
+   "fieldname": "cb_s3",
+   "label": "",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "s3_access_key",
+   "label": "Access Key ID",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.backup_destination!='This server only'",
+   "mandatory_depends_on": "eval:doc.backup_destination!='This server only'"
+  },
+  {
+   "fieldname": "s3_secret_key",
+   "label": "Secret Access Key",
+   "fieldtype": "Password",
+   "depends_on": "eval:doc.backup_destination!='This server only'"
+  },
+  {
+   "fieldname": "keep_offsite_days",
+   "label": "Keep off-server copies (days)",
+   "fieldtype": "Int",
+   "default": "90",
+   "depends_on": "eval:doc.backup_destination!='This server only'",
+   "description": "0 keeps them forever. Pinned backups are always kept."
+  },
+  {
+   "fieldname": "last_nightly_run",
+   "label": "Last Nightly Run",
+   "fieldtype": "Date",
+   "read_only": 1,
+   "hidden": 1
   }
  ],
  "permissions": [
@@ -635,7 +782,7 @@
   }
  ],
  "creation": "2026-10-26 18:00:00.000000",
- "modified": "2026-11-21 11:00:00.000000",
+ "modified": "2026-11-21 18:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "issingle": 1

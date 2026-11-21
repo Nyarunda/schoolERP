@@ -1,0 +1,183 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS Backup",
+  "module": "Stemic Control",
+  "custom": 0,
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "autoname": "BKP-.#####",
+  "naming_rule": "Expression (old style)",
+  "title_field": "site",
+  "sort_field": "taken_on",
+  "sort_order": "DESC",
+  "in_create": 1,
+  "description": "A backup of a school's site: on this server and/or off-server storage. Restore from the school's Backups button.",
+  "field_order": [
+    "tenant",
+    "site",
+    "taken_on",
+    "kind",
+    "column_break_where",
+    "status",
+    "size_mb",
+    "on_server",
+    "offsite_status",
+    "pinned",
+    "files_section",
+    "database_file",
+    "public_file",
+    "private_file",
+    "config_file",
+    "offsite_prefix",
+    "record_section",
+    "operation",
+    "note"
+  ],
+  "fields": [
+    {
+      "fieldname": "tenant",
+      "label": "School",
+      "fieldtype": "Link",
+      "options": "SaaS Tenant",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "site",
+      "label": "Site",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "taken_on",
+      "label": "Taken On",
+      "fieldtype": "Datetime",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "kind",
+      "label": "Kind",
+      "fieldtype": "Select",
+      "options": "Manual\nScheduled\nBefore restore\nFound on server",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_where",
+      "label": "",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Available\nRemoved",
+      "default": "Available",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "size_mb",
+      "label": "Size (MB)",
+      "fieldtype": "Float",
+      "read_only": 1
+    },
+    {
+      "fieldname": "on_server",
+      "label": "On This Server",
+      "fieldtype": "Check",
+      "read_only": 1
+    },
+    {
+      "fieldname": "offsite_status",
+      "label": "Off-server Copy",
+      "fieldtype": "Select",
+      "options": "Not set up\nPending\nUploaded\nFailed\nRemoved",
+      "default": "Not set up",
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "pinned",
+      "label": "Pinned (never removed)",
+      "fieldtype": "Check",
+      "read_only": 1
+    },
+    {
+      "fieldname": "files_section",
+      "label": "Files",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "database_file",
+      "label": "Database",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "public_file",
+      "label": "Public Files",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "private_file",
+      "label": "Private Files",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "config_file",
+      "label": "Site Config",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "offsite_prefix",
+      "label": "Off-server Folder",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "record_section",
+      "label": "Record",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "operation",
+      "label": "Operation",
+      "fieldtype": "Link",
+      "options": "SaaS Site Operation",
+      "read_only": 1
+    },
+    {
+      "fieldname": "note",
+      "label": "Note",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "report": 1,
+      "export": 1
+    }
+  ],
+  "creation": "2026-11-21 18:00:00.000000",
+  "modified": "2026-11-21 18:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator"
+}

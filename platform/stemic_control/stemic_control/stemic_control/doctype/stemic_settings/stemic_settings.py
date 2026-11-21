@@ -37,6 +37,20 @@ class StemicSettings(Document):
         from stemic_control.communications import check_gateway_url
 
         check_gateway_url(self)
+        self.validate_backups()
+
+    def validate_backups(self):
+        if not 0 <= (self.backup_hour or 0) <= 23:
+            frappe.throw("The backup hour is 0 to 23", frappe.ValidationError)
+        for field in ("keep_daily", "keep_weekly", "keep_monthly", "keep_offsite_days"):
+            if (self.get(field) or 0) < 0:
+                frappe.throw("Backups kept cannot be negative", frappe.ValidationError)
+        if self.backup_destination and self.backup_destination != "This server only":
+            self.s3_endpoint_url = (self.s3_endpoint_url or "").strip().rstrip("/") or None
+            if self.s3_endpoint_url and not self.s3_endpoint_url.startswith("https://"):
+                frappe.throw("The storage endpoint must start with https://", frappe.ValidationError)
+            self.s3_bucket = (self.s3_bucket or "").strip()
+            self.s3_prefix = (self.s3_prefix or "").strip().strip("/")
 
     def validate_platform_domains(self):
         seen = set()

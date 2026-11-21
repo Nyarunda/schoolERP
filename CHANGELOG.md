@@ -5,6 +5,9 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Control Center: nightly backups of every school, an optional off-server copy (any S3-compatible storage),
+  retention, a **Backups** list per school (download, pin) and a strict **Restore** (typed site name, safety backup
+  first, maintenance mode, school emailed); alerts for failed or missing backups (#89).
 - Sidebar: **Chart of Accounts** under Finance (#88).
 - Fixed: cash pocket money deposits and library fines paid in cash posted to the default payment mode's account (often
   M-Pesa); they now use the school's Cash mode (#87).

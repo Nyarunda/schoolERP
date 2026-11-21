@@ -247,16 +247,23 @@ def _post(name, student=None):
 		else:
 			why = f"No account number and no single student whose guardian has phone {tx.msisdn}: assign the student"
 		tx.db_set({"status": "Unmatched", "error": why})
+		_to_suspense(tx.name)
 		frappe.publish_realtime("paybill_unmatched", {"name": tx.name, "amount": tx.amount}, after_commit=True)
 		return tx.status
 
 	existing = frappe.db.get_value("Fee Payment", {"reference_no": tx.trans_id, "docstatus": 1})
 	if existing:  # already receipted (e.g. bursar entered it by hand)
+		from school_erp.api import ledger
+
+		ledger.clear_suspense(tx)
 		tx.db_set({"status": "Posted", "student": student, "fee_payment": existing, "error": None})
 		return tx.status
 
 	settings = _settings()
 	try:
+		from school_erp.api import ledger
+
+		ledger.clear_suspense(tx)  # cancelled in the same transaction as the Fee Payment: never both, never neither
 		fp = frappe.get_doc(
 			{
 				"doctype": "Fee Payment",
@@ -286,7 +293,22 @@ def _post(name, student=None):
 		)
 		frappe.db.commit()
 		frappe.log_error(title=f"Paybill posting failed for {name}")
+		_to_suspense(name)
 		return "Failed"
+
+
+def _to_suspense(name):
+	"""Real money we couldn't put on a learner: into Unidentified Receipts now (logged, never fatal: the payment record
+	itself is already safe, and Check Ledger lists anything left out)."""
+	from school_erp.api import ledger
+
+	frappe.db.commit()  # keep the status just set, whatever happens to the posting
+	try:
+		ledger.post_suspense(frappe.get_doc("M-Pesa Transaction", name))
+		frappe.db.commit()
+	except Exception:
+		frappe.db.rollback()
+		frappe.log_error(title=f"M-Pesa {name}: could not post to Unidentified Receipts")
 
 
 # Who may release a payment held for review: it failed our checks, so someone senior confirms it with Safaricom

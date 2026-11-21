@@ -18,8 +18,19 @@ frappe.ui.form.on("Library Loan", {
 			frm.add_custom_button(__("Mark Lost"), () => frappe.confirm(__("Mark this copy as lost? The replacement price is charged."), () => act("mark_lost")));
 			if (frm.doc.due_date < frappe.datetime.get_today()) frm.set_intro(__("Overdue since {0}", [frappe.datetime.str_to_user(frm.doc.due_date)]), "red");
 		}
-		if (frm.doc.fine_amount > 0 && !frm.doc.fine_waived && !frm.doc.fine_invoice && frm.doc.student) {
+		const open_fine = frm.doc.fine_amount > 0 && !frm.doc.fine_waived && !frm.doc.fine_invoice && !frm.doc.fine_paid_entry;
+		if (open_fine && frm.doc.student) {
 			frm.add_custom_button(__("Bill Fine to Fees"), () => act("bill_fine"));
+		}
+		if (open_fine) {
+			frm.add_custom_button(__("Fine Paid"), () => frappe.prompt([
+				{ fieldname: "mode", label: __("Paid by"), fieldtype: "Select", options: "Cash\nM-Pesa", default: "Cash", reqd: 1 },
+				{ fieldname: "reference", label: __("M-Pesa code"), fieldtype: "Data", depends_on: "eval:doc.mode=='M-Pesa'",
+					mandatory_depends_on: "eval:doc.mode=='M-Pesa'" },
+			], (v) => act("fine_paid", v), __("Fine of {0} paid", [format_currency(frm.doc.fine_amount)]), __("Record payment")));
+		}
+		if (frm.doc.fine_paid_entry) {
+			frm.set_intro(__("Fine paid by {0} and posted to the ledger ({1}).", [frm.doc.fine_paid_mode, frm.doc.fine_paid_entry]), "green");
 		}
 	},
 });

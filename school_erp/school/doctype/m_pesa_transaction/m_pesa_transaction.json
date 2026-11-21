@@ -15,6 +15,7 @@
   "student",
   "student_name",
   "fee_payment",
+  "suspense_entry",
   "sb_payer",
   "payer_name",
   "msisdn",
@@ -107,6 +108,15 @@
    "label": "Fee Payment",
    "options": "Fee Payment",
    "read_only": 1
+  },
+  {
+   "fieldname": "suspense_entry",
+   "label": "Suspense Entry",
+   "fieldtype": "Link",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Held in Unidentified Receipts until matched to a learner; cancelled when the Fee Payment posts."
   },
   {
    "fieldname": "sb_payer",
@@ -237,7 +247,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-26 20:00:00.000000",
+ "modified": "2026-11-21 14:30:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "M-Pesa Transaction",

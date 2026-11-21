@@ -56,6 +56,9 @@ def post(doc):
 	frappe.db.set_value("Pocket Money Account", doc.student, {"balance": after, "last_transaction": doc.posting_datetime},
 						update_modified=False)
 	doc.db_set({"balance_before": before, "balance_after": after})
+	from school_erp.api import ledger
+
+	ledger.post_pocket_money(doc)  # in the same database transaction: no balance change without its posting
 	if doc.transaction_type == "Deposit":
 		_queue_sms(doc.name, "deposit")
 	elif crossed_low(before, after, flt(row.low_balance_alert)):
@@ -75,6 +78,9 @@ def unpost(doc):
 	row = check_unpost(doc)
 	after = round(flt(row.balance) - signed(doc.transaction_type, doc.amount), 2)
 	frappe.db.set_value("Pocket Money Account", doc.student, "balance", after, update_modified=False)
+	from school_erp.api import ledger
+
+	ledger.unpost_pocket_money(doc)
 
 
 @frappe.whitelist(methods=["POST"])

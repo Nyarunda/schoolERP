@@ -27,6 +27,9 @@
   "fine_amount",
   "fine_waived",
   "fine_invoice",
+  "fine_paid_entry",
+  "fine_paid_mode",
+  "fine_paid_reference",
   "cb_5",
   "issued_by",
   "last_reminder",
@@ -191,6 +194,28 @@
    "idx": 21
   },
   {
+   "fieldname": "fine_paid_entry",
+   "label": "Fine Paid Entry",
+   "fieldtype": "Link",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "fine_paid_mode",
+   "label": "Fine Paid By",
+   "fieldtype": "Data",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "fine_paid_reference",
+   "label": "Fine Payment Reference",
+   "fieldtype": "Data",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "cb_5",
    "fieldtype": "Column Break",
    "idx": 22
@@ -224,7 +249,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-11-10 12:00:00.000000",
+ "modified": "2026-11-21 14:30:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Library Loan",

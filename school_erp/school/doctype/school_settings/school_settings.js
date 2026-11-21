@@ -7,6 +7,7 @@ frappe.ui.form.on("School Settings", {
 	},
 
 	refresh(frm) {
+		frm.add_custom_button(__("Check Ledger"), () => school_erp.ledger_check());
 		frm.add_custom_button(__("Run School Setup"), () => {
 			frappe.confirm(__("Create classes, fee types, terms, periods and subjects that are missing? Nothing existing is changed."), () => {
 				frappe.call({ method: "school_erp.api.setup.run_setup", freeze: true, freeze_message: __("Setting up...") }).then(({ message }) => {

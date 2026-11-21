@@ -19,6 +19,8 @@
   "balance_before",
   "balance_after",
   "recorded_by",
+  "journal_entry",
+  "reversal_entry",
   "amended_from"
  ],
  "fields": [
@@ -124,6 +126,23 @@
    "idx": 13
   },
   {
+   "fieldname": "journal_entry",
+   "label": "Journal Entry",
+   "fieldtype": "Link",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "The General Ledger posting (a daily summary for shop purchases)."
+  },
+  {
+   "fieldname": "reversal_entry",
+   "label": "Reversal Entry",
+   "fieldtype": "Link",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -137,7 +156,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-11-10 12:00:00.000000",
+ "modified": "2026-11-21 14:30:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "Pocket Money Transaction",

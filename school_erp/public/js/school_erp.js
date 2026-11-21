@@ -104,3 +104,28 @@ school_erp.move_class_dialog = function (students, doc, after) {
 	});
 	d.show();
 };
+
+// Finance: is every shilling in the General Ledger? (School Settings and Pocket Money lists)
+school_erp.ledger_check = function () {
+	const esc = frappe.utils.escape_html;
+	const fmt = (v) => format_currency(v, frappe.defaults.get_default("currency"));
+	Promise.all([
+		frappe.xcall("school_erp.api.ledger.pocket_money_reconciliation").catch(() => null),
+		frappe.xcall("school_erp.api.ledger.unposted_money"),
+	]).then(([rec, missing]) => {
+		const parts = [];
+		if (rec && rec.account) {
+			parts.push(`<p><b>${__("Pocket money")}</b>: ${__("ledger")} ${fmt(rec.ledger)}, ${__("learners' balances")} ${fmt(rec.learners)}` +
+				(rec.awaiting_daily_posting ? `, ${__("shop sales waiting for tonight's posting")} ${fmt(rec.awaiting_daily_posting)}` : "") +
+				` → <span style="color:var(--${rec.agrees ? "green" : "red"}-600)">${rec.agrees ? __("agrees") : __("difference {0}", [fmt(rec.difference)])}</span></p>`);
+		}
+		if (!missing.length) {
+			parts.push(`<p style="color:var(--green-600)">${__("Every recorded payment, sale, fine and expense is in the General Ledger.")}</p>`);
+		} else {
+			parts.push(`<p style="color:var(--red-600)">${__("{0} record(s) are not in the General Ledger:", [missing.length])}</p><ul>` +
+				missing.slice(0, 50).map((m) => `<li><a href="${frappe.utils.get_form_link(m.doctype, m.name)}">${esc(m.name)}</a> ` +
+					`${fmt(m.amount)}: ${esc(m.problem)}</li>`).join("") + "</ul>");
+		}
+		frappe.msgprint({ title: __("Ledger check"), indicator: missing.length || (rec && !rec.agrees) ? "orange" : "green", message: parts.join("") });
+	});
+};

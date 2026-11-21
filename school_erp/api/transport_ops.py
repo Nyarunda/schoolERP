@@ -91,3 +91,76 @@ def alert_expiring_documents():
 	if items:
 		notify(_("Transport documents expiring"), "\n".join(items), users=manager_users(),
 			   sms=today.weekday() == 0, sms_text="Expiring: " + "; ".join(items[:5]))  # SMS weekly (Mondays), bell daily
+
+
+# ----------------------------------------------------------------------------- fuel -> expense
+def raise_fuel_expense(log):
+	"""Never blocks the driver's log: a problem is logged and School Settings > Check Ledger lists the log."""
+	try:
+		frappe.db.savepoint("fuel_expense")
+		return _raise_fuel_expense(log)
+	except Exception:
+		frappe.db.rollback(save_point="fuel_expense")
+		frappe.log_error(title=f"Fuel expense not raised for {log.name}")
+		frappe.msgprint(_("The fuel expense could not be raised; the bursar will see it under Check Ledger."), indicator="orange", alert=True)
+		return None
+
+
+def _raise_fuel_expense(log):
+	"""A driver log with fuel bought raises one School Expense (category Fuel) for approval; approving it posts it to the
+	General Ledger like any expense. Off when School Settings > Raise a Fuel expense is unticked."""
+	from frappe.utils import cint, flt
+
+	if log.get("fuel_expense") or flt(log.fuel_cost) <= 0:
+		return log.get("fuel_expense")
+	if not (licensing.is_enabled("expenses") and licensing.is_enabled("transport")):
+		return None
+	settings = frappe.get_cached_doc("School Settings")
+	if not cint(settings.get("raise_fuel_expenses")):
+		return None
+	if not settings.get("fuel_expense_category"):
+		from school_erp.api import ledger
+
+		ledger.ensure_accounts(settings, save=True)
+		settings = frappe.get_cached_doc("School Settings")
+	litres = f", {flt(log.fuel_added_litres):g} L" if flt(log.fuel_added_litres) else ""
+	exp = frappe.get_doc({
+		"doctype": "School Expense",
+		"posting_date": log.log_date,
+		"expense_category": settings.fuel_expense_category,
+		"amount": flt(log.fuel_cost),
+		"payee": log.driver_name or log.driver,
+		"mode_of_payment": settings.default_mode_of_payment,
+		"requested_by": frappe.session.user,
+		"description": f"Fuel for {log.vehicle}{litres} ({log.trip}, {log.log_date}), driver log {log.name}",
+		"status": "Pending Approval",
+	})
+	exp.flags.ignore_permissions = True
+	exp.insert()
+	log.db_set("fuel_expense", exp.name, update_modified=False)
+	frappe.msgprint(_("Fuel expense {0} sent for approval.").format(exp.name), indicator="green", alert=True)
+	return exp.name
+
+
+def fuel_cost_changed(log, old_cost):
+	"""The fuel cost on a log changed after its expense was raised: say so, nothing is changed silently."""
+	from frappe.utils import flt
+
+	if log.get("fuel_expense") and flt(old_cost) != flt(log.fuel_cost):
+		frappe.msgprint(_("Fuel expense {0} was raised for {1}. Ask the bursar to reject and correct it.")
+						.format(log.fuel_expense, frappe.utils.fmt_money(old_cost)), indicator="orange")
+
+
+def drop_fuel_expense(log):
+	"""The log is cancelled: withdraw a fuel expense that isn't approved yet; warn if it already posted."""
+	if not log.get("fuel_expense"):
+		return
+	exp = frappe.get_doc("School Expense", log.fuel_expense)
+	if exp.docstatus == 0:
+		exp.flags.ignore_permissions = True
+		exp.flags.ignore_links = True
+		frappe.delete_doc("School Expense", exp.name, ignore_permissions=True, force=True)
+		log.db_set("fuel_expense", None, update_modified=False)
+	elif exp.docstatus == 1:
+		frappe.msgprint(_("Fuel expense {0} is already approved and posted. Cancel it from the expense if the fuel was not bought.")
+						.format(exp.name), indicator="orange")

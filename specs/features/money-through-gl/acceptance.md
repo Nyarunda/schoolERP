@@ -31,6 +31,6 @@
 
 ## Docs
 
-- [ ] `docs/ACCOUNTING.md` (accounts used by each kind of money)
+- [x] `docs/ACCOUNTING.md` (accounts used by each kind of money)
 - [ ] User guide: Fees/Finance, Pocket Money, Library, Transport sections
-- [ ] `CHANGELOG.md`
+- [x] `CHANGELOG.md`

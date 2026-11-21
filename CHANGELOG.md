@@ -7,6 +7,8 @@ Add your line in the PR that makes the change.
 
 - Control Center: school addresses can live on several Stemic domains; choose one per school when onboarding, and
   check each domain is ready from Stemic Settings (#82).
+- Parents are linked to their children by themselves when a guardian's email or phone matches their login, in
+  whichever order the guardian and the login were added (#81).
 - Spec-driven development: `AGENTS.md`, `specs/` (brief, technical design, roadmap, feature template) and this changelog.
 - Checks: a sidebar change must bump its `modified` date, or `migrate` would skip it.
 

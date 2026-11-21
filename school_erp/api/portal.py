@@ -6,7 +6,7 @@ from frappe.utils import date_diff, flt, formatdate, get_url, getdate, nowdate, 
 
 from school_erp import licensing
 from school_erp.logic.paybill import is_till
-from school_erp.logic.text import normalize_phone, render
+from school_erp.logic.text import normalize_phone, phone_variants, render
 
 PARENT_ROLE = "Parent"
 
@@ -83,6 +83,73 @@ def ensure_parent_user(guardian, cc) -> tuple[str | None, str | None]:
 		user.flags.ignore_permissions = True
 		user.add_roles(PARENT_ROLE)
 	return user.name, password
+
+
+# ----------------------------------------------------------------------------- automatic linking
+def parent_login_for(email=None, mobile=None, cc="254"):
+	"""The one enabled parent (website) login with this email or phone, or None when there is none or more than one."""
+	found = set()
+	if email and email.strip():
+		found.update(frappe.get_all("User", filters={"name": email.strip().lower(), "user_type": "Website User", "enabled": 1},
+									pluck="name"))
+	variants = phone_variants(mobile, cc)
+	if variants:
+		found.update(frappe.get_all("User", filters={"mobile_no": ("in", variants), "user_type": "Website User", "enabled": 1},
+									pluck="name"))
+	return found.pop() if len(found) == 1 else None
+
+
+def _ensure_parent_role(user):
+	if not frappe.db.exists("Has Role", {"parent": user, "parenttype": "User", "role": PARENT_ROLE}):
+		frappe.get_doc({"doctype": "Has Role", "parent": user, "parenttype": "User", "parentfield": "roles",
+						"role": PARENT_ROLE}).db_insert()
+		frappe.clear_cache(user=user)
+
+
+def _portal_on():
+	return licensing.is_enabled("portal")
+
+
+def link_guardian_logins(student):
+	"""Student.validate: give each guardian row with no login the existing parent login with its email or phone."""
+	if not student.get("guardians") or not _portal_on():
+		return
+	cc = frappe.db.get_single_value("School Settings", "country_code") or "254"
+	for g in student.guardians:
+		if g.user or not (g.email or g.mobile_no):
+			continue
+		user = parent_login_for(g.email, g.mobile_no, cc)
+		if user:
+			g.user = user
+			_ensure_parent_role(user)
+
+
+def link_login_to_guardians(user, method=None):
+	"""User after_insert / on_update: link a parent login to every unlinked guardian row with its email or phone,
+	without re-saving the students."""
+	if user.user_type != "Website User" or not user.enabled or user.name in ("Guest", "Administrator"):
+		return
+	if not frappe.db.exists("DocType", "Student Guardian") or not _portal_on():
+		return
+	cc = frappe.db.get_single_value("School Settings", "country_code") or "254"
+	mine = normalize_phone(user.mobile_no, cc)
+	email = (user.email or user.name or "").strip().lower()
+	rows = []
+	if "@" in email:
+		rows += frappe.get_all("Student Guardian", filters={"parenttype": "Student", "email": email, "user": ("is", "not set")},
+							   fields=["name", "email", "mobile_no"])
+	if mine:
+		rows += [r for r in frappe.get_all("Student Guardian", fields=["name", "email", "mobile_no"],
+										   filters={"parenttype": "Student", "mobile_no": ("like", f"%{mine[-9:]}"),
+													"user": ("is", "not set")})
+				 if normalize_phone(r.mobile_no, cc) == mine]
+	linked = 0
+	for r in {r.name: r for r in rows}.values():
+		if parent_login_for(r.email, r.mobile_no, cc) == user.name:  # only when this login is the one match
+			frappe.db.set_value("Student Guardian", r.name, "user", user.name, update_modified=False)
+			linked += 1
+	if linked:
+		_ensure_parent_role(user.name)
 
 
 @frappe.whitelist()

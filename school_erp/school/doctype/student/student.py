@@ -33,7 +33,13 @@ class Student(Document):
 		self.validate_leaving()
 		self.validate_government_ids()
 		self.set_primary_guardian()
+		self.link_parent_logins()
 		self.validate_services()
+
+	def link_parent_logins(self):
+		from school_erp.api.portal import link_guardian_logins
+
+		link_guardian_logins(self)
 
 	def validate_admission_number(self):
 		if self.admission_number and frappe.db.exists(

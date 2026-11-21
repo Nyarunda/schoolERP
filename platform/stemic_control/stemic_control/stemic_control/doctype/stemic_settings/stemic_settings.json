@@ -114,7 +114,14 @@
   "s3_access_key",
   "s3_secret_key",
   "keep_offsite_days",
-  "last_nightly_run"
+  "last_nightly_run",
+  "service_tab",
+  "update_after_code_change",
+  "watch_schools",
+  "cb_service",
+  "disk_alert_percent",
+  "cert_alert_days",
+  "last_code_version"
  ],
  "fields": [
   {
@@ -765,6 +772,49 @@
    "fieldtype": "Date",
    "read_only": 1,
    "hidden": 1
+  },
+  {
+   "fieldname": "service_tab",
+   "label": "Service",
+   "fieldtype": "Tab Break"
+  },
+  {
+   "fieldname": "update_after_code_change",
+   "label": "Update every school after a code change",
+   "fieldtype": "Check",
+   "default": "1",
+   "description": "When the School ERP code on this server changes, every live school is migrated, one at a time."
+  },
+  {
+   "fieldname": "watch_schools",
+   "label": "Watch every school's site",
+   "fieldtype": "Check",
+   "default": "1",
+   "description": "Every 15 minutes: alert when a school's site stops answering, and when it is back."
+  },
+  {
+   "fieldname": "cb_service",
+   "label": "",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "disk_alert_percent",
+   "label": "Alert when free disk is under (%)",
+   "fieldtype": "Int",
+   "default": "10"
+  },
+  {
+   "fieldname": "cert_alert_days",
+   "label": "Alert when a certificate expires within (days)",
+   "fieldtype": "Int",
+   "default": "14"
+  },
+  {
+   "fieldname": "last_code_version",
+   "label": "Last Code Version",
+   "fieldtype": "Data",
+   "read_only": 1,
+   "hidden": 1
   }
  ],
  "permissions": [
@@ -782,7 +832,7 @@
   }
  ],
  "creation": "2026-10-26 18:00:00.000000",
- "modified": "2026-11-21 18:00:00.000000",
+ "modified": "2026-11-21 20:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "issingle": 1

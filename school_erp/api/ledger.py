@@ -73,7 +73,8 @@ def ensure_accounts(settings, save=False):
 	for field, (name, root, groups) in ACCOUNTS.items():
 		if not settings.get(field):
 			changed[field] = _ensure_account(settings.company, name, root, groups)
-	if cint(settings.get("raise_fuel_expenses")) and not settings.get("fuel_expense_category"):
+	if (cint(settings.get("raise_fuel_expenses")) and not settings.get("fuel_expense_category")
+			and licensing.is_enabled("expenses") and licensing.is_enabled("transport")):
 		if not frappe.db.exists("Expense Category", FUEL_CATEGORY):
 			account = _ensure_account(settings.company, FUEL_ACCOUNT, "Expense", ("Indirect Expenses", "Expenses"))
 			frappe.get_doc({"doctype": "Expense Category", "category_name": FUEL_CATEGORY, "expense_account": account,

@@ -25,7 +25,7 @@ class SchoolSettings(Document):
 
 		try:
 			ledger.ensure_accounts(self)
-		except frappe.ValidationError as e:
+		except (frappe.ValidationError, frappe.PermissionError) as e:
 			frappe.clear_last_message()
 			frappe.msgprint(str(e), title=_("Ledger accounts"), indicator="orange")
 

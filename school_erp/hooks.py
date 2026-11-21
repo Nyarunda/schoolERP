@@ -22,8 +22,8 @@ after_install = "school_erp.setup.install.after_install"
 after_migrate = "school_erp.setup.install.after_migrate"
 before_tests = "school_erp.tests.utils.before_tests"
 
-app_include_js = ["/assets/school_erp/js/school_erp.js", "/assets/school_erp/js/school_dashboard.js",
-	"/assets/school_erp/js/verified_documents.js"]
+# One hashed bundle (see public/js/school_erp.bundle.js): plain /assets paths are cached for a year.
+app_include_js = ["school_erp.bundle.js"]
 app_include_css = ["school_dashboard.bundle.css"]
 
 boot_session = "school_erp.licensing.boot_session"

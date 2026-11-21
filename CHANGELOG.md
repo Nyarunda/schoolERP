@@ -5,6 +5,8 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Control Center: school addresses can live on several Stemic domains; choose one per school when onboarding, and
+  check each domain is ready from Stemic Settings (#82).
 - Spec-driven development: `AGENTS.md`, `specs/` (brief, technical design, roadmap, feature template) and this changelog.
 - Checks: a sidebar change must bump its `modified` date, or `migrate` would skip it.
 

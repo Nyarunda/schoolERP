@@ -16,8 +16,8 @@ class SaaSDomain(Document):
             frappe.throw("A new domain cannot start active", frappe.ValidationError)
         elif self.status == "Verified":
             tenant = frappe.get_doc("SaaS Tenant", self.tenant)
-            from stemic_control.config import get
+            from stemic_control.api import known_domains
 
-            base = (get("stemic_platform_domain") or "stemicschools.com").lower().rstrip(".")
-            if self.domain_type != "Stemic Subdomain" or self.hostname != f"{tenant.slug}.{base}":
+            own = {f"{tenant.slug}.{base}" for base in known_domains()}
+            if self.domain_type != "Stemic Subdomain" or self.hostname not in own:
                 frappe.throw("Custom domains require DNS verification", frappe.PermissionError)

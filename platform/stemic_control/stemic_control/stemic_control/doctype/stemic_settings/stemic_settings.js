@@ -7,6 +7,7 @@ const STEMIC_SERVER_KEYS = {
 frappe.ui.form.on("Stemic Settings", {
     refresh(frm) {
         frm.add_custom_button(__("Re-check Setup"), () => render_setup(frm));
+        frm.add_custom_button(__("Check Domains"), () => check_platform_domains());
         if (frm.doc.notify_schools_by_sms) frm.add_custom_button(__("Send Test SMS"), () =>
             frappe.prompt({ fieldname: "number", fieldtype: "Data", label: __("Phone number"), reqd: 1, default: frm.doc.sms_test_number },
                 ({ number }) => frappe.call({ method: "stemic_control.communications.send_test_sms", args: { number },
@@ -169,5 +170,21 @@ function render_setup(frm) {
             frm.set_df_property(field, "description", fromServer
                 ? `${base} <b>${__("Set on the server (site_config.json: {0}); change it there.", [key])}</b>` : base);
         }
+    });
+}
+
+// Stemic Settings > Check Domains: can schools live on each platform domain? (wildcard DNS, certificate on the server)
+function check_platform_domains() {
+    const esc = frappe.utils.escape_html;
+    frappe.call({ method: "stemic_control.domains.platform_domain_health", type: "GET", freeze: true,
+        freeze_message: __("Checking each domain...") }).then(({ message: rows }) => {
+        const colour = { ready: "var(--green-600)", no_dns: "var(--red-600)", no_certificate: "var(--red-600)",
+            no_connection: "var(--orange-600)", unexpected: "var(--orange-600)" };
+        const body = rows.map((r) => `<tr>
+            <td style="padding:6px 8px;white-space:nowrap"><b>${esc(r.domain)}</b>${r.default ? ` <span class="text-muted">(${__("default")})</span>` : ""}
+                <div class="text-muted small">${r.offered ? __("Offered for new schools") : __("Not offered")} · ${__("{0} school(s)", [r.schools])}</div></td>
+            <td style="padding:6px 8px;color:${colour[r.state]}">${esc(r.message)}</td></tr>`).join("");
+        frappe.msgprint({ title: __("Platform domains"), wide: true,
+            message: `<table style="width:100%">${body}</table>` });
     });
 }

@@ -39,6 +39,18 @@ def normalize_phone(raw: str | None, country_code: str = "254") -> str | None:
 	return digits if 9 <= len(digits) <= 15 else None
 
 
+def phone_variants(raw: str | None, country_code: str = "254") -> list[str]:
+	"""Every form a phone may be stored in (0712345678, 254712345678, +254712345678), for matching logins."""
+	full = normalize_phone(raw, country_code)
+	if not full:
+		return []
+	cc = re.sub(r"\D", "", country_code or "")
+	out = [full, "+" + full]
+	if cc and full.startswith(cc):
+		out.append("0" + full[len(cc):])
+	return out
+
+
 def sms_parts(message: str) -> int:
 	n = len(message or "")
 	return 1 if n <= 160 else -(-n // 153)

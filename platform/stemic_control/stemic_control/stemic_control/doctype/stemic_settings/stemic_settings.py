@@ -15,6 +15,7 @@ class StemicSettings(Document):
             self.platform_domain = self.platform_domain.strip().lower().rstrip(".")
             if not policy.is_hostname(self.platform_domain):
                 frappe.throw(f"{self.platform_domain} is not a domain name", frappe.ValidationError)
+        self.validate_platform_domains()
         for field in ("billing_months", "payment_terms_days", "renewal_notice_days"):
             if (self.get(field) or 0) < 0:
                 frappe.throw("Months and days cannot be negative", frappe.ValidationError)
@@ -36,6 +37,27 @@ class StemicSettings(Document):
         from stemic_control.communications import check_gateway_url
 
         check_gateway_url(self)
+
+    def validate_platform_domains(self):
+        seen = set()
+        for row in self.get("platform_domains") or []:
+            row.domain = (row.domain or "").strip().lower().rstrip(".")
+            if not policy.is_hostname(row.domain) or "." not in row.domain:
+                frappe.throw(f"Row {row.idx}: {row.domain or 'blank'} is not a domain name", frappe.ValidationError)
+            if row.domain in seen:
+                frappe.throw(f"{row.domain} is listed twice", frappe.ValidationError)
+            seen.add(row.domain)
+        rows = self.get("platform_domains") or []
+        if not rows:
+            return
+        defaults = [r for r in rows if r.is_default]
+        if len(defaults) > 1:
+            frappe.throw("Only one platform domain can be the Default", frappe.ValidationError)
+        if not defaults:
+            frappe.throw("Tick Default on one platform domain", frappe.ValidationError)
+        if not defaults[0].enabled:
+            frappe.throw(f"The Default domain ({defaults[0].domain}) must be offered for new schools", frappe.ValidationError)
+        self.platform_domain = defaults[0].domain  # the single field stays in step with the Default
 
     def on_update(self):
         frappe.clear_document_cache("Stemic Settings", "Stemic Settings")

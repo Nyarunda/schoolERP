@@ -18,6 +18,14 @@ class TestPolicy(unittest.TestCase):
         self.assertIn("admin.stemic.cloud", policy.reserved_hosts("stemic.cloud"))
         self.assertIn("stemic.cloud", policy.reserved_hosts("stemic.cloud"))
 
+    def test_several_platform_domains(self):
+        bases = ["stemicschools.com", "stemic.cloud", "co.stemic.cloud"]
+        self.assertEqual(policy.managed_base("greenhill.stemic.cloud", bases), "stemic.cloud")
+        self.assertEqual(policy.managed_base("greenhill.co.stemic.cloud", bases), "co.stemic.cloud")  # longest match
+        self.assertIsNone(policy.managed_base("portal.greenhill.ac.ke", bases))  # a school's own domain
+        reserved = policy.reserved_hosts(*bases)
+        self.assertTrue({"www.stemicschools.com", "admin.stemic.cloud", "stemic.cloud"} <= reserved)
+
     def test_transitions(self):
         t = policy.TENANT_TRANSITIONS
         self.assertTrue(policy.can_move(t, "Draft", "Pending Approval"))

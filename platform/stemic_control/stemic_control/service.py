@@ -229,7 +229,9 @@ def service_health():
 						"last_operation": last_op[0] if last_op else None})
 	running = frappe.get_all("SaaS Site Operation", filters={"status": ("in", ["Queued", "Running"]), "batch": ("is", "set")},
 							 pluck="batch", distinct=True)
-	return {"machinery": health.check(), "schools": schools, "batches_running": running,
+	from stemic_control.backups import nightly_status
+
+	return {"machinery": health.check(), "schools": schools, "batches_running": running, "nightly": nightly_status(),
 			"disk": {"total_gb": round(usage.total / rules.GB, 1), "free_gb": round(usage.free / rules.GB, 1),
 					 "problem": rules.disk_problem(usage.total, usage.free, _settings().get("disk_alert_percent") or 10)},
 			"code_version": (code_version() or "")[:10]}

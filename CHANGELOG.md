@@ -7,7 +7,7 @@ Add your line in the PR that makes the change.
 
 - Control Center: posting to the books is compulsory once the accounting company is set; **Post Missing Entries** and
   **Check Ledger**; sidebar redesigned with **Accounts** (chart of accounts, journals, GL, Trial Balance, P&L, Balance
-  Sheet, Cash Flow, receivables, payables), **Tax (eTIMS)** and **Operations** groups (#PR).
+  Sheet, Cash Flow, receivables, payables), **Tax (eTIMS)** and **Operations** groups (#94).
 - Fixed: after the upgrade, the Control Center's new settings read 0 (nightly backups off, keep 0/0/0, site watch off);
   every migrate now stores the defaults of settings never set, without touching chosen values (#92).
 - Control Center: **Delete School**: suspended at once, deleted after a 7-day grace (cancellable): site, database,

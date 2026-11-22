@@ -15,6 +15,8 @@
 
 | # | Feature | Why | Done when |
 |---|---|---|---|
+| 12 | **Stemic expenses** (hosting, SMS, domains, salaries, marketing by category, approval, posted to the GL; cost vs revenue) | Owner, 22 Nov: "everything through the chart of accounts" | Spec agreed |
+| 13 | **Refunds and credit notes** (credit an invoice or refund a payment, linked, posted; eTIMS credit note) | Owner, 22 Nov | Spec agreed |
 | 14 | **Growth and health KPIs** (MRR, ARR, new/churned schools, ARPU, collection rate, ageing, cash vs costs, by plan/county, trends) | Owner, 22 Nov | Spec agreed |
 
 ## Done

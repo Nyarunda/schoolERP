@@ -140,7 +140,7 @@ def record_backup(operation, output, kind=None):
 		store = storage()
 	except Exception:
 		frappe.log_error(title="Backup storage could not be opened")
-	doc = _insert({"tenant": op.tenant, "site": op.site, "taken_on": found.get("taken_on") or now_datetime(),
+	doc = _insert({"tenant": op.tenant, "site": op.site, "taken_on": now_datetime(),  # the Control Center's clock, not the file name's
 				   "kind": kind or KIND.get(op.trigger or "Manual", "Manual"), "size_mb": found.get("size_mb"),
 				   "on_server": 1, "offsite_status": "Pending" if store else "Not set up", "operation": operation,
 				   **{f: found.get(f) for f in FILE_FIELDS}})
@@ -174,6 +174,24 @@ def upload(backup, store=None):
 	return status
 
 
+def _file_time(path):
+	"""When a file was written, on the Control Center's clock (the server may name backups in another time zone)."""
+	import datetime
+
+	from frappe.utils import convert_utc_to_system_timezone
+
+	stamp = datetime.datetime.fromtimestamp(os.path.getmtime(path), datetime.timezone.utc).replace(tzinfo=None)
+	return convert_utc_to_system_timezone(stamp).replace(tzinfo=None)
+
+
+def _last_day(value):
+	"""A stored date, or None when never set (Frappe may store an empty date as 0001-01-01)."""
+	if not value or str(value).startswith(("0001-01-01", "0000-00-00")):
+		return None
+	parsed = get_datetime(value)
+	return parsed.date() if parsed else None
+
+
 def sync_server_backups(tenant):
 	"""Bring the record in line with the site's backups folder: backups taken by hand appear; files deleted by hand
 	are marked gone."""
@@ -190,7 +208,7 @@ def sync_server_backups(tenant):
 			continue
 		paths = {f: os.path.join(folder, n) for f, n in parts.items()}
 		size = sum(os.path.getsize(p) for p in paths.values() if os.path.isfile(p))
-		_insert({"tenant": tenant, "site": site, "taken_on": rules.stamp_time(parts["database_file"]), "kind": "Found on server",
+		_insert({"tenant": tenant, "site": site, "taken_on": _file_time(db), "kind": "Found on server",
 				 "size_mb": round(size / 1048576, 2), "on_server": 1,
 				 "offsite_status": "Pending" if _settings().get("backup_destination") not in (None, "", SERVER_ONLY) else "Not set up",
 				 **paths})
@@ -286,8 +304,7 @@ def hourly():
 	"""Scheduler: nightly backups at the chosen hour, then retention; the watchdog every hour."""
 	s = _settings()
 	now = now_datetime()
-	if cint(s.get("nightly_backups")) and rules.wants_nightly(now, s.get("backup_hour"), s.get("last_nightly_run") and
-															   get_datetime(s.get("last_nightly_run")).date()):
+	if cint(s.get("nightly_backups")) and rules.wants_nightly(now, s.get("backup_hour"), _last_day(s.get("last_nightly_run"))):
 		frappe.db.set_single_value("Stemic Settings", "last_nightly_run", nowdate())
 		frappe.clear_document_cache("Stemic Settings", "Stemic Settings")
 		frappe.db.commit()
@@ -304,6 +321,20 @@ def hourly():
 		watchdog()
 	except Exception:
 		frappe.log_error(title="Backup watchdog failed")
+
+
+@frappe.whitelist(methods=["GET"])
+def nightly_status():
+	"""Why nightly backups will or will not run (Service Health)."""
+	_admin()
+	s = _settings()
+	now = now_datetime()
+	last = _last_day(s.get("last_nightly_run"))
+	enabled = bool(cint(s.get("nightly_backups")))
+	return {"enabled": enabled, "hour": cint(s.get("backup_hour")), "last_run": str(last) if last else None, "now": str(now),
+			"due": enabled and rules.wants_nightly(now, s.get("backup_hour"), last),
+			"stored": {"nightly_backups": frappe.db.get_single_value("Stemic Settings", "nightly_backups"),
+					   "last_nightly_run": str(frappe.db.get_single_value("Stemic Settings", "last_nightly_run"))}}
 
 
 def retry_uploads():
@@ -406,7 +437,7 @@ def watchdog(now=None):
 	from stemic_control.alerts import notify_admins
 
 	s = _settings()
-	if not cint(s.get("nightly_backups")) or not s.get("last_nightly_run"):
+	if not cint(s.get("nightly_backups")) or not _last_day(s.get("last_nightly_run")):
 		return []
 	now = now or now_datetime()
 	late = []

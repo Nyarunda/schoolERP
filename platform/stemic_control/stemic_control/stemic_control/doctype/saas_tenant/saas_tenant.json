@@ -13,6 +13,7 @@
     "overview_html",
     "school_section",
     "school_name",
+    "county",
     "slug",
     "admin_email",
     "contact_phone",
@@ -55,6 +56,14 @@
       "reqd": 1,
       "in_list_view": 1,
       "in_standard_filter": 1
+    },
+    {
+      "fieldname": "county",
+      "label": "County",
+      "fieldtype": "Select",
+      "options": "\nBaringo\nBomet\nBungoma\nBusia\nElgeyo-Marakwet\nEmbu\nGarissa\nHoma Bay\nIsiolo\nKajiado\nKakamega\nKericho\nKiambu\nKilifi\nKirinyaga\nKisii\nKisumu\nKitui\nKwale\nLaikipia\nLamu\nMachakos\nMakueni\nMandera\nMarsabit\nMeru\nMigori\nMombasa\nMurang'a\nNairobi\nNakuru\nNandi\nNarok\nNyamira\nNyandarua\nNyeri\nSamburu\nSiaya\nTaita-Taveta\nTana River\nTharaka-Nithi\nTrans Nzoia\nTurkana\nUasin Gishu\nVihiga\nWajir\nWest Pokot",
+      "in_standard_filter": 1,
+      "description": "Where the school is (for growth by county)."
     },
     {
       "fieldtype": "Data",
@@ -238,7 +247,7 @@
     }
   ],
   "creation": "2026-10-25 20:00:00.000000",
-  "modified": "2026-11-21 22:00:00.000000",
+  "modified": "2026-11-22 16:00:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator",
   "title_field": "school_name",

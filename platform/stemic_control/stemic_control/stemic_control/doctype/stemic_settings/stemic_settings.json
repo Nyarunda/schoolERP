@@ -566,15 +566,15 @@
    "fieldtype": "Check",
    "label": "Post to accounts",
    "default": "0",
-   "description": "Post each subscription invoice, payment and agent commission to ERPNext on this site, as Sales Invoices, Payment Entries and Journal Entries. Needs ERPNext installed here and Set Up Accounts run."
+   "description": "No longer used: posting is compulsory once a company is chosen.",
+   "hidden": 1,
+   "read_only": 1
   },
   {
    "fieldname": "accounting_company",
    "fieldtype": "Autocomplete",
    "label": "Company",
-   "depends_on": "post_to_accounts",
-   "mandatory_depends_on": "post_to_accounts",
-   "description": "The ERPNext company that keeps Stemic's books. Pick it from the list."
+   "description": "The ERPNext company that keeps Stemic's books. Once chosen, every invoice, payment, commission, payout, expense and refund is posted to it; nothing is saved without its entry."
   },
   {
    "fieldname": "accounting_html",
@@ -832,7 +832,7 @@
   }
  ],
  "creation": "2026-10-26 18:00:00.000000",
- "modified": "2026-11-21 20:00:00.000000",
+ "modified": "2026-11-22 13:00:00.000000",
  "modified_by": "Administrator",
  "owner": "Administrator",
  "issingle": 1

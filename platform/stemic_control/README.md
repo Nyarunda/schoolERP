@@ -39,6 +39,15 @@ platform admins get an alert saying why, and Issue License on the subscription d
 | `stemic_platform_domain` | `stemicschools.com` | The default domain school subdomains live under (`<slug>.<domain>`); its reserved names (admin, www, api, ...) cannot be claimed. Further domains: **Stemic Settings > Platform Domains** (see `server/README.md`, "Adding another platform domain") |
 | `stemic_dns_over_https` | `https://cloudflare-dns.com/dns-query` | DNS-over-HTTPS resolver used to verify custom domains (JSON API) |
 
+## Accounts (Stemic's own books)
+
+Once **Stemic Settings > Accounting > Company** is chosen (ERPNext installed here), posting is compulsory: every
+subscription invoice (Sales Invoice, income released monthly), payment (Payment Entry), agent commission and payout
+(Journal Entries) is posted, or refused with the reason. **Post Missing Entries** posts older records; **Check Ledger**
+lists anything not posted and any invoice whose amount owed differs from its Sales Invoice. The sidebar's **Accounts**
+group has the chart of accounts, journals, General Ledger, Trial Balance, Profit and Loss, Balance Sheet, Cash Flow,
+receivables and payables.
+
 ## Backups and restore
 
 Each school's site is backed up from here; settings in **Stemic Settings > Backups**.

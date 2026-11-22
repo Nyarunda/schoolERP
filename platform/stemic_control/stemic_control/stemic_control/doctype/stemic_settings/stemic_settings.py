@@ -28,7 +28,7 @@ class StemicSettings(Document):
                              frappe.ValidationError)
         if self.seller_name:
             self.seller_name = self.seller_name.strip()
-        if self.post_to_accounts and self.accounting_company and "erpnext" in frappe.get_installed_apps() \
+        if self.accounting_company and "erpnext" in frappe.get_installed_apps() \
                 and not frappe.db.exists("Company", self.accounting_company):
             frappe.throw(f"There is no ERPNext company called {self.accounting_company}", frappe.ValidationError)
         for field in ("brand_color", "accent_color"):

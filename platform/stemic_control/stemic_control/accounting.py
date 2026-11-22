@@ -1,7 +1,7 @@
 """Stemic's own books: subscription invoices, payments and agents' commission posted to ERPNext on this site.
 
-Optional. Nothing is posted unless ERPNext is installed here and Stemic Settings > Accounting > Post to accounts is on.
-When it is, each posting happens in the same transaction as the Control Center record, so the two never disagree:
+Always on once ERPNext is installed here and Stemic Settings > Accounting > Company is set: every invoice, payment,
+commission and payout then posts, or is refused with the reason. Each posting happens in the same transaction as the Control Center record, so the two never disagree:
 if the accounts refuse (no fiscal year, a closed period), the invoice or payment is refused too, with the reason.
 
     SaaS Invoice submitted  -> Sales Invoice    Dr Debtors                  Cr Deferred Subscription Income, Output VAT
@@ -38,8 +38,7 @@ VAT_TEMPLATE = "Kenya VAT (included in price)"
 def enabled():
     if "erpnext" not in frappe.get_installed_apps():
         return False
-    s = frappe.get_cached_doc("Stemic Settings")
-    return bool(s.get("post_to_accounts") and s.get("accounting_company"))
+    return bool(frappe.get_cached_doc("Stemic Settings").get("accounting_company"))  # compulsory once a company is set
 
 
 def company():
@@ -348,9 +347,9 @@ def check():
         return [_item("Accounts", "Post to accounts", None, "ERPNext is not installed on this site: invoices and payments "
                       "are kept in the Control Center only.", "To keep Stemic's books here: bench --site <admin site> install-app erpnext")]
     s = frappe.get_cached_doc("Stemic Settings")
-    if not s.get("post_to_accounts"):
-        return [_item("Accounts", "Post to accounts", None, "Off: invoices and payments are not posted to the books.",
-                      "Stemic Settings > Accounting: choose the company, Set Up Accounts, then switch it on.")]
+    if not s.get("accounting_company"):
+        return [_item("Accounts", "Company", None, "No company chosen: invoices and payments are not posted to the books.",
+                      "Stemic Settings > Accounting: choose the company, then Set Up Accounts.")]
     name = s.get("accounting_company")
     if not name or not frappe.db.exists("Company", name):
         return [_item("Accounts", "Company", False, f"{name or 'No company'}: not found in ERPNext.",
@@ -368,9 +367,94 @@ def check():
                if not frappe.db.get_value("Account", {"company": name, "account_name": ACCOUNTS[k][0], "is_group": 0})]
     out.append(_item("Accounts", "Accounts", not missing, "All set up." if not missing else f"Missing: {', '.join(missing)}",
                      "" if not missing else "Stemic Settings > Accounting > Set Up Accounts."))
-    unposted = frappe.db.count("SaaS Invoice", {"docstatus": 1, "sales_invoice": ("in", ["", None])})
-    if unposted:
-        out.append(_item("Accounts", "Invoices not in the books", None,
-                         f"{unposted} submitted invoice(s) were raised before posting was switched on; their payments "
-                         "are not posted either."))
+    missing = unposted()
+    out.append(_item("Accounts", "Everything in the books", not missing,
+                     "Every invoice, payment, commission and payout is posted." if not missing else
+                     f"{len(missing)} record(s) not posted.", "" if not missing else "Accounting > Post Missing Entries."))
     return out
+
+
+# ----------------------------------------------------------------------------- nothing outside the books
+def unposted():
+    """Submitted records with no entry in the books."""
+    if not enabled():
+        return []
+    out = []
+    for name, total in frappe.get_all("SaaS Invoice", filters={"docstatus": 1, "sales_invoice": ("in", ["", None])},
+                                      fields=["name", "total"], as_list=True):
+        out.append({"doctype": "SaaS Invoice", "name": name, "amount": total, "problem": "Invoice not posted"})
+    for name, amount in frappe.get_all("SaaS Payment", filters={"docstatus": 1, "payment_entry": ("in", ["", None])},
+                                       fields=["name", "amount"], as_list=True):
+        out.append({"doctype": "SaaS Payment", "name": name, "amount": amount, "problem": "Payment not posted"})
+    for name, amount, status in frappe.get_all("SaaS Commission", filters={"journal_entry": ("in", ["", None]), "amount": (">", 0),
+                                                                           "status": ("!=", "Cancelled")},
+                                               fields=["name", "amount", "status"], as_list=True):
+        out.append({"doctype": "SaaS Commission", "name": name, "amount": amount, "problem": "Commission not posted"})
+    for name, amount in frappe.get_all("SaaS Commission", filters={"status": "Paid", "payout_entry": ("in", ["", None])},
+                                       fields=["name", "amount"], as_list=True):
+        out.append({"doctype": "SaaS Commission", "name": name, "amount": amount, "problem": "Payout not posted"})
+    return out
+
+
+def _admin():
+    from stemic_control.api import _admin as check
+
+    check()
+
+
+@frappe.whitelist(methods=["GET"])
+def ledger_check():
+    """Is everything in the books, and do the books agree with what schools owe?"""
+    _admin()
+    mismatches = []
+    if enabled():
+        for inv in frappe.get_all("SaaS Invoice", filters={"docstatus": 1, "sales_invoice": ("is", "set")},
+                                  fields=["name", "outstanding", "sales_invoice", "school_name"]):
+            si = frappe.db.get_value("Sales Invoice", inv.sales_invoice, ["outstanding_amount", "docstatus"], as_dict=True)
+            if not si or si.docstatus != 1:
+                mismatches.append({"name": inv.name, "problem": f"{inv.sales_invoice} is not a submitted Sales Invoice"})
+            elif abs(flt(si.outstanding_amount) - flt(inv.outstanding)) > 0.01:
+                mismatches.append({"name": inv.name, "problem": f"{inv.school_name} owes {flt(inv.outstanding):,.2f} here but "
+                                   f"{flt(si.outstanding_amount):,.2f} in the books ({inv.sales_invoice})"})
+    return {"enabled": enabled(), "company": frappe.get_cached_doc("Stemic Settings").get("accounting_company"),
+            "unposted": unposted(), "mismatches": mismatches}
+
+
+@frappe.whitelist(methods=["POST"])
+def post_missing():
+    _admin()
+    return _post_missing()
+
+
+def _post_missing():
+    """Post every record that is not in the books yet (older invoices, their payments, commissions, payouts), oldest
+    first. Each is its own transaction: one refused (a closed period) does not stop the rest."""
+    if not enabled():
+        frappe.throw("Choose the accounting company in Stemic Settings > Accounting first", frappe.ValidationError)
+    done, failed = [], []
+
+    def attempt(label, fn):
+        try:
+            fn()
+            frappe.db.commit()
+            done.append(label)
+        except Exception as e:
+            frappe.db.rollback()
+            failed.append({"name": label, "error": str(e)[:300]})
+
+    for name in frappe.get_all("SaaS Invoice", filters={"docstatus": 1, "sales_invoice": ("in", ["", None])},
+                               pluck="name", order_by="issue_date asc"):
+        attempt(name, lambda name=name: post_invoice(frappe.get_doc("SaaS Invoice", name)))
+    for name in frappe.get_all("SaaS Payment", filters={"docstatus": 1, "payment_entry": ("in", ["", None])},
+                               pluck="name", order_by="payment_date asc"):
+        attempt(name, lambda name=name: post_payment(frappe.get_doc("SaaS Payment", name)))
+    for name in frappe.get_all("SaaS Commission", filters={"journal_entry": ("in", ["", None]), "amount": (">", 0),
+                                                           "status": ("!=", "Cancelled")}, pluck="name", order_by="earned_on asc"):
+        attempt(name, lambda name=name: post_commission(name))
+    paid = frappe.get_all("SaaS Commission", filters={"status": "Paid", "payout_entry": ("in", ["", None]),
+                                                      "journal_entry": ("is", "set")},
+                          fields=["name", "agent", "paid_reference", "paid_on"])
+    for key in {(r.agent, r.paid_reference, str(r.paid_on)) for r in paid}:
+        names = [r.name for r in paid if (r.agent, r.paid_reference, str(r.paid_on)) == key]
+        attempt(f"payout {key[1] or ''} to {key[0]}", lambda key=key, names=names: post_payout(key[0], names, key[1], key[2]))
+    return {"posted": done, "failed": failed}

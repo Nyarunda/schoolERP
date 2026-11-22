@@ -357,3 +357,21 @@ stemic_control.service_health = function () {
                 + `<p class="text-muted small">${__("Sites are checked every 15 minutes and certificates daily. Code version {0}.", [esc(h.code_version || "?")])}</p>` });
     });
 };
+
+// ----------------------------------------------------------------------------- the books: is everything posted?
+stemic_control.ledger_check = function () {
+    const esc = frappe.utils.escape_html;
+    const fmt = (v) => format_currency(v, "KES");
+    frappe.xcall("stemic_control.accounting.ledger_check", {}, "GET").then((r) => {
+        if (!r.enabled) return frappe.msgprint({ title: __("Ledger check"), indicator: "orange",
+            message: __("Choose the accounting company in Stemic Settings > Accounting: until then nothing is posted.") });
+        const ok = !r.unposted.length && !r.mismatches.length;
+        const list = (rows, f) => `<ul>${rows.slice(0, 50).map(f).join("")}</ul>`;
+        frappe.msgprint({ title: __("Ledger check: {0}", [esc(r.company)]), indicator: ok ? "green" : "orange", wide: true,
+            message: (ok ? `<p style="color:var(--green-600)">${__("Every invoice, payment, commission and payout is in the books, and what schools owe agrees with the receivables.")}</p>` : "")
+                + (r.unposted.length ? `<p style="color:var(--red-600)">${__("Not in the books")}:</p>` + list(r.unposted, (u) =>
+                    `<li><a href="${frappe.utils.get_form_link(u.doctype, u.name)}">${esc(u.name)}</a> ${fmt(u.amount)}: ${esc(u.problem)}</li>`) : "")
+                + (r.mismatches.length ? `<p style="color:var(--red-600)">${__("Do not agree")}:</p>` + list(r.mismatches, (m) =>
+                    `<li><a href="${frappe.utils.get_form_link("SaaS Invoice", m.name)}">${esc(m.name)}</a>: ${esc(m.problem)}</li>`) : "") });
+    });
+};

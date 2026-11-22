@@ -9,12 +9,12 @@
 |---|---|---|---|
 | 11 | **Control Center accounts + sidebar** (compulsory posting, Post Missing Entries, Check Ledger, Accounts/Tax/Operations groups) | `specs/features/control-center-accounts/` | Acceptance passes on admin.stemicschools.com |
 | 12 | **Stemic expenses** (categories with accounts, approval posts to the GL, monthly repeats, Costs vs Revenue) | `specs/features/stemic-expenses/` | Acceptance passes on admin.stemicschools.com |
+| 13 | **Refunds and credit notes** (Sales Invoice returns, refund Payment Entries, KRA flag) | `specs/features/credit-notes/` | Acceptance passes on admin.stemicschools.com |
 
 ## Next (in order)
 
 | # | Feature | Why | Done when |
 |---|---|---|---|
-| 13 | **Refunds and credit notes** (credit an invoice or refund a payment, linked, posted; eTIMS credit note) | Owner, 22 Nov | Spec agreed |
 | 14 | **Growth and health KPIs** (MRR, ARR, new/churned schools, ARPU, collection rate, ageing, cash vs costs, by plan/county, trends) | Owner, 22 Nov | Spec agreed |
 
 ## Done

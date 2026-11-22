@@ -1,4 +1,4 @@
-const INVOICE_COLORS = { Draft: "gray", Unpaid: "orange", "Partly Paid": "yellow", Paid: "green", Overdue: "red", Cancelled: "gray" };
+const INVOICE_COLORS = { Draft: "gray", Unpaid: "orange", "Partly Paid": "yellow", Paid: "green", Credited: "blue", Overdue: "red", Cancelled: "gray" };
 
 frappe.ui.form.on("SaaS Invoice", {
     setup(frm) {
@@ -11,6 +11,12 @@ frappe.ui.form.on("SaaS Invoice", {
                 .addClass("btn-primary");
         }
         if (frm.doc.docstatus === 1 && frm.doc.status !== "Cancelled" && stemic_control.is_platform_admin()) etims_button(frm);
+        if (frm.doc.docstatus === 1 && !["Cancelled", "Credited"].includes(frm.doc.status) && stemic_control.is_platform_admin()) {
+            frm.add_custom_button(__("Credit / Refund"), () => frappe.new_doc("SaaS Credit Note", { invoice: frm.doc.name }));
+        }
+        if (frm.doc.credited_amount) {
+            frm.add_custom_button(__("Credit Notes"), () => frappe.set_route("List", "SaaS Credit Note", { invoice: frm.doc.name }), __("View"));
+        }
         if (!frm.is_new()) {
             frm.add_custom_button(__("Payments"), () => frappe.set_route("List", "SaaS Payment", { invoice: frm.doc.name }), __("View"));
             frm.add_custom_button(__("Subscription"), () => frappe.set_route("Form", "SaaS Subscription", frm.doc.subscription), __("View"));

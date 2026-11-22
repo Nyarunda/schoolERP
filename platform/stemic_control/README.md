@@ -48,6 +48,14 @@ lists anything not posted and any invoice whose amount owed differs from its Sal
 group has the chart of accounts, journals, General Ledger, Trial Balance, Profit and Loss, Balance Sheet, Cash Flow,
 receivables and payables.
 
+## Credit notes and refunds
+
+On a submitted invoice, **Credit / Refund** opens a **SaaS Credit Note**: credit part or all of it (with a reason) and,
+if the school paid more than it now owes, refund the difference (mode, reference). What a school owes = total −
+credited − (paid − refunded); a fully credited invoice shows **Credited**. Posted as a Sales Invoice return (income and VAT
+reversed) and a refund Payment Entry; cancel reverses both. If the invoice's tax invoice is with KRA the credit note is
+flagged *KRA credit note: Needed*: raise it in eTIMS and enter its number.
+
 ## Stemic expenses
 
 **Expenses** in the sidebar: record what Stemic spends (category, paid to, amount incl. VAT, claimable VAT, how paid,

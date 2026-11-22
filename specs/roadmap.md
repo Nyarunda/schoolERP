@@ -11,6 +11,7 @@
 | 12 | **Stemic expenses** (categories with accounts, approval posts to the GL, monthly repeats, Costs vs Revenue) | `specs/features/stemic-expenses/` | Acceptance passes on admin.stemicschools.com |
 | 13 | **Refunds and credit notes** (Sales Invoice returns, refund Payment Entries, KRA flag) | `specs/features/credit-notes/` | Acceptance passes on admin.stemicschools.com |
 | 14 | **Growth and health KPIs** (Growth & Health tab, County on schools) | `specs/features/growth-kpis/` | Acceptance passes on admin.stemicschools.com |
+| 15 | **Schools with several branches** (School Groups, combined/separate billing, cost center per school) | `specs/features/school-groups/` | Acceptance passes on admin.stemicschools.com |
 
 ## Next (in order)
 

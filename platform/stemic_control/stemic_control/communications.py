@@ -122,6 +122,11 @@ def deliver(tenant, event, reference=(None, None), email=None, sms=None, dedupe=
     if not wanted(event):
         return []
     t = frappe.db.get_value("SaaS Tenant", tenant, ["admin_email", "contact_phone"], as_dict=True) or frappe._dict()
+    from stemic_control.groups import billing_email
+
+    head_office = billing_email(tenant, event)  # a branch of a group billed as one: billing goes to the head office
+    if head_office:
+        t.admin_email = head_office
     out = []
     if email and _settings().get("notify_schools_by_email") not in (0, "0"):
         key = f"{event}|{reference[0]}|{reference[1]}|Email" if dedupe and reference[1] else None

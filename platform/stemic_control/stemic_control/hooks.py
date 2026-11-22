@@ -46,6 +46,8 @@ app_include_js = ["stemic_control.bundle.js"]
 app_include_css = ["stemic_overview.bundle.css"]  # bundled: hashed file name, so browsers pick up changes
 
 # Local provisioner safety net: picks up queued jobs and fails abandoned ones (only when switched on)
+doc_events = {"SaaS Tenant": {"on_update": "stemic_control.groups.on_tenant_update"}}
+
 scheduler_events = {
     "cron": {"*/5 * * * *": ["stemic_control.provisioner.process_queue"], "*/15 * * * *": ["stemic_control.service.watch"]},
     # Billing: overdue invoices and Past Due subscriptions; renewal invoices ahead of the end date

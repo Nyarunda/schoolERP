@@ -1,0 +1,115 @@
+{
+  "doctype": "DocType",
+  "name": "SaaS School Group",
+  "module": "Stemic Control",
+  "custom": 0,
+  "engine": "InnoDB",
+  "track_changes": 1,
+  "autoname": "field:group_name",
+  "naming_rule": "By fieldname",
+  "title_field": "group_name",
+  "field_order": [
+    "group_name",
+    "billing_mode",
+    "billing_email",
+    "billing_phone",
+    "cb1",
+    "cost_center",
+    "notes",
+    "branches_section",
+    "branches_html"
+  ],
+  "fields": [
+    {
+      "fieldname": "group_name",
+      "label": "Group Name",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1,
+      "description": "e.g. Greenhills Schools"
+    },
+    {
+      "fieldname": "billing_mode",
+      "label": "Billing",
+      "fieldtype": "Select",
+      "options": "One combined bill\nEach branch billed separately",
+      "default": "One combined bill",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "Combined: each branch still has its own invoice (licences and balances stay right), but invoice emails go to the head office, one statement covers all branches and one payment can settle them."
+    },
+    {
+      "fieldname": "billing_email",
+      "label": "Head Office Billing Email",
+      "fieldtype": "Data",
+      "options": "Email",
+      "depends_on": "eval:doc.billing_mode=='One combined bill'",
+      "mandatory_depends_on": "eval:doc.billing_mode=='One combined bill'"
+    },
+    {
+      "fieldname": "billing_phone",
+      "label": "Head Office Phone",
+      "fieldtype": "Data",
+      "options": "Phone"
+    },
+    {
+      "fieldname": "cb1",
+      "label": "",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "cost_center",
+      "label": "Cost Center",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "description": "In Stemic's books: the group's cost center; each branch has its own under it."
+    },
+    {
+      "fieldname": "notes",
+      "label": "Notes",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "branches_section",
+      "label": "Branches",
+      "fieldtype": "Section Break"
+    },
+    {
+      "fieldname": "branches_html",
+      "label": "",
+      "fieldtype": "HTML"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "Stemic Agent",
+      "read": 1
+    }
+  ],
+  "creation": "2026-11-22 17:00:00.000000",
+  "modified": "2026-11-22 17:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "description": "A school with several branches, each its own site: grouped here for billing, statements and reports."
+}

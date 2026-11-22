@@ -65,7 +65,7 @@ def _expense_account(company, category):
 def post_expense(doc):
 	check_can_post()
 	company = accounting.company()
-	cost_center = frappe.get_cached_value("Company", company, "cost_center")
+	cost_center = (accounting._center(doc.tenant, company) if doc.tenant else None) or frappe.get_cached_value("Company", company, "cost_center")
 	vat = flt(doc.vat_amount, 2)
 	amount = flt(doc.amount, 2)
 	je = frappe.new_doc("Journal Entry")

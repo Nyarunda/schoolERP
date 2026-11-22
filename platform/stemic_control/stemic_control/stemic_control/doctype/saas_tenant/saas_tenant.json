@@ -14,6 +14,9 @@
     "school_section",
     "school_name",
     "county",
+    "cost_center",
+    "branch_name",
+    "school_group",
     "slug",
     "admin_email",
     "contact_phone",
@@ -64,6 +67,29 @@
       "options": "\nBaringo\nBomet\nBungoma\nBusia\nElgeyo-Marakwet\nEmbu\nGarissa\nHoma Bay\nIsiolo\nKajiado\nKakamega\nKericho\nKiambu\nKilifi\nKirinyaga\nKisii\nKisumu\nKitui\nKwale\nLaikipia\nLamu\nMachakos\nMakueni\nMandera\nMarsabit\nMeru\nMigori\nMombasa\nMurang'a\nNairobi\nNakuru\nNandi\nNarok\nNyamira\nNyandarua\nNyeri\nSamburu\nSiaya\nTaita-Taveta\nTana River\nTharaka-Nithi\nTrans Nzoia\nTurkana\nUasin Gishu\nVihiga\nWajir\nWest Pokot",
       "in_standard_filter": 1,
       "description": "Where the school is (for growth by county)."
+    },
+    {
+      "fieldname": "cost_center",
+      "label": "Cost Center",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "no_copy": 1,
+      "description": "This school's cost center in Stemic's books."
+    },
+    {
+      "fieldname": "branch_name",
+      "label": "Branch",
+      "fieldtype": "Data",
+      "depends_on": "school_group",
+      "description": "e.g. Kisii Campus"
+    },
+    {
+      "fieldname": "school_group",
+      "label": "School Group",
+      "fieldtype": "Link",
+      "options": "SaaS School Group",
+      "in_standard_filter": 1,
+      "description": "Branches of one school, each its own site, are grouped here."
     },
     {
       "fieldtype": "Data",
@@ -247,7 +273,7 @@
     }
   ],
   "creation": "2026-10-25 20:00:00.000000",
-  "modified": "2026-11-22 16:00:00.000000",
+  "modified": "2026-11-22 17:00:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator",
   "title_field": "school_name",

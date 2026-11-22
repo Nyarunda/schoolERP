@@ -39,6 +39,16 @@ platform admins get an alert saying why, and Issue License on the subscription d
 | `stemic_platform_domain` | `stemicschools.com` | The default domain school subdomains live under (`<slug>.<domain>`); its reserved names (admin, www, api, ...) cannot be claimed. Further domains: **Stemic Settings > Platform Domains** (see `server/README.md`, "Adding another platform domain") |
 | `stemic_dns_over_https` | `https://cloudflare-dns.com/dns-query` | DNS-over-HTTPS resolver used to verify custom domains (JSON API) |
 
+## Schools with several branches
+
+Each branch is its own site and school record (own domain, licence, subscription), linked to a **School Group**
+(Schools > School Groups; set School Group and Branch on each school). Billing is chosen per group: **Each branch billed
+separately**, or **One combined bill**: branches keep their own invoices, but billing emails go to the head office,
+**Email Statement** sends one statement for all branches and **Record Group Payment** spreads one payment over them,
+oldest first. In Stemic's books every school has a **cost center** (a group's branches under the group's), and its
+invoices, payments, commissions, credit notes and expenses carry it: filter Profit and Loss by cost center for a school,
+branch or group.
+
 ## Growth & Health
 
 The overview's **Growth & Health** tab: MRR (and change over 3 months), annual run rate, paying schools and revenue per

@@ -5,6 +5,8 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Control Center: **Growth & Health** tab: MRR trend and growth, run rate, revenue per school, new and lost schools,
+  churn, collection rate, overdue ageing, cash in vs costs, schools by county and plan; County on schools (#97).
 - Control Center: **credit notes and refunds** on subscription invoices, posted as Sales Invoice returns and refund
   Payment Entries; invoices show credited/refunded and status Credited; KRA credit notes flagged when needed (#96).
 - Control Center: **Stemic expenses**: record hosting, SMS, salaries, marketing etc. by category with receipts;

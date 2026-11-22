@@ -39,6 +39,12 @@ platform admins get an alert saying why, and Issue License on the subscription d
 | `stemic_platform_domain` | `stemicschools.com` | The default domain school subdomains live under (`<slug>.<domain>`); its reserved names (admin, www, api, ...) cannot be claimed. Further domains: **Stemic Settings > Platform Domains** (see `server/README.md`, "Adding another platform domain") |
 | `stemic_dns_over_https` | `https://cloudflare-dns.com/dns-query` | DNS-over-HTTPS resolver used to verify custom domains (JSON API) |
 
+## Growth & Health
+
+The overview's **Growth & Health** tab: MRR (and change over 3 months), annual run rate, paying schools and revenue per
+school, new and lost schools with churn, collection rate, what schools owe by age, cash in against costs and agents'
+commission, and schools by county (set **County** on each school) and by plan.
+
 ## Accounts (Stemic's own books)
 
 Once **Stemic Settings > Accounting > Company** is chosen (ERPNext installed here), posting is compulsory: every

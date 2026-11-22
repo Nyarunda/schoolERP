@@ -147,3 +147,82 @@ def overview():
         "went_live": went_live,
         "renewals": renewals, "plans": plans, "agents": agents, "setup": setup,
     }
+
+
+# ----------------------------------------------------------------------------- Growth & Health tab
+AGEING = (("Not due yet", None, 0), ("1-30 days", 1, 30), ("31-60 days", 31, 60), ("61-90 days", 61, 90), ("Over 90 days", 91, None))
+
+
+@frappe.whitelist(methods=["GET"])
+def growth():
+	"""Growth and health: MRR trend and growth, paying schools, revenue per school, new and lost schools, churn,
+	collection rate, overdue ageing, cash in against costs and commission, schools by plan and county."""
+	_admin()
+	from frappe.utils import add_days, add_months, flt, get_first_day, get_last_day, getdate, nowdate
+
+	from stemic_control.billing import OPEN, settings
+
+	sql = frappe.db.sql
+	today = getdate(nowdate())
+	days, labels = _months()
+	# MRR in each month: the monthly price of every invoice whose period covers the month's last day (today for this
+	# month), so each school counts once even when one invoice ends and the next begins mid-month
+	mrr_trend = []
+	for d in days:
+		day = min(get_last_day(d), today)
+		mrr_trend.append(flt(sql("""select coalesce(sum(monthly_price - discount_amount / greatest(months, 1)), 0)
+			from `tabSaaS Invoice` where docstatus = 1 and status != 'Credited' and period_start <= %s and period_end >= %s""",
+								 (day, day))[0][0], 2))
+	mrr = flt(sql("""select coalesce(sum(p.monthly_price), 0) from `tabSaaS Subscription` s join `tabSaaS Plan` p on p.name = s.plan
+		where s.status = 'Active'""")[0][0], 2)
+	paying = frappe.db.count("SaaS Subscription", {"status": "Active"})
+	three_ago = mrr_trend[-4] if len(mrr_trend) >= 4 else 0
+	new_schools = _by_month("""select date_format(creation, '%%Y-%%m'), count(*) from `tabSaaS Tenant`
+		where creation >= %(since)s group by 1""", days)
+	lost = _by_month("""select date_format(modified, '%%Y-%%m'), count(*) from `tabSaaS Subscription`
+		where status = 'Cancelled' and modified >= %(since)s group by 1""", days)
+	lost_30 = frappe.db.count("SaaS Subscription", {"status": "Cancelled", "modified": (">=", add_days(today, -30))})
+	since_90 = add_days(today, -90)
+	invoiced_90 = flt(sql("select coalesce(sum(total), 0) from `tabSaaS Invoice` where docstatus = 1 and issue_date >= %s", since_90)[0][0])
+	collected_90 = flt(sql("select coalesce(sum(amount), 0) from `tabSaaS Payment` where docstatus = 1 and payment_date >= %s", since_90)[0][0])
+	ageing = []
+	for label, lo, hi in AGEING:
+		where, args = "", {"open": OPEN, "today": today}
+		if lo is None:
+			where = "and due_date >= %(today)s"
+		else:
+			args["lo"] = add_days(today, -lo)
+			where = "and due_date <= %(lo)s"
+			if hi is not None:
+				args["hi"] = add_days(today, -hi)
+				where += " and due_date >= %(hi)s"
+		amount, count = sql(f"""select coalesce(sum(outstanding), 0), count(*) from `tabSaaS Invoice`
+			where docstatus = 1 and status in %(open)s and outstanding > 0 {where}""", args)[0]
+		ageing.append({"label": label, "amount": flt(amount, 2), "count": count})
+	collected = _by_month("""select date_format(payment_date, '%%Y-%%m'), sum(amount) from `tabSaaS Payment`
+		where docstatus = 1 and payment_date >= %(since)s group by 1""", days)
+	commission = _by_month("""select date_format(earned_on, '%%Y-%%m'), sum(amount) from `tabSaaS Commission`
+		where status != 'Cancelled' and earned_on >= %(since)s group by 1""", days)
+	costs = _by_month("""select date_format(posting_date, '%%Y-%%m'), sum(amount) from `tabStemic Expense`
+		where docstatus = 1 and posting_date >= %(since)s group by 1""", days) \
+		if frappe.db.exists("DocType", "Stemic Expense") else [0] * len(days)
+	net = [flt(c - k - x, 2) for c, k, x in zip(collected, commission, costs)]
+	counties = sql("""select ifnull(nullif(county, ''), 'Not set') county, count(*) schools,
+		sum(status = 'Active') live from `tabSaaS Tenant` where status not in ('Rejected', 'Deleted')
+		group by 1 order by schools desc""", as_dict=True) if frappe.db.has_column("SaaS Tenant", "county") else []
+	plans = sql("""select p.name, p.monthly_price, count(s.name) active, count(s.name) * p.monthly_price mrr
+		from `tabSaaS Plan` p left join `tabSaaS Subscription` s on s.plan = p.name and s.status = 'Active'
+		where p.enabled = 1 group by p.name, p.monthly_price order by mrr desc""", as_dict=True)
+	return {
+		"currency": settings().currency, "months": labels,
+		"kpis": {"mrr": mrr, "arr": flt(mrr * 12, 2), "paying": paying, "arpu": flt(mrr / paying, 2) if paying else 0,
+				 "mrr_growth_pct": round((mrr_trend[-1] - three_ago) * 100.0 / three_ago, 1) if three_ago else None,
+				 "new_this_month": new_schools[-1] if new_schools else 0, "lost_30": lost_30,
+				 "churn_pct": round(lost_30 * 100.0 / (paying + lost_30), 1) if (paying + lost_30) else 0,
+				 "collection_pct": round(min(collected_90 * 100.0 / invoiced_90, 100), 1) if invoiced_90 else None,
+				 "owed": flt(sum(a["amount"] for a in ageing), 2),
+				 "overdue": flt(sum(a["amount"] for a in ageing[1:]), 2)},
+		"mrr_trend": mrr_trend, "new_schools": new_schools, "lost": lost,
+		"collected": collected, "commission": commission, "costs": costs, "net": net,
+		"ageing": ageing, "counties": counties, "plans": plans,
+	}

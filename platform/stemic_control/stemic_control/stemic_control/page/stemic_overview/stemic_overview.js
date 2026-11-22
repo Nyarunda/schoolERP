@@ -41,8 +41,8 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
             ["referred_active_schools", "Active Referrals", "SaaS Tenant", { agent: ["is", "set"], status: "Active" }, "Active tenant records"],
         ],
     };
-    const tabs = [["home", "Overview"], ["schools", "Schools"], ["billing", "Billing"], ["agents", "Agents"], ["tax", "Kenya Tax & eTIMS"]];
-    let selected = "home", metrics = null, tax = null, ov = null, attention = null, busy = false, loadError = false;
+    const tabs = [["home", "Overview"], ["growth", "Growth & Health"], ["schools", "Schools"], ["billing", "Billing"], ["agents", "Agents"], ["tax", "Kenya Tax & eTIMS"]];
+    let selected = "home", metrics = null, tax = null, ov = null, attention = null, busy = false, loadError = false, gr = null;
     try { selected = localStorage.getItem("stemic-overview-tab") || "home"; } catch (e) { /* private window */ }
     if (!tabs.some(([id]) => id === selected)) selected = "home";
 
@@ -76,6 +76,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         }
         root.append(nav);
         if (selected === "home") return render_home();
+        if (selected === "growth") return render_growth();
         if (selected === "tax") {
             const action = el(`<button type="button" class="btn btn-default btn-sm stemic-tab-action">${__("Configure School Tax Profile")}</button>`);
             action.addEventListener("click", () => frappe.set_route("List", "SaaS Tax Profile"));
@@ -315,6 +316,87 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         return card;
     }
 
+    // ------------------------------------------------------------------ Growth & Health tab
+    function render_growth() {
+        if (!gr) {
+            root.append(el(`<div class="so-loading">${busy ? __("Loading...") : __("Could not load growth figures. Use Refresh to try again.")}</div>`));
+            return;
+        }
+        const k = gr.kpis, pct = (v) => (v == null ? "—" : `${v}%`);
+        const tiles = [
+            [__("Monthly recurring revenue"), short(k.mrr), k.mrr_growth_pct == null ? __("No figure from 3 months ago yet")
+                : __("{0} vs 3 months ago", [(k.mrr_growth_pct >= 0 ? "+" : "") + k.mrr_growth_pct + "%"]), k.mrr_growth_pct == null || k.mrr_growth_pct >= 0],
+            [__("Annual run rate"), short(k.arr), __("MRR × 12"), true],
+            [__("Paying schools"), String(k.paying), __("{0} per school per month", [short(k.arpu)]), true],
+            [__("New schools this month"), String(k.new_this_month), __("Registered"), true],
+            [__("Lost, last 30 days"), String(k.lost_30), __("Churn {0}", [pct(k.churn_pct)]), !k.lost_30],
+            [__("Collection rate"), pct(k.collection_pct), __("Collected ÷ invoiced, last 90 days"), k.collection_pct == null || k.collection_pct >= 80],
+            [__("Owed by schools"), short(k.owed), __("{0} overdue", [short(k.overdue)]), !k.overdue],
+        ];
+        const grid = el(`<div class="stemic-card-grid"></div>`);
+        for (const [label, value, hint, good] of tiles) {
+            grid.append(el(`<div class="stemic-kpi-card"><span class="stemic-kpi-label">${esc(label)}</span>
+                <strong class="stemic-kpi-value" style="${good ? "" : "color:var(--red-600)"}">${esc(value)}</strong>
+                <span class="stemic-kpi-hint">${esc(hint)}</span></div>`));
+        }
+        root.append(grid);
+        const chart = (title, sub, key) => el(`<section class="so-card"><div class="so-card-head"><h3>${esc(title)}</h3><span class="so-sub">${esc(sub)}</span></div>
+            <div class="so-growth-chart" data-g="${key}"></div></section>`);
+        const last = (a) => a[a.length - 1] || 0;
+        root.append(two(chart(__("MRR, last 12 months"), short(last(gr.mrr_trend)), "mrr"),
+            chart(__("Cash in vs costs, last 12 months"), __("{0} left this month", [short(last(gr.net))]), "cash")));
+        root.append(two(chart(__("New and lost schools"), __("{0} new this year", [gr.new_schools.reduce((a, b) => a + b, 0)]), "schools"), ageing_card()));
+        root.append(two(counties_card(), growth_plans_card()));
+        if (!frappe.Chart) return;
+        const draw = (key, type, series, colors) => {
+            const node = root.querySelector(`[data-g="${key}"]`);
+            if (!series.some(([, v]) => v.some((x) => x))) { node.innerHTML = `<div class="so-empty">${__("No figures yet.")}</div>`; return; }
+            new frappe.Chart(node, { type, height: 230, colors, data: { labels: gr.months, datasets: series.map(([name, values]) => ({ name, values })) },
+                axisOptions: { xIsSeries: 1, shortenYAxisNumbers: 1 }, barOptions: { spaceRatio: 0.45 },
+                lineOptions: { regionFill: 1, hideDots: 0 },
+                tooltipOptions: { formatTooltipY: (v) => (key === "schools" ? v : money(v)) } });
+        };
+        draw("mrr", "line", [[__("MRR"), gr.mrr_trend]], [SERIES[0]]);
+        draw("cash", "bar", [[__("Collected"), gr.collected], [__("Costs"), gr.costs], [__("Commission"), gr.commission]], [SERIES[2], SERIES[1], SERIES[3]]);
+        draw("schools", "bar", [[__("New"), gr.new_schools], [__("Lost"), gr.lost]], [SERIES[0], SERIES[1]]);
+    }
+
+    function ageing_card() {
+        const card = el(`<section class="so-card"><div class="so-card-head"><h3>${__("What schools owe, by age")}</h3>
+            <button type="button" class="btn btn-default btn-xs">${__("Open report")}</button></div></section>`);
+        card.querySelector(".btn").addEventListener("click", () => frappe.set_route("query-report", "SaaS Receivables"));
+        const top = Math.max(1, ...gr.ageing.map((a) => a.amount));
+        const table = el(`<table class="so-table"><tbody></tbody></table>`);
+        gr.ageing.forEach((a, i) => table.tBodies[0].append(el(`<tr><td>${esc(__(a.label))}<small>${__("{0} invoice(s)", [a.count])}</small></td>
+            <td style="width:45%"><div style="height:8px;border-radius:4px;background:var(--${i === 0 ? "blue" : i < 2 ? "yellow" : i < 4 ? "orange" : "red"}-500);width:${Math.round((a.amount / top) * 100)}%"></div></td>
+            <td class="num">${money(a.amount)}</td></tr>`)));
+        card.append(table);
+        return card;
+    }
+
+    function counties_card() {
+        const card = el(`<section class="so-card"><div class="so-card-head"><h3>${__("Schools by county")}</h3></div></section>`);
+        if (!gr.counties.length) { card.append(el(`<div class="so-empty">${__("Set each school's County on its record to see this.")}</div>`)); return card; }
+        const table = el(`<table class="so-table so-click"><thead><tr><th>${__("County")}</th><th class="num">${__("Schools")}</th><th class="num">${__("Live")}</th></tr></thead><tbody></tbody></table>`);
+        for (const c of gr.counties.slice(0, 12)) {
+            const tr = el(`<tr><td>${esc(__(c.county))}</td><td class="num">${c.schools}</td><td class="num">${c.live}</td></tr>`);
+            tr.addEventListener("click", () => go("SaaS Tenant", c.county === "Not set" ? { county: ["is", "not set"] } : { county: c.county }));
+            table.tBodies[0].append(tr);
+        }
+        card.append(table);
+        return card;
+    }
+
+    function growth_plans_card() {
+        const card = el(`<section class="so-card"><div class="so-card-head"><h3>${__("Paying schools by plan")}</h3></div></section>`);
+        if (!gr.plans.length) { card.append(el(`<div class="so-empty">${__("No plans yet.")}</div>`)); return card; }
+        const table = el(`<table class="so-table"><thead><tr><th>${__("Plan")}</th><th class="num">${__("Schools")}</th><th class="num">${__("MRR")}</th></tr></thead><tbody></tbody></table>`);
+        for (const p of gr.plans) table.tBodies[0].append(el(`<tr><td><b>${esc(p.name)}</b><small>${money(p.monthly_price)} / ${__("month")}</small></td>
+            <td class="num">${p.active}</td><td class="num">${money(p.mrr)}</td></tr>`));
+        card.append(table);
+        return card;
+    }
+
     function two(a, b) {
         const row = el(`<div class="so-two"></div>`);
         row.append(a, b);
@@ -328,6 +410,7 @@ frappe.pages["stemic-overview"].on_page_load = function (wrapper) {
         const [m, o, a, t] = await Promise.all([get("stemic_control.api.dashboard_metrics"), get("stemic_control.dashboard.overview"),
                                                 get("stemic_control.api.operations_queue"), get("stemic_control.etims.compliance_overview")]);
         metrics = m; ov = o; attention = a; tax = t;
+        gr = await get("stemic_control.dashboard.growth");
         loadError = !m && !o;
         busy = false; render();
     }

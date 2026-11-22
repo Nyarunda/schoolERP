@@ -92,7 +92,10 @@ class TestBackups(TestCase):
 		with patch.object(site_runtime, "_set", side_effect=lambda o, v: frappe.db.set_value("SaaS Site Operation", o, v)), \
 				patch.object(provisioner, "_frappe_cli", return_value=output):
 			self.assertEqual(site_runtime.perform_operation(op), "Succeeded")
-		return frappe.db.get_value("SaaS Site Operation", op, "backup")
+		name = frappe.db.get_value("SaaS Site Operation", op, "backup")
+		if when and name:  # backups are timed by the Control Center's clock: place this one in the past
+			frappe.db.set_value("SaaS Backup", name, "taken_on", when)
+		return name
 
 	# ------------------------------------------------------------------ tests
 	def test_backup_is_recorded(self):
@@ -101,6 +104,27 @@ class TestBackups(TestCase):
 		self.assertEqual((b.tenant, b.site, b.kind, b.on_server, b.offsite_status, b.status),
 						 (self.slug, self.site, "Manual", 1, "Not set up", "Available"))
 		self.assertTrue(b.database_file.endswith("-database.sql.gz") and b.private_file.endswith("-private-files.tar"))
+
+	def test_long_site_paths_and_empty_last_run(self):
+		"""A long site name gives paths over 140 characters; an empty date stored as 0001-01-01 still means 'never run'."""
+		long_folder = os.path.join(self.folder, "x" * 120)
+		os.makedirs(long_folder, exist_ok=True)
+		path = os.path.join(long_folder, now_datetime().strftime("%Y%m%d_%H%M%S") + "-long_school_name-database.sql.gz")
+		with open(path, "w") as f:
+			f.write("x")
+		self.made.append(path)
+		op = site_runtime.queue_operation(self.slug, self.site, "Backup", enqueue=False, status="Succeeded")
+		name = backups.record_backup(op, f"Database: {path} 1.0KiB")
+		self.assertEqual(frappe.db.get_value("SaaS Backup", name, "database_file"), path)
+		os.rmdir(long_folder) if not os.listdir(long_folder) else None
+		frappe.db.sql("update `tabSingles` set value='0001-01-01' where doctype='Stemic Settings' and field='last_nightly_run'")
+		frappe.clear_document_cache("Stemic Settings", "Stemic Settings")
+		self.assertTrue(backups.nightly_status()["due"])
+		tenant = frappe._dict(name=self.slug, canonical_site=self.site)
+		with patch.object(backups, "_live_tenants", return_value=[tenant]), patch.object(frappe, "enqueue"), \
+				patch.object(backups, "watchdog"), patch.object(backups, "prune"):
+			backups.hourly()
+		self.assertEqual(str(frappe.db.get_single_value("Stemic Settings", "last_nightly_run")), frappe.utils.nowdate())
 
 	def test_offsite_upload(self):
 		self.set_settings(backup_destination="This server + S3-compatible storage", s3_bucket="school-backups")

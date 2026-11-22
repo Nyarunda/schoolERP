@@ -67,19 +67,42 @@ def check():
 	raise HTTPException(response=Response(page(info, message, contact), status=503, mimetype="text/html", headers=headers))
 
 
-PAUSE = ('<svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="11" '
-		 'fill="currentColor" opacity=".12"/><rect x="8.2" y="7" width="2.6" height="10" rx="1.1" fill="currentColor"/>'
-		 '<rect x="13.2" y="7" width="2.6" height="10" rx="1.1" fill="currentColor"/></svg>')
+def _school() -> dict:
+	"""The school's own name, crest, colour and office contacts for the paused page. Never required: any failure
+	(no database, a half-installed site) gives {} and the page shows Stemic's details only."""
+	try:
+		if not getattr(frappe.local, "db", None):
+			return {}
+		get = lambda f: frappe.db.get_single_value("School Settings", f)  # noqa: E731
+		return {k: (get(f) or "") for k, f in (("name", "school_name"), ("logo", "school_logo"), ("phone", "phone"),
+											   ("email", "email"), ("color", "site_color"), ("accent", "statement_accent_color"))}
+	except Exception:
+		return {}
 
 
-def page(info, message=DEFAULT_MESSAGE, contact="support@stemicschools.com"):
-	"""The suspended page: who, why, what is owed and how to pay, how to reach Stemic, and a way to check again."""
+def page(info, message=DEFAULT_MESSAGE, contact="support@stemicschools.com", school=None):
+	"""The paused page. Parents see the school's name and office contacts and that records are safe; Stemic's reason,
+	the amount due, how to pay and who to call sit under "For school administrators"."""
+	from school_erp.logic.website import initials, readable, tint
+
 	esc = frappe.utils.escape_html
+	sch = _school() if school is None else school
 	brand = info.get("brand") or "Stemic Schools"
-	color, accent = info.get("color") or "#1b3a6b", info.get("accent") or "#43a047"
-	school = info.get("school") or ""
-	first, _, rest = brand.partition(" ")
-	heading = f"{esc(school)}'s service is suspended" if school else "This school's service is suspended"
+	name = info.get("school") or sch.get("name") or ""
+	color = readable(sch.get("color") or sch.get("accent") or info.get("color") or "#166534")
+	wash = tint(color, 0.92)
+	if sch.get("logo"):
+		crest = f'<img src="{esc(sch["logo"])}" alt="" style="height:64px;width:auto">'
+	else:
+		crest = (f'<svg width="58" height="64" viewBox="0 0 44 48" aria-hidden="true"><path d="M22 2 L40 8 V24 C40 35 32 43 22 46 '
+				 f'C12 43 4 35 4 24 V8 Z" fill="{color}"/><text x="22" y="29" text-anchor="middle" font-family="sans-serif" '
+				 f'font-weight="800" font-size="13" fill="#fff">{esc(initials(name or brand))}</text></svg>')
+	office = []
+	if sch.get("phone"):
+		office.append(f'<a class="btn" href="tel:{esc(sch["phone"].replace(" ", ""))}">Call the school: {esc(sch["phone"])}</a>')
+	if sch.get("email"):
+		office.append(f'<a class="link" href="mailto:{esc(sch["email"])}">{esc(sch["email"])}</a>')
+	office_html = "".join(office) or '<p class="muted">Please contact the school office.</p>'
 	reason = (f'<div class="box"><div class="label">Reason</div><div>{esc(info["reason"])}</div></div>'
 			  if info.get("reason") else "")
 	owed = ""
@@ -92,45 +115,53 @@ def page(info, message=DEFAULT_MESSAGE, contact="support@stemicschools.com"):
 	phone = info.get("phone")
 	call = f'<a class="btn ghost" href="tel:{esc(phone.replace(" ", ""))}">Call us</a>' if phone else ""
 	since = f"Suspended since {esc(info['since'])}. " if info.get("since") else ""
-	intro = ("Signing in and all school work are paused until the service is restored. Your school's records are "
-			 "safe and nothing has been deleted.")
+	subject = esc(("Restore " + name) if name else "Suspended school")
 	return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
-<title>Service suspended - {esc(school or brand)}</title>
+<title>Portal paused - {esc(name or brand)}</title>
 <style>
 *{{box-sizing:border-box}}
-body{{margin:0;background:#f4f7fb;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#14243d;line-height:1.55}}
-.wrap{{max-width:560px;margin:0 auto;padding:32px 16px}}
-.card{{background:#fff;border:1px solid #e1e7f0;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px rgba(20,36,61,.06)}}
-.band{{background:{color};color:#fff;font-weight:700;font-size:18px;padding:16px 24px}}.band span{{opacity:.75}}
-.body{{padding:26px 24px 28px}}
-.status{{display:flex;align-items:center;gap:14px;color:#c62828;margin-bottom:8px}}
-.pill{{display:inline-block;background:#fdecea;color:#c62828;font-weight:700;font-size:12px;letter-spacing:.04em;
-text-transform:uppercase;border-radius:999px;padding:4px 10px}}
-h1{{font-size:22px;line-height:1.3;margin:4px 0 0;color:#14243d}}
-p{{margin:12px 0}}
-.box{{background:#f6f8fa;border-left:4px solid {accent};border-radius:8px;padding:12px 14px;margin:14px 0;font-size:15px}}
-.box.owed{{border-left-color:#c62828;background:#fff7f6}}
-.label{{font-size:12px;font-weight:700;color:#5b6b82;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}}
-.amount{{font-size:24px;font-weight:800;color:#14243d}}
-.muted{{color:#5b6b82;font-size:14px}}
-.actions{{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}}
-.btn{{display:inline-block;padding:11px 18px;border-radius:8px;font-weight:700;text-decoration:none;font-size:15px;
-background:{accent};color:#fff;border:2px solid {accent}}}
-.btn.ghost{{background:#fff;color:{color};border-color:#d5dde8}}
-.foot{{text-align:center;color:#5b6b82;font-size:13px;margin-top:16px}}
+body{{margin:0;background:{wash};font-family:Inter,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;line-height:1.55}}
+.wrap{{max-width:580px;margin:0 auto;padding:56px 16px 32px;min-height:100vh;display:flex;flex-direction:column;justify-content:center}}
+.card{{background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:44px 36px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}}
+.school{{font-weight:800;font-size:18px;color:#334155}}
+h1{{font-size:28px;line-height:1.25;margin:4px 0 0}}
+p{{margin:0}}
+.lead{{font-size:17px;color:#475569}}
+.office{{width:100%;display:flex;flex-direction:column;gap:10px;margin-top:8px}}
+.btn{{display:flex;align-items:center;justify-content:center;min-height:50px;padding:0 18px;border-radius:12px;font-weight:700;
+text-decoration:none;font-size:16px;background:{color};color:#fff;border:2px solid {color}}}
+.btn.ghost{{background:#fff;color:#0f172a;border-color:#cbd5e1}}
+.link{{color:#334155}}
+details{{width:100%;border-top:1px solid #e2e8f0;padding-top:16px;margin-top:10px;text-align:left}}
+summary{{cursor:pointer;font-weight:600;color:#334155;min-height:44px;display:flex;align-items:center;justify-content:center}}
+.pill{{display:inline-block;background:#fdecea;color:#b42318;font-weight:700;font-size:12px;letter-spacing:.04em;
+text-transform:uppercase;border-radius:999px;padding:4px 10px;margin:6px 0 4px}}
+.box{{background:#f6f8fa;border-radius:10px;padding:12px 14px;margin:12px 0;font-size:15px}}
+.box.owed{{background:#fff7f6}}
+.label{{font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}}
+.amount{{font-size:24px;font-weight:800}}
+.muted{{color:#475569;font-size:14px}}
+.actions{{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}}
+.actions .btn{{flex:1 1 140px;min-height:46px;font-size:15px}}
+.foot{{text-align:center;color:#475569;font-size:13px;margin-top:18px}}
 </style></head><body><div class="wrap"><div class="card">
-<div class="band">{esc(first)}{f" <span>{esc(rest)}</span>" if rest else ""}</div>
-<div class="body">
-<div class="status">{PAUSE}<div><span class="pill">Service suspended</span><h1>{heading}</h1></div></div>
-<p>{intro}</p>
+{crest}
+{f'<div class="school">{esc(name)}</div>' if name else ""}
+<h1>The school portal is paused for now</h1>
+<p class="lead">Your records are safe and nothing has been deleted. Parents and staff: please contact the school office
+for fees, results or anything urgent.</p>
+<div class="office">{office_html}</div>
+<details><summary>For school administrators</summary>
+<span class="pill">Service suspended</span>
+<p>Signing in and all school work are paused until {esc(brand)} restores the service.</p>
 {reason}{owed}{pay}
 <p class="muted">Already paid or sorted it out? It can take a short while for {esc(brand)} to confirm and restore
 the service. Contact us if it has not come back: <b>{esc(contact)}</b>{f" &middot; <b>{esc(phone)}</b>" if phone else ""}</p>
 <div class="actions">
-<a class="btn" href="mailto:{esc(contact)}?subject={esc(("Restore " + school) if school else "Suspended school")}">Email us</a>
+<a class="btn" href="mailto:{esc(contact)}?subject={subject}">Email us</a>
 {call}
 <a class="btn ghost" href="" onclick="location.reload();return false">Check again</a>
-</div></div></div>
-<div class="foot">{since}{esc(message) if not school else ""}</div>
+</div></details></div>
+<div class="foot">{since}{esc(message) if not info.get("school") else ""} Powered by {esc(brand)}</div>
 </div></body></html>"""

@@ -82,3 +82,21 @@ class TestSuspension(unittest.TestCase):
 		page = self.request("/app", stemic_suspension={"school": "Greenfield Academy", "reason": "Requested by the school"}).get_data(as_text=True)
 		self.assertNotIn("Amount due", page)
 		self.assertIn("Requested by the school", page)
+
+	def test_parents_see_the_school_and_its_office_first(self):
+		school = {"name": "Greenfield Academy", "phone": "0711 222 333", "email": "office@greenfield.ac.ke", "color": "#3cbd4d"}
+		page = suspension.page({"school": "Greenfield Academy", "reason": "Unpaid invoice", "amount_due": "KES 114,000.00"},
+							   school=school)
+		for text in ("The school portal is paused for now", "Your records are safe", "tel:0711222333",
+					 "office@greenfield.ac.ke", "For school administrators", "Check again"):
+			self.assertIn(text, page)
+		# what is owed to Stemic sits inside the administrators' section, after the school's contacts
+		self.assertLess(page.index("office@greenfield.ac.ke"), page.index("For school administrators"))
+		self.assertLess(page.index("For school administrators"), page.index("KES 114,000.00"))
+		self.assertNotIn("#3cbd4d", page)  # too light for white text: a darker shade is used
+
+	def test_the_page_renders_without_the_database(self):
+		with patch.object(frappe.db, "get_single_value", side_effect=Exception("no database")):
+			page = suspension.page({"brand": "Stemic Schools"}, "Service suspended.", "support@stemicschools.com")
+		self.assertIn("The school portal is paused for now", page)
+		self.assertIn("support@stemicschools.com", page)

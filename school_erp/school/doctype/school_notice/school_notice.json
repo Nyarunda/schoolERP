@@ -14,6 +14,7 @@
   "expiry_date",
   "pinned",
   "send_sms",
+  "show_on_website",
   "parent_class",
   "sb_msg",
   "message",
@@ -90,23 +91,29 @@
    "label": "Also send by SMS"
   },
   {
+   "fieldname": "show_on_website",
+   "fieldtype": "Check",
+   "label": "Show on the school website",
+   "description": "Anyone visiting the school's homepage can read it (up to three are shown, pinned first)"
+  },
+  {
    "depends_on": "eval:doc.audience=='Parents'",
    "fieldname": "parent_class",
    "fieldtype": "Link",
-   "idx": 9,
+   "idx": 10,
    "label": "Only Parents of Class",
    "options": "School Class"
   },
   {
    "fieldname": "sb_msg",
    "fieldtype": "Section Break",
-   "idx": 10,
+   "idx": 11,
    "label": "Message"
   },
   {
    "fieldname": "message",
    "fieldtype": "Text Editor",
-   "idx": 11,
+   "idx": 12,
    "label": "Message",
    "reqd": 1
   },
@@ -114,13 +121,13 @@
    "collapsible": 1,
    "fieldname": "sb_reach",
    "fieldtype": "Section Break",
-   "idx": 12,
+   "idx": 13,
    "label": "Reach"
   },
   {
    "fieldname": "posted_by",
    "fieldtype": "Link",
-   "idx": 13,
+   "idx": 14,
    "label": "Posted By",
    "options": "User",
    "read_only": 1
@@ -128,28 +135,28 @@
   {
    "fieldname": "notified",
    "fieldtype": "Check",
-   "idx": 14,
+   "idx": 15,
    "label": "Notified",
    "read_only": 1
   },
   {
    "fieldname": "audience_count",
    "fieldtype": "Int",
-   "idx": 15,
+   "idx": 16,
    "label": "Staff in Audience",
    "read_only": 1
   },
   {
    "fieldname": "acknowledged_count",
    "fieldtype": "Int",
-   "idx": 16,
+   "idx": 17,
    "label": "Acknowledged",
    "read_only": 1
   },
   {
    "fieldname": "acknowledgements",
    "fieldtype": "Table",
-   "idx": 17,
+   "idx": 18,
    "label": "Acknowledgements",
    "options": "Notice Acknowledgement",
    "read_only": 1
@@ -157,7 +164,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-22 16:00:00.000000",
+ "modified": "2026-11-22 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "School",
  "name": "School Notice",

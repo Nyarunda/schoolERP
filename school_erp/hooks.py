@@ -34,6 +34,10 @@ override_whitelisted_methods = {"frappe.desk.desktop.get_desktop_page": "school_
 
 # Parents are website users: after login they land on the parent portal
 role_home_page = {"Parent": "parent"}
+# The school's own homepage at "/" (school_erp/www/welcome); School Settings > Website can switch it off
+home_page = "welcome"
+# Every web page (navbar, sign-in, web forms) carries the school's crest, name and colour (school_erp.website)
+update_website_context = ["school_erp.website.update_context"]
 
 # Branding on the school's web pages (parent portal, login, verify): Stemic, not ERPNext. website_context is applied
 # after Website Settings, and for keys several apps set, the last installed app wins (school_erp comes after erpnext).

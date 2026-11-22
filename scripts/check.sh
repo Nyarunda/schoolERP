@@ -40,7 +40,8 @@ $PY -m pytest -q \
   school_erp/tests/test_homework.py \
   school_erp/tests/test_admissions.py \
   school_erp/tests/test_cbc.py \
-  school_erp/tests/test_nemis.py || fail "unit tests"
+  school_erp/tests/test_nemis.py \
+  school_erp/tests/test_website_logic.py || fail "unit tests"
 
 step "Sidebar follows scripts/regroup_sidebar.py (no link lost or doubled)"
 $PY scripts/regroup_sidebar.py --check || fail "sidebar layout"

@@ -1,0 +1,171 @@
+{% extends "templates/web.html" %}
+{% from "school_erp/templates/includes/school_site/macros.html" import crest, icon, head, header, footer with context %}
+
+{% block title %}{{ school_site.name | e }}{% endblock %}
+{% block head_include %}{{ super() }}{{ head() }}{% endblock %}
+{% block navbar %}{{ header(school_site, school_account) }}{% endblock %}
+{% block footer %}{{ footer(school_site) }}{% endblock %}
+
+{% block content %}
+{%- set s = school_site -%}
+<div class="ss-page" id="school-home" style="--ss-color: {{ s.color }}; --ss-dark: {{ s.color_dark }}; --ss-wash: {{ s.wash }}">
+
+<section class="ss-hero">
+	<div class="ss-wrap ss-hero-grid">
+		<div class="ss-hero-copy">
+			{% if s.tagline %}<span class="ss-chip">{{ s.tagline | e }}</span>{% endif %}
+			<h1>{{ _("Welcome to {0}").format(s.name | e) }}</h1>
+			{% if intro %}<p>{{ intro | e }}</p>{% elif s.motto %}<p>{{ s.motto | e }}</p>{% endif %}
+			<div class="ss-actions-row">
+				{% if portal %}
+				<a class="ss-btn ss-btn-solid ss-btn-lg" href="/parent">{{ _("Parent portal") }} {{ icon("arrow", 18) }}</a>
+				{% else %}
+				<a class="ss-btn ss-btn-solid ss-btn-lg" href="#fees">{{ _("How to pay fees") }} {{ icon("arrow", 18) }}</a>
+				{% endif %}
+				{% if admissions %}
+				<a class="ss-btn ss-btn-line ss-btn-lg" href="/admission-application">{{ _("Apply for admission") }}</a>
+				{% else %}
+				<a class="ss-btn ss-btn-line ss-btn-lg" href="#contact">{{ _("Contact the school") }}</a>
+				{% endif %}
+			</div>
+		</div>
+		<div class="ss-hero-media">
+			{% if photo %}
+			<img class="ss-photo" src="{{ photo | e }}" alt="{{ s.name | e }}">
+			{% else %}
+			<span class="ss-crest-big">{{ crest(s, 160, light=True) }}</span>
+			{% endif %}
+			{% if next_date %}
+			<div class="ss-hero-badge">{{ icon("calendar", 22) }}<span><small>{{ _("Next date") }}</small><strong>{{ next_date | e }}</strong></span></div>
+			{% endif %}
+		</div>
+	</div>
+</section>
+
+<section class="ss-section" aria-labelledby="h-actions">
+	<div class="ss-wrap">
+		<h2 class="ss-h2" id="h-actions">{{ _("What would you like to do?") }}</h2>
+		<div class="ss-cards">
+			{% for key, title, text, href in cards %}
+			<a class="ss-card" href="{{ href }}" data-card="{{ key }}">
+				<span class="ss-card-icon">{{ icon(key) }}</span>
+				<span class="ss-card-title">{{ _(title) }}</span>
+				<span class="ss-card-text">{{ _(text) }}</span>
+			</a>
+			{% endfor %}
+		</div>
+	</div>
+</section>
+
+<section class="ss-section ss-tight" id="fees">
+	<div class="ss-wrap">
+		<div class="ss-fees ss-two">
+			<div class="ss-fees-col">
+				<h2>{{ _("How to pay school fees") }}</h2>
+				{% if pay %}
+				<p>{{ _("Pay by M-Pesa and the school matches your payment to your child. You get an M-Pesa message as your receipt, and the balance updates in the parent portal.") }}</p>
+				<ol>{% for step in pay.steps %}<li>{{ step | e }}</li>{% endfor %}</ol>
+				{% else %}
+				<p>{{ _("Ask the school office for the fees payment details.") }}</p>
+				{% endif %}
+				{% if payment_note %}<p>{{ payment_note | e }}</p>{% endif %}
+			</div>
+			<div class="ss-fees-col">
+				{% if pay %}
+				<div class="ss-paybox">
+					<span class="ss-label">{{ _(pay.label) }}</span>
+					<span class="ss-paynum">{{ pay.number | e }}</span>
+					{% if pay.account %}<span>{{ _("Account: {0}").format(_(pay.account)) }}</span>{% endif %}
+				</div>
+				{% endif %}
+				{% if bank %}
+				<div class="ss-bankbox"><span class="ss-label">{{ _("Bank") }}</span><div>{{ bank | e }}</div></div>
+				{% endif %}
+				{% if not pay and not bank and s.phone %}
+				<div class="ss-paybox"><span class="ss-label">{{ _("School office") }}</span><a class="ss-paynum" style="font-size:28px;color:inherit" href="tel:{{ s.phone | replace(' ', '') | e }}">{{ s.phone | e }}</a></div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="ss-section ss-tight" id="notices">
+	<div class="ss-wrap ss-two">
+		<div>
+			{% if notices %}
+			<div class="ss-row-head"><h2>{{ _("Notices") }}</h2></div>
+			{% for n in notices %}
+			<details class="ss-notice">
+				<summary>
+					<span class="ss-date"><small>{{ n.month }}</small><b>{{ n.day }}</b></span>
+					<span><span class="ss-notice-title">{{ n.title | e }}</span><span class="ss-notice-text">{{ n.text | e }}</span></span>
+				</summary>
+				{% if n.full != n.text %}<p class="ss-prose" style="margin:14px 0 0;font-size:15px">{{ n.full | e }}</p>{% endif %}
+			</details>
+			{% endfor %}
+			{% endif %}
+			<form class="ss-box" action="/verify" method="get" id="verify" {% if notices %}style="margin-top:20px"{% endif %}>
+				<label class="ss-box-title" for="ss-code">{{ _("Verify a document") }}</label>
+				<span class="ss-muted" style="font-size:14px">{{ _("Type the code printed at the bottom of a report card, receipt or letter.") }}</span>
+				<div class="ss-inline-form">
+					<input class="ss-input" id="ss-code" name="code" type="text" autocomplete="off" maxlength="100" placeholder="{{ _('Verification code') }}" required>
+					<button class="ss-btn ss-btn-solid" type="submit">{{ _("Check") }}</button>
+				</div>
+			</form>
+		</div>
+		<div>
+			{% if terms %}
+			<div class="ss-row-head"><h2>{{ _("Term dates") }}{% if year %} {{ year | e }}{% endif %}</h2></div>
+			<table class="ss-table">
+				<thead><tr><th scope="col">{{ _("Term") }}</th><th scope="col">{{ _("Opens") }}</th><th scope="col">{{ _("Closes") }}</th></tr></thead>
+				<tbody>
+				{% for t in terms %}
+				<tr><td>{{ t.term_name | e }}</td><td>{{ t.opens | e }}</td><td>{{ t.closes | e }}</td></tr>
+				{% endfor %}
+				</tbody>
+			</table>
+			{% endif %}
+		</div>
+	</div>
+</section>
+
+{% if about or photo_2 %}
+<section class="ss-section ss-wash" id="about">
+	<div class="ss-wrap ss-two" style="align-items:center">
+		<div class="ss-about-media">
+			{% if photo_2 %}<img src="{{ photo_2 | e }}" alt="">{% else %}{{ crest(s, 120, light=True) }}{% endif %}
+		</div>
+		<div>
+			<h2 class="ss-h2" style="margin-bottom:16px">{{ _("About the school") }}</h2>
+			{% if about %}<p class="ss-prose">{{ about | e }}</p>{% endif %}
+			<div class="ss-actions-row">
+				{% if admissions %}<a class="ss-btn ss-btn-solid" href="/admission-application">{{ _("Apply for admission") }}</a>
+				<a class="ss-btn ss-btn-line" href="/admission-status">{{ _("Check application status") }}</a>{% endif %}
+			</div>
+		</div>
+	</div>
+</section>
+{% else %}<span id="about"></span>{% endif %}
+
+<section class="ss-section" id="contact">
+	<div class="ss-wrap ss-two">
+		<div>
+			<h2 class="ss-h2" style="margin-bottom:20px">{{ _("Contact the school") }}</h2>
+			<div class="ss-contact-list">
+				{% if s.phone %}<a href="tel:{{ s.phone | replace(' ', '') | e }}">{{ icon("phone", 20) }}{{ s.phone | e }}</a>{% endif %}
+				{% if s.email %}<a href="mailto:{{ s.email | e }}">{{ icon("mail", 20) }}{{ s.email | e }}</a>{% endif %}
+				{% if s.address %}<span>{{ icon("pin", 20) }}{{ s.address | e }}</span>{% endif %}
+				{% if s.office_hours %}<span>{{ icon("clock", 20) }}{{ _("Office hours: {0}").format(s.office_hours | e) }}</span>{% endif %}
+			</div>
+			{% if complaints %}<a class="ss-btn ss-btn-line" href="/complaint">{{ _("Send a complaint or concern") }}</a>{% endif %}
+		</div>
+		<div class="ss-directions">
+			{{ icon("pin", 40) }}
+			<strong style="font-size:17px">{{ s.name | e }}</strong>
+			{% if s.address %}<span class="ss-muted">{{ s.address | e }}</span>{% endif %}
+			{% if s.map_link %}<a class="ss-btn ss-btn-solid" href="{{ s.map_link | e }}" target="_blank" rel="noopener">{{ _("Get directions") }}</a>{% endif %}
+		</div>
+	</div>
+</section>
+</div>
+{% endblock %}

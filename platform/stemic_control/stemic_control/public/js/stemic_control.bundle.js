@@ -344,7 +344,9 @@ stemic_control.service_health = function () {
         const machinery = h.machinery.length
             ? `<ul>${h.machinery.map((p) => `<li style="color:var(--red-600)">${esc(p.message)} <span class="text-muted">${esc(p.fix)}</span></li>`).join("")}</ul>`
             : `<p style="color:var(--green-600)">${__("Workers, scheduler and queues are running.")}</p>`;
-        const disk = `<p>${__("Disk")}: ${__("{0} GB free of {1} GB", [h.disk.free_gb, h.disk.total_gb])} ${h.disk.problem ? `<span style="color:var(--red-600)">(${esc(h.disk.problem)})</span>` : ""}</p>`;
+        const n = h.nightly || {};
+        const nightly = `<p>${__("Nightly backups")}: ${n.enabled ? __("on at {0}:00", [n.hour]) : `<span style="color:var(--red-600)">${__("off")}</span>`}; ${__("last run")} ${n.last_run ? esc(frappe.datetime.str_to_user(n.last_run)) : __("never")}${n.due ? ` (${__("due now: runs within the hour")})` : ""}</p>`;
+        const disk = nightly + `<p>${__("Disk")}: ${__("{0} GB free of {1} GB", [h.disk.free_gb, h.disk.total_gb])} ${h.disk.problem ? `<span style="color:var(--red-600)">(${esc(h.disk.problem)})</span>` : ""}</p>`;
         const rows = h.schools.map((s) => `<tr><td>${esc(s.site)}</td><td>${pill(s.answering, __("Answering"), __("Not answering"))}</td>
             <td>${s.cert_days == null ? "–" : `<span style="color:var(--${s.cert_days < 14 ? "red" : "green"}-600)">${__("{0} days", [s.cert_days])}</span>`}</td>
             <td>${s.last_backup ? esc(frappe.datetime.str_to_user(s.last_backup)) : `<span style="color:var(--orange-600)">${__("None")}</span>`}</td>

@@ -48,6 +48,14 @@ lists anything not posted and any invoice whose amount owed differs from its Sal
 group has the chart of accounts, journals, General Ledger, Trial Balance, Profit and Loss, Balance Sheet, Cash Flow,
 receivables and payables.
 
+## Stemic expenses
+
+**Expenses** in the sidebar: record what Stemic spends (category, paid to, amount incl. VAT, claimable VAT, how paid,
+reference, receipt, optional school). Submitting approves it and posts it: Dr the category's expense account (13 default
+categories, each with its own account under Indirect Expenses), Dr Input VAT, Cr M-Pesa / bank / cash. Cancel reverses.
+**Repeat every month** prepares next month's draft to confirm. **This Month** and the **Costs vs Revenue** report show
+costs by category against money collected and agents' commission.
+
 ## Backups and restore
 
 Each school's site is backed up from here; settings in **Stemic Settings > Backups**.

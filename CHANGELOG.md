@@ -5,6 +5,8 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Control Center: **Stemic expenses**: record hosting, SMS, salaries, marketing etc. by category with receipts;
+  approval posts them to the books (with claimable VAT); monthly repeats; **Costs vs Revenue** report (#95).
 - Control Center: posting to the books is compulsory once the accounting company is set; **Post Missing Entries** and
   **Check Ledger**; sidebar redesigned with **Accounts** (chart of accounts, journals, GL, Trial Balance, P&L, Balance
   Sheet, Cash Flow, receivables, payables), **Tax (eTIMS)** and **Operations** groups (#94).

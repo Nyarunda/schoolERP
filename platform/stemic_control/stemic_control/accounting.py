@@ -149,6 +149,9 @@ def setup_accounts():
     used["vat_template"] = _vat_template(company_name, _vat()[1] or 16)
     _ensure_modes(company_name)
     used["plans"] = {plan: plan_item(company_name, plan)[1] for plan in frappe.get_all("SaaS Plan", pluck="name")}
+    from stemic_control import expenses
+
+    used["expense_categories"] = expenses.ensure_categories(company_name)
     settings = frappe.get_doc("Accounts Settings")
     settings.book_deferred_entries_based_on = "Months"
     settings.automatically_process_deferred_accounting_entry = 1
@@ -393,6 +396,10 @@ def unposted():
     for name, amount in frappe.get_all("SaaS Commission", filters={"status": "Paid", "payout_entry": ("in", ["", None])},
                                        fields=["name", "amount"], as_list=True):
         out.append({"doctype": "SaaS Commission", "name": name, "amount": amount, "problem": "Payout not posted"})
+    if frappe.db.exists("DocType", "Stemic Expense"):
+        for name, amount in frappe.get_all("Stemic Expense", filters={"docstatus": 1, "journal_entry": ("in", ["", None])},
+                                           fields=["name", "amount"], as_list=True):
+            out.append({"doctype": "Stemic Expense", "name": name, "amount": amount, "problem": "Expense not posted"})
     return out
 
 
@@ -457,4 +464,10 @@ def _post_missing():
     for key in {(r.agent, r.paid_reference, str(r.paid_on)) for r in paid}:
         names = [r.name for r in paid if (r.agent, r.paid_reference, str(r.paid_on)) == key]
         attempt(f"payout {key[1] or ''} to {key[0]}", lambda key=key, names=names: post_payout(key[0], names, key[1], key[2]))
+    if frappe.db.exists("DocType", "Stemic Expense"):
+        from stemic_control import expenses
+
+        for name in frappe.get_all("Stemic Expense", filters={"docstatus": 1, "journal_entry": ("in", ["", None])},
+                                   pluck="name", order_by="posting_date asc"):
+            attempt(name, lambda name=name: expenses.post_expense(frappe.get_doc("Stemic Expense", name)))
     return {"posted": done, "failed": failed}

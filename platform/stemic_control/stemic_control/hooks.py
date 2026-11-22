@@ -50,7 +50,7 @@ scheduler_events = {
     "cron": {"*/5 * * * *": ["stemic_control.provisioner.process_queue"], "*/15 * * * *": ["stemic_control.service.watch"]},
     # Billing: overdue invoices and Past Due subscriptions; renewal invoices ahead of the end date
     "daily": ["stemic_control.billing.daily", "stemic_control.billing.check_ledger", "stemic_control.service.check_certificates",
-              "stemic_control.deletion.daily"],
+              "stemic_control.deletion.daily", "stemic_control.expenses.daily"],
     # Custom domains: keep the server's routes current; activate verified domains once they serve their school
     "hourly": ["stemic_control.domains.hourly", "stemic_control.backups.hourly", "stemic_control.service.auto_update"],
 }

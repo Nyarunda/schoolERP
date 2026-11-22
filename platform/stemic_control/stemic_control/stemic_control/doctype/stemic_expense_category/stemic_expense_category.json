@@ -1,0 +1,73 @@
+{
+  "doctype": "DocType",
+  "name": "Stemic Expense Category",
+  "module": "Stemic Control",
+  "custom": 0,
+  "engine": "InnoDB",
+  "autoname": "field:category_name",
+  "naming_rule": "By fieldname",
+  "track_changes": 1,
+  "field_order": [
+    "category_name",
+    "expense_account",
+    "enabled",
+    "description"
+  ],
+  "fields": [
+    {
+      "fieldname": "category_name",
+      "label": "Category",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "expense_account",
+      "label": "Expense Account",
+      "fieldtype": "Link",
+      "options": "Account",
+      "in_list_view": 1,
+      "description": "Created for you under Indirect Expenses; change it to post somewhere else."
+    },
+    {
+      "fieldname": "enabled",
+      "label": "Enabled",
+      "fieldtype": "Check",
+      "default": "1",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "description",
+      "label": "Description",
+      "fieldtype": "Small Text"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ],
+  "creation": "2026-11-22 14:00:00.000000",
+  "modified": "2026-11-22 14:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "description": "What Stemic spends money on (hosting, SMS, salaries...), each posting to its own expense account."
+}

@@ -23,6 +23,8 @@ class SaaSInvoice(Document):
         guard_saas_invoice_cancel(self.name)
         if billing.has_submitted_payment(self.name):
             frappe.throw("Cancel this invoice's payments first", frappe.ValidationError)
+        if frappe.db.exists("SaaS Credit Note", {"invoice": self.name, "docstatus": 1}):
+            frappe.throw("Cancel this invoice's credit notes first", frappe.ValidationError)
 
     def on_cancel(self):
         self.db_set("status", "Cancelled")

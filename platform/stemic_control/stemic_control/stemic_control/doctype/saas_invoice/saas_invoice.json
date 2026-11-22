@@ -28,6 +28,8 @@
     "discount_amount",
     "total",
     "paid_amount",
+    "refunded_amount",
+    "credited_amount",
     "outstanding",
     "currency",
     "sales_invoice",
@@ -106,7 +108,7 @@
       "fieldname": "status",
       "fieldtype": "Select",
       "label": "Status",
-      "options": "Draft\nUnpaid\nPartly Paid\nPaid\nOverdue\nCancelled",
+      "options": "Draft\nUnpaid\nPartly Paid\nPaid\nCredited\nOverdue\nCancelled",
       "default": "Draft",
       "read_only": 1,
       "in_list_view": 1,
@@ -174,6 +176,22 @@
       "fieldname": "paid_amount",
       "fieldtype": "Currency",
       "label": "Paid",
+      "options": "currency",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "refunded_amount",
+      "label": "Refunded",
+      "fieldtype": "Currency",
+      "options": "currency",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "credited_amount",
+      "label": "Credited",
+      "fieldtype": "Currency",
       "options": "currency",
       "read_only": 1,
       "no_copy": 1
@@ -259,7 +277,7 @@
     }
   ],
   "creation": "2026-10-26 18:00:00.000000",
-  "modified": "2026-10-27 12:30:00.000000",
+  "modified": "2026-11-22 15:00:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator",
   "autoname": "SINV-.YYYY.-.#####",

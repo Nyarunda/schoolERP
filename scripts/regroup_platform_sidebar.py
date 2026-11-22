@@ -21,6 +21,7 @@ base.LAYOUT = [
         "Deletions|SaaS Deletion"]),
     ("Billing", "receipt", 0, [
         "Dashboard|Billing", "Subscriptions|SaaS Subscription", "Invoices|SaaS Invoice", "Payments|SaaS Payment",
+        "Credit Notes & Refunds|SaaS Credit Note",
         "Plans|SaaS Plan", "Licenses|SaaS License", "Revenue|SaaS Revenue", "What Schools Owe|SaaS Receivables"]),
     ("Agents", "users", 1, [
         "Dashboard|Agents", "All Agents|SaaS Agent", "Commissions|SaaS Commission",

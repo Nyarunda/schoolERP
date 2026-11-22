@@ -396,6 +396,9 @@ def unposted():
     for name, amount in frappe.get_all("SaaS Commission", filters={"status": "Paid", "payout_entry": ("in", ["", None])},
                                        fields=["name", "amount"], as_list=True):
         out.append({"doctype": "SaaS Commission", "name": name, "amount": amount, "problem": "Payout not posted"})
+    from stemic_control import credit_notes
+
+    out += credit_notes.unposted()
     if frappe.db.exists("DocType", "Stemic Expense"):
         for name, amount in frappe.get_all("Stemic Expense", filters={"docstatus": 1, "journal_entry": ("in", ["", None])},
                                            fields=["name", "amount"], as_list=True):
@@ -416,13 +419,15 @@ def ledger_check():
     mismatches = []
     if enabled():
         for inv in frappe.get_all("SaaS Invoice", filters={"docstatus": 1, "sales_invoice": ("is", "set")},
-                                  fields=["name", "outstanding", "sales_invoice", "school_name"]):
+                                  fields=["name", "total", "paid_amount", "credited_amount", "sales_invoice", "school_name"]):
             si = frappe.db.get_value("Sales Invoice", inv.sales_invoice, ["outstanding_amount", "docstatus"], as_dict=True)
+            # the Sales Invoice carries payments and credit notes; refunds are paid to the school's account separately
+            expected = flt(flt(inv.total) - flt(inv.credited_amount) - flt(inv.paid_amount), 2)
             if not si or si.docstatus != 1:
                 mismatches.append({"name": inv.name, "problem": f"{inv.sales_invoice} is not a submitted Sales Invoice"})
-            elif abs(flt(si.outstanding_amount) - flt(inv.outstanding)) > 0.01:
-                mismatches.append({"name": inv.name, "problem": f"{inv.school_name} owes {flt(inv.outstanding):,.2f} here but "
-                                   f"{flt(si.outstanding_amount):,.2f} in the books ({inv.sales_invoice})"})
+            elif abs(flt(si.outstanding_amount) - expected) > 0.01:
+                mismatches.append({"name": inv.name, "problem": f"{inv.school_name}: {expected:,.2f} expected on "
+                                   f"{inv.sales_invoice} in the books, which shows {flt(si.outstanding_amount):,.2f}"})
     return {"enabled": enabled(), "company": frappe.get_cached_doc("Stemic Settings").get("accounting_company"),
             "unposted": unposted(), "mismatches": mismatches}
 
@@ -464,6 +469,10 @@ def _post_missing():
     for key in {(r.agent, r.paid_reference, str(r.paid_on)) for r in paid}:
         names = [r.name for r in paid if (r.agent, r.paid_reference, str(r.paid_on)) == key]
         attempt(f"payout {key[1] or ''} to {key[0]}", lambda key=key, names=names: post_payout(key[0], names, key[1], key[2]))
+    if frappe.db.exists("DocType", "SaaS Credit Note"):
+        from stemic_control import credit_notes
+
+        credit_notes.post_missing(attempt)
     if frappe.db.exists("DocType", "Stemic Expense"):
         from stemic_control import expenses
 

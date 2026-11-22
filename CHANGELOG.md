@@ -5,6 +5,8 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Control Center: **credit notes and refunds** on subscription invoices, posted as Sales Invoice returns and refund
+  Payment Entries; invoices show credited/refunded and status Credited; KRA credit notes flagged when needed (#96).
 - Control Center: **Stemic expenses**: record hosting, SMS, salaries, marketing etc. by category with receipts;
   approval posts them to the books (with claimable VAT); monthly repeats; **Costs vs Revenue** report (#95).
 - Control Center: posting to the books is compulsory once the accounting company is set; **Post Missing Entries** and

@@ -88,17 +88,29 @@ def refresh_invoice(name):
     lock_invoice(name)
     inv = frappe.get_doc("SaaS Invoice", name)
     paid = submitted_payments(name)
-    outstanding = flt(inv.total - paid, 2)
+    credited, refunded = _credits(name)
+    outstanding = flt(inv.total - credited - (paid - refunded), 2)  # what the school still owes
     if inv.docstatus == 2:
         status = "Cancelled"
+    elif credited >= flt(inv.total) - 0.005:
+        status = "Credited"
     elif outstanding <= 0:
         status = "Paid"
     elif getdate(inv.due_date) < getdate(nowdate()):
         status = "Overdue"
     else:
         status = "Partly Paid" if paid else "Unpaid"
-    inv.db_set({"paid_amount": paid, "outstanding": max(outstanding, 0), "status": status})
+    inv.db_set({"paid_amount": paid, "credited_amount": credited, "refunded_amount": refunded,
+                "outstanding": max(outstanding, 0), "status": status})
     return inv.reload()
+
+
+def _credits(invoice):
+    if not frappe.db.exists("DocType", "SaaS Credit Note"):
+        return 0.0, 0.0
+    from stemic_control.credit_notes import totals
+
+    return totals(invoice)
 
 
 def open_invoice(subscription):
@@ -202,7 +214,8 @@ def validate_payment_for_submit(doc):
         frappe.throw("Invoice is not submitted", frappe.ValidationError)
     paid = submitted_payments(doc.invoice, exclude=doc.name)  # locking read: sees payments committed while we waited
     total = frappe.db.get_value("SaaS Invoice", doc.invoice, "total")
-    remaining = flt(flt(total) - flt(paid), 2)
+    credited, refunded = _credits(doc.invoice)
+    remaining = flt(flt(total) - credited - (flt(paid) - refunded), 2)
     if remaining <= 0 or flt(doc.amount) > remaining + 0.005:
         frappe.throw(
             f"Payment exceeds the current invoice balance of {remaining:,.2f}",

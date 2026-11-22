@@ -1,4 +1,8 @@
 {% extends "templates/web.html" %}
+{% from "school_erp/templates/includes/school_site/macros.html" import head, header, footer with context %}
+{% block head_include %}{{ super() }}{% if school_site %}{{ head() }}{% endif %}{% endblock %}
+{% block navbar %}{% if school_site %}{{ header(school_site, school_account) }}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block footer %}{% if school_site %}{{ footer(school_site) }}{% else %}{{ super() }}{% endif %}{% endblock %}
 {% block page_content %}
 <section style="max-width:640px;margin:32px auto;padding:24px;border:1px solid #ddd;border-radius:12px">
   <h2>Verify a School Document</h2>

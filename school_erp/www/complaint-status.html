@@ -1,4 +1,8 @@
 {% extends "templates/web.html" %}
+{% from "school_erp/templates/includes/school_site/macros.html" import head, header, footer with context %}
+{% block head_include %}{{ super() }}{% if school_site %}{{ head() }}{% endif %}{% endblock %}
+{% block navbar %}{% if school_site %}{{ header(school_site, school_account) }}{% else %}{{ super() }}{% endif %}{% endblock %}
+{% block footer %}{% if school_site %}{{ footer(school_site) }}{% else %}{{ super() }}{% endif %}{% endblock %}
 
 {% block title %}{{ _("Complaint Status") }}{% endblock %}
 
@@ -11,7 +15,7 @@
 	.cs-field { margin-top: 14px; }
 	.cs-field label { font-weight: 600; font-size: 13px; display: block; margin-bottom: 4px; }
 	.cs-field input { width: 100%; padding: 10px 12px; border: 1px solid #d0d5dd; border-radius: 8px; font-size: 15px; }
-	.cs-btn { margin-top: 18px; width: 100%; padding: 11px; border: 0; border-radius: 8px; background: #1f6f5c; color: #fff; font-weight: 600; font-size: 15px; }
+	.cs-btn { margin-top: 18px; width: 100%; padding: 11px; border: 0; border-radius: 8px; background: {{ school_site.color if school_site else '#1f6f5c' }}; color: #fff; font-weight: 600; font-size: 15px; }
 	.cs-result { margin-top: 20px; padding: 16px; border-radius: 10px; background: #f4f6f8; display: none; }
 	.cs-status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 13px; }
 	.cs-Open, .cs-In.Progress { background: #fff6e5; color: #7a4b00; }

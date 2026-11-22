@@ -5,6 +5,9 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- **School website**: the school's address now opens a homepage branded for the school (crest, colours, photos, fees
+  and Paybill, notices, term dates, contacts), with a branded sign-in page, one header and footer on the public pages,
+  and a calm "portal paused" page that keeps Stemic's invoice details for school administrators (#PR).
 - Control Center: **School Groups** for schools with several branches (each its own site): combined or separate
   billing, head-office statement and group payment; a **cost center per school** (branches under their group) on every
   posting, so Profit and Loss runs per school, branch and group (#98).

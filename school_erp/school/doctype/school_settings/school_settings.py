@@ -64,6 +64,9 @@ class SchoolSettings(Document):
 
 	def on_update(self):
 		licensing.clear_cache()
+		from frappe.website.utils import clear_website_cache
+
+		clear_website_cache()  # the school's name, crest and colour are on every cached web page
 		if (self.has_value_changed("expense_first_approver_role") or self.has_value_changed("expense_final_approver_role")
 				or self.has_value_changed("marks_need_approval")):
 			from school_erp.setup.workflows import make_workflows

@@ -12,6 +12,7 @@
 | 13 | **Refunds and credit notes** (Sales Invoice returns, refund Payment Entries, KRA flag) | `specs/features/credit-notes/` | Acceptance passes on admin.stemicschools.com |
 | 14 | **Growth and health KPIs** (Growth & Health tab, County on schools) | `specs/features/growth-kpis/` | Acceptance passes on admin.stemicschools.com |
 | 15 | **Schools with several branches** (School Groups, combined/separate billing, cost center per school) | `specs/features/school-groups/` | Acceptance passes on admin.stemicschools.com |
+| 16 | **School website** (branded homepage at "/", branded sign-in, shared header/footer, calm portal-paused page, website notices) | `specs/features/school-website/` | Acceptance passes on test.stemicschools.com |
 
 ## Next (in order)
 

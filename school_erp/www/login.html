@@ -1,0 +1,39 @@
+{#- Frappe's sign-in page (frappe/www/login.html) inside the school's brand. The form, its script and every sign-in
+    option stay Frappe's: page_content wraps super(). See login.py. -#}
+{% extends "frappe/www/login.html" %}
+{% from "school_erp/templates/includes/school_site/macros.html" import crest, icon, head with context %}
+
+{% block head_include %}{{ super() }}{% if school_site %}{{ head() }}{% endif %}{% endblock %}
+{% block footer %}{% if not school_site %}{{ super() }}{% endif %}{% endblock %}
+
+{% block page_content %}
+{% if school_site %}
+{%- set s = school_site -%}
+<div class="ss-login" style="--ss-color: {{ s.color }}; --ss-dark: {{ s.color_dark }}; --ss-wash: {{ s.wash }}">
+	<aside class="ss-login-brand">
+		<a class="ss-login-name" href="/">
+			{{ crest(s, 52, light=True) }}
+			<span><b>{{ s.name | e }}</b>{% if s.motto %}<small>{{ s.motto | e }}</small>{% else %}<small>{{ _("School portal") }}</small>{% endif %}</span>
+		</a>
+		{% if school_photo %}<div class="ss-login-photo"><img src="{{ school_photo | e }}" alt=""></div>{% endif %}
+		<div>
+			<h1>{{ _("School portal") }}</h1>
+			<p>{{ _("Parents see fees, results and attendance. Staff manage classes, marks and the school office.") }}</p>
+		</div>
+	</aside>
+	<div class="ss-login-main">
+		<a class="ss-login-back" href="/">{{ icon("back", 18) }} {{ _("Back to school website") }}</a>
+		<div class="ss-login-form">
+			{{ super() }}
+			<div class="ss-login-note">
+				{{ icon("info", 22) }}
+				<span><strong>{{ _("Parents:") }}</strong> {{ _("sign in with the phone number you gave the school and the password the school sent you by SMS. Lost it? Ask the school office to send a new one.") }}{% if s.phone %} {{ _("Office: {0}.").format(s.phone | e) }}{% endif %}</span>
+			</div>
+		</div>
+		<div class="ss-login-foot"><span>&copy; {{ s.year }} {{ s.name | e }}</span><span>{{ _("Powered by") }} <a href="https://stemicschools.com" target="_blank" rel="noopener">Stemic Schools</a></span></div>
+	</div>
+</div>
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}

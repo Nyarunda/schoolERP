@@ -17,7 +17,7 @@ base.PATH = os.path.join(os.path.dirname(__file__), "..", "platform", "stemic_co
 base.TOP = ["Home|Stemic Control", "KPI Overview|stemic-overview"]
 base.LAYOUT = [
     ("Schools", "school", 0, [
-        "Dashboard|Schools", "All Schools|SaaS Tenant", "Domains|SaaS Domain", "Provisioning Jobs|SaaS Provisioning Job",
+        "Dashboard|Schools", "All Schools|SaaS Tenant", "School Groups|SaaS School Group", "Domains|SaaS Domain", "Provisioning Jobs|SaaS Provisioning Job",
         "Deletions|SaaS Deletion"]),
     ("Billing", "receipt", 0, [
         "Dashboard|Billing", "Subscriptions|SaaS Subscription", "Invoices|SaaS Invoice", "Payments|SaaS Payment",

@@ -219,6 +219,17 @@ def _vat():
     return treatment, flt(s.get("vat_rate") or 16) if treatment == "Standard Rated" else 0
 
 
+def _center(tenant, company_name):
+    """The school's cost center (groups.py), or the company's default."""
+    from stemic_control import groups
+
+    try:
+        return groups.cost_center(tenant) if tenant else None
+    except Exception:
+        frappe.log_error(title=f"Cost center for {tenant}")
+        return None
+
+
 def _submit(doc):
     doc.flags.ignore_permissions = True
     doc.insert()
@@ -247,8 +258,11 @@ def post_invoice(inv):
                "due_date": inv.due_date, "currency": currency, "conversion_rate": 1,
                "remarks": f"Stemic subscription: {inv.name}, {inv.plan} plan, {inv.period_start} to {inv.period_end}",
                "po_no": inv.name})
+    center = _center(inv.tenant, company_name)
+    if center:
+        si.cost_center = center
     si.append("items", {"item_code": item, "qty": int(inv.months), "rate": flt(inv.monthly_price), "uom": "Nos",
-                        "income_account": income, "enable_deferred_revenue": 1,
+                        "income_account": income, "enable_deferred_revenue": 1, "cost_center": center,
                         "deferred_revenue_account": account(company_name, "deferred"),
                         "service_start_date": inv.period_start, "service_end_date": inv.period_end,
                         "description": f"{inv.plan} plan, {inv.months} month(s) from {inv.period_start}"})
@@ -259,7 +273,8 @@ def post_invoice(inv):
     if rate:
         si.taxes_and_charges = _vat_template(company_name, rate)
         si.append("taxes", {"charge_type": "On Net Total", "account_head": account(company_name, "vat"),
-                            "description": f"VAT {rate:g}%", "rate": rate, "included_in_print_rate": 1})
+                            "description": f"VAT {rate:g}%", "rate": rate, "included_in_print_rate": 1,
+                            **({"cost_center": center} if center else {})})
     si.flags.ignore_permissions = True
     si.insert()
     if abs(flt(si.grand_total) - flt(inv.total)) > 0.01:
@@ -290,6 +305,9 @@ def post_payment(pay):
                "remarks": f"Stemic subscription payment {pay.name} ({pay.mode} {pay.reference}) for {pay.invoice}"})
     pe.append("references", {"reference_doctype": "Sales Invoice", "reference_name": si.name,
                              "allocated_amount": flt(pay.amount)})
+    center = _center(pay.tenant, si.company)
+    if center:
+        pe.cost_center = center
     pay.db_set("payment_entry", _submit(pe), update_modified=False)
     return pay.payment_entry
 
@@ -309,7 +327,8 @@ def post_commission(name):
     je.update({"voucher_type": "Journal Entry", "company": company_name, "posting_date": com.earned_on,
                "user_remark": f"Agent commission {com.name}: {com.rate}% of payment {com.payment} ({com.tenant})"})
     je.append("accounts", {"account": account(company_name, "commission"), "debit_in_account_currency": flt(com.amount),
-                           "cost_center": frappe.get_cached_value("Company", company_name, "cost_center")})
+                           "cost_center": _center(com.tenant, company_name)
+                           or frappe.get_cached_value("Company", company_name, "cost_center")})
     je.append("accounts", {"account": account(company_name, "commission_payable"), "party_type": "Supplier",
                            "party": supplier(com.agent), "credit_in_account_currency": flt(com.amount)})
     com.db_set("journal_entry", _submit(je), update_modified=False)

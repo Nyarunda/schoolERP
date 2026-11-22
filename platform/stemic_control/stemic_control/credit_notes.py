@@ -126,6 +126,9 @@ def _refund(doc, ret):
 			   "reference_date": doc.credit_date,
 			   "mode_of_payment": doc.refund_mode if frappe.db.exists("Mode of Payment", doc.refund_mode) else None,
 			   "remarks": f"Refund to {doc.school_name} on credit note {doc.name} ({doc.invoice})"})
+	center = accounting._center(doc.tenant, company)
+	if center:
+		pe.cost_center = center
 	return accounting._submit(pe)
 
 

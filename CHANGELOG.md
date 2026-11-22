@@ -5,6 +5,9 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Control Center: **School Groups** for schools with several branches (each its own site): combined or separate
+  billing, head-office statement and group payment; a **cost center per school** (branches under their group) on every
+  posting, so Profit and Loss runs per school, branch and group (#PR).
 - Control Center: **Growth & Health** tab: MRR trend and growth, run rate, revenue per school, new and lost schools,
   churn, collection rate, overdue ageing, cash in vs costs, schools by county and plan; County on schools (#97).
 - Control Center: **credit notes and refunds** on subscription invoices, posted as Sales Invoice returns and refund

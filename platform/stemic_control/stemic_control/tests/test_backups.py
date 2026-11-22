@@ -92,7 +92,10 @@ class TestBackups(TestCase):
 		with patch.object(site_runtime, "_set", side_effect=lambda o, v: frappe.db.set_value("SaaS Site Operation", o, v)), \
 				patch.object(provisioner, "_frappe_cli", return_value=output):
 			self.assertEqual(site_runtime.perform_operation(op), "Succeeded")
-		return frappe.db.get_value("SaaS Site Operation", op, "backup")
+		name = frappe.db.get_value("SaaS Site Operation", op, "backup")
+		if when and name:  # backups are timed by the Control Center's clock: place this one in the past
+			frappe.db.set_value("SaaS Backup", name, "taken_on", when)
+		return name
 
 	# ------------------------------------------------------------------ tests
 	def test_backup_is_recorded(self):

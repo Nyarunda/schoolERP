@@ -20,13 +20,13 @@ feature is Done when every box is ticked.*
 
 ## Not broken
 
-- [ ] `./scripts/check.sh` and CI green
+- [x] `./scripts/check.sh` and CI green
 - [ ] Parent sign-in lands on the parent portal as before
 - [ ] /admission-status, /complaint-status and /verify still work
 - [ ] Unlicensed school: unlicensed cards hidden
 
 ## Docs
 
-- [ ] `docs/SCHOOL_WEBSITE.md`
+- [x] `docs/SCHOOL_WEBSITE.md`
 - [ ] User guide section updated
-- [ ] `CHANGELOG.md`
+- [x] `CHANGELOG.md`

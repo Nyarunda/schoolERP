@@ -5,6 +5,9 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Fixed (found live): backups of schools with long site names were taken but not recorded (file paths over 140
+  characters); backup times used the server's file names (another time zone); nightly backups did not start when the
+  last-run date was empty. Service Health now shows the nightly backup status (#PR).
 - Fixed: after the upgrade, the Control Center's new settings read 0 (nightly backups off, keep 0/0/0, site watch off);
   every migrate now stores the defaults of settings never set, without touching chosen values (#92).
 - Control Center: **Delete School**: suspended at once, deleted after a 7-day grace (cancellable): site, database,

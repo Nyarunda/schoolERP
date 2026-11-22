@@ -1,0 +1,195 @@
+{
+  "doctype": "DocType",
+  "name": "Stemic Expense",
+  "module": "Stemic Control",
+  "custom": 0,
+  "engine": "InnoDB",
+  "is_submittable": 1,
+  "autoname": "EXP-.YYYY.-.#####",
+  "naming_rule": "Expression (old style)",
+  "track_changes": 1,
+  "title_field": "paid_to",
+  "sort_field": "posting_date",
+  "sort_order": "DESC",
+  "field_order": [
+    "posting_date",
+    "category",
+    "paid_to",
+    "description",
+    "cb_amount",
+    "amount",
+    "vat_amount",
+    "mode",
+    "reference",
+    "receipt",
+    "more_section",
+    "tenant",
+    "repeat_monthly",
+    "next_repeat_on",
+    "repeated_from",
+    "cb_more",
+    "journal_entry",
+    "amended_from"
+  ],
+  "fields": [
+    {
+      "fieldname": "posting_date",
+      "label": "Date",
+      "fieldtype": "Date",
+      "reqd": 1,
+      "default": "Today",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "category",
+      "label": "Category",
+      "fieldtype": "Link",
+      "options": "Stemic Expense Category",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "paid_to",
+      "label": "Paid To",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "in_list_view": 1,
+      "description": "The supplier or person paid, e.g. Hetzner, Africa's Talking, staff name."
+    },
+    {
+      "fieldname": "description",
+      "label": "What For",
+      "fieldtype": "Small Text",
+      "reqd": 1
+    },
+    {
+      "fieldname": "cb_amount",
+      "label": "",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "amount",
+      "label": "Amount (incl. VAT)",
+      "fieldtype": "Currency",
+      "reqd": 1,
+      "in_list_view": 1,
+      "options": "KES"
+    },
+    {
+      "fieldname": "vat_amount",
+      "label": "VAT Claimable",
+      "fieldtype": "Currency",
+      "default": "0",
+      "options": "KES",
+      "description": "Input VAT on a VAT invoice you can claim; 0 if none."
+    },
+    {
+      "fieldname": "mode",
+      "label": "Paid By",
+      "fieldtype": "Select",
+      "options": "M-Pesa\nBank Transfer\nCard\nCash",
+      "default": "M-Pesa",
+      "reqd": 1
+    },
+    {
+      "fieldname": "reference",
+      "label": "Reference",
+      "fieldtype": "Data",
+      "description": "M-Pesa code, bank reference or invoice number."
+    },
+    {
+      "fieldname": "receipt",
+      "label": "Receipt",
+      "fieldtype": "Attach"
+    },
+    {
+      "fieldname": "more_section",
+      "label": "More",
+      "fieldtype": "Section Break",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "tenant",
+      "label": "For School",
+      "fieldtype": "Link",
+      "options": "SaaS Tenant",
+      "description": "Optional: a cost for one school (e.g. its SMS bundle)."
+    },
+    {
+      "fieldname": "repeat_monthly",
+      "label": "Repeat every month",
+      "fieldtype": "Check",
+      "description": "A draft for next month is prepared on the same day each month, for you to confirm."
+    },
+    {
+      "fieldname": "next_repeat_on",
+      "label": "Next Draft On",
+      "fieldtype": "Date",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "repeated_from",
+      "label": "Repeated From",
+      "fieldtype": "Link",
+      "options": "Stemic Expense",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "cb_more",
+      "label": "",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "journal_entry",
+      "label": "Journal Entry",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "amended_from",
+      "label": "Amended From",
+      "fieldtype": "Link",
+      "options": "Stemic Expense",
+      "read_only": 1,
+      "no_copy": 1,
+      "print_hide": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1
+    },
+    {
+      "role": "Stemic Platform Admin",
+      "read": 1,
+      "report": 1,
+      "export": 1,
+      "print": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1,
+      "submit": 1,
+      "cancel": 1,
+      "amend": 1
+    }
+  ],
+  "creation": "2026-11-22 14:00:00.000000",
+  "modified": "2026-11-22 14:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "description": "Money Stemic spends. Submitting approves it and posts it to the books (Dr the category's expense account, Cr M-Pesa / bank / cash)."
+}

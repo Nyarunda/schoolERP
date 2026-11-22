@@ -8,3 +8,4 @@ stemic_control.patches.link_school_subscriptions
 stemic_control.patches.default_onboarding_settings
 stemic_control.patches.set_school_platform_domains
 stemic_control.patches.post_missing_entries
+stemic_control.patches.expense_categories

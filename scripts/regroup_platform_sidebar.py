@@ -25,6 +25,8 @@ base.LAYOUT = [
     ("Agents", "users", 1, [
         "Dashboard|Agents", "All Agents|SaaS Agent", "Commissions|SaaS Commission",
         "Commission Statement|Agent Commission Statement"]),
+    ("Expenses", "wallet", 1, [
+        "Expenses|Stemic Expense", "Expense Categories|Stemic Expense Category", "Costs vs Revenue|Costs vs Revenue"]),
     ("Accounts", "sheet", 1, [
         "Chart of Accounts|Account", "Journal Entry|Journal Entry", "Sales Invoice|Sales Invoice", "Payment Entry|Payment Entry",
         "Bank Reconciliation|Bank Reconciliation Tool", "General Ledger|General Ledger", "Trial Balance|Trial Balance",

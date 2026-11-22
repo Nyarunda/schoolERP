@@ -165,12 +165,14 @@ def growth():
 	sql = frappe.db.sql
 	today = getdate(nowdate())
 	days, labels = _months()
-	# MRR in each month: the monthly price of every invoice whose period covers that month's first day
+	# MRR in each month: the monthly price of every invoice whose period covers the month's last day (today for this
+	# month), so each school counts once even when one invoice ends and the next begins mid-month
 	mrr_trend = []
 	for d in days:
+		day = min(get_last_day(d), today)
 		mrr_trend.append(flt(sql("""select coalesce(sum(monthly_price - discount_amount / greatest(months, 1)), 0)
 			from `tabSaaS Invoice` where docstatus = 1 and status != 'Credited' and period_start <= %s and period_end >= %s""",
-								 (d, d))[0][0], 2))
+								 (day, day))[0][0], 2))
 	mrr = flt(sql("""select coalesce(sum(p.monthly_price), 0) from `tabSaaS Subscription` s join `tabSaaS Plan` p on p.name = s.plan
 		where s.status = 'Active'""")[0][0], 2)
 	paying = frappe.db.count("SaaS Subscription", {"status": "Active"})

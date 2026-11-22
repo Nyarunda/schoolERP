@@ -131,31 +131,31 @@
     {
       "fieldname": "database_file",
       "label": "Database",
-      "fieldtype": "Data",
+      "fieldtype": "Small Text",
       "read_only": 1
     },
     {
       "fieldname": "public_file",
       "label": "Public Files",
-      "fieldtype": "Data",
+      "fieldtype": "Small Text",
       "read_only": 1
     },
     {
       "fieldname": "private_file",
       "label": "Private Files",
-      "fieldtype": "Data",
+      "fieldtype": "Small Text",
       "read_only": 1
     },
     {
       "fieldname": "config_file",
       "label": "Site Config",
-      "fieldtype": "Data",
+      "fieldtype": "Small Text",
       "read_only": 1
     },
     {
       "fieldname": "offsite_prefix",
       "label": "Off-server Folder",
-      "fieldtype": "Data",
+      "fieldtype": "Small Text",
       "read_only": 1
     },
     {
@@ -192,7 +192,7 @@
     }
   ],
   "creation": "2026-11-21 18:00:00.000000",
-  "modified": "2026-11-21 22:00:00.000000",
+  "modified": "2026-11-22 12:00:00.000000",
   "modified_by": "Administrator",
   "owner": "Administrator"
 }

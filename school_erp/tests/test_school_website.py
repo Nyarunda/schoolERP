@@ -13,11 +13,15 @@ from school_erp.tests.test_integration import TestCase, setup_school
 
 
 def render(path, user="Guest"):
+	"""Render a web page as a browser would. CI's bench has no built assets, so bundle names pass through unhashed."""
+	from frappe.utils import jinja_globals
+
 	frappe.set_user(user)
 	frappe.cache.delete_key("home_page")
 	clear_website_cache()
 	set_request(method="GET", path=path)
-	response = get_response(path)
+	with patch.object(jinja_globals, "bundled_asset", lambda path, rtl=None: path):
+		response = get_response(path)
 	return response.status_code, frappe.safe_decode(response.get_data()), response
 
 

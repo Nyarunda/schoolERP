@@ -44,6 +44,7 @@ $PY -m pytest -q \
 
 step "Sidebar follows scripts/regroup_sidebar.py (no link lost or doubled)"
 $PY scripts/regroup_sidebar.py --check || fail "sidebar layout"
+$PY scripts/regroup_platform_sidebar.py --check || fail "Control Center sidebar layout"
 
 step "Sidebar changes bump their modified date"
 # bench migrate re-syncs a sidebar JSON only when its "modified" is newer than the database's copy.

@@ -130,7 +130,18 @@ function render_accounting(frm) {
                 <b>${__("Income by plan")}</b><table class="table table-sm"><tbody>${rows(a.plans)}</tbody></table>`
                 : `<p class="text-muted">${__("Enter the ERPNext company that keeps Stemic's books, save, then Set Up Accounts.")}</p>`}
             <button class="btn btn-default btn-sm" data-setup-accounts>${__("Set Up Accounts")}</button>
+            ${a.enabled ? `<button class="btn btn-default btn-sm" data-check-ledger>${__("Check Ledger")}</button>
+                <button class="btn btn-default btn-sm" data-post-missing>${__("Post Missing Entries")}</button>` : ""}
         </div>`);
+        $w.find("[data-check-ledger]").on("click", () => stemic_control.ledger_check());
+        $w.find("[data-post-missing]").on("click", () => frappe.call({ method: "stemic_control.accounting.post_missing", type: "POST",
+            freeze: true, freeze_message: __("Posting...") }).then(({ message: r }) => {
+            const esc = frappe.utils.escape_html;
+            frappe.msgprint({ title: __("Post Missing Entries"), indicator: r.failed.length ? "orange" : "green",
+                message: `<p>${__("{0} posted.", [r.posted.length])}</p>` + (r.failed.length
+                    ? `<p>${__("Not posted")}:</p><ul>${r.failed.map((f) => `<li>${esc(f.name)}: ${esc(f.error)}</li>`).join("")}</ul>` : "") });
+            render_accounting(frm);
+        }));
         $w.find("[data-setup-accounts]").on("click", () => {
             if (frm.is_dirty()) {
                 frappe.msgprint(__("Save first."));

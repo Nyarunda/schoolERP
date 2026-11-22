@@ -5,6 +5,9 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- Control Center: posting to the books is compulsory once the accounting company is set; **Post Missing Entries** and
+  **Check Ledger**; sidebar redesigned with **Accounts** (chart of accounts, journals, GL, Trial Balance, P&L, Balance
+  Sheet, Cash Flow, receivables, payables), **Tax (eTIMS)** and **Operations** groups (#94).
 - Fixed (found live): backups of schools with long site names were taken but not recorded (file paths over 140
   characters); backup times used the server's file names (another time zone); nightly backups did not start when the
   last-run date was empty. Service Health now shows the nightly backup status (#93).

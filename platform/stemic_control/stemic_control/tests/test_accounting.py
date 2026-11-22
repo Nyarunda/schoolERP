@@ -71,7 +71,8 @@ class TestAccounting(TestCase):
         frappe.clear_document_cache("Stemic Tax Settings", "Stemic Tax Settings")
 
     def posting(self, on):
-        frappe.db.set_single_value("Stemic Settings", {"post_to_accounts": int(on), "accounting_company": COMPANY})
+        """Posting is compulsory once a company is chosen: 'off' means no company."""
+        frappe.db.set_single_value("Stemic Settings", {"post_to_accounts": int(on), "accounting_company": COMPANY if on else None})
         frappe.clear_document_cache("Stemic Settings", "Stemic Settings")
 
     def vat(self, treatment):
@@ -175,6 +176,28 @@ class TestAccounting(TestCase):
         ledger = self.gl("Sales Invoice", inv.sales_invoice)
         self.assertNotIn(self.acc("vat"), ledger)
         self.assertEqual(ledger[self.acc("deferred")], (0, 10000))
+
+    def test_posting_is_compulsory_once_a_company_is_chosen(self):
+        frappe.db.set_single_value("Stemic Settings", {"post_to_accounts": 0, "accounting_company": COMPANY})  # old switch off
+        frappe.clear_document_cache("Stemic Settings", "Stemic Settings")
+        inv = frappe.get_doc("SaaS Invoice", billing.create_invoice(self.sub, months=1))
+        self.assertTrue(inv.sales_invoice)
+
+    def test_post_missing_and_ledger_check(self):
+        self.posting(False)  # records made before a company was chosen
+        inv = frappe.get_doc("SaaS Invoice", billing.create_invoice(self.sub, months=1))
+        payment = self.pay(inv.name, 5000)["payment"]
+        self.posting(True)
+        names = {u["name"] for u in accounting.ledger_check()["unposted"]}
+        self.assertTrue({inv.name, payment} <= names)
+        result = accounting.post_missing()
+        self.assertIn(inv.name, result["posted"])
+        self.assertIn(payment, result["posted"])
+        self.assertFalse(result["failed"])
+        check = accounting.ledger_check()
+        self.assertFalse([u for u in check["unposted"] if u["name"] in (inv.name, payment)])
+        self.assertFalse([m for m in check["mismatches"] if m["name"] == inv.name])  # paid in full here and in the books
+        self.assertTrue(frappe.db.get_value("SaaS Commission", {"payment": payment}, "journal_entry"))
 
     def test_nothing_is_posted_when_switched_off(self):
         self.posting(False)

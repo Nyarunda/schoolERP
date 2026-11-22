@@ -7,20 +7,23 @@
 
 | # | Feature | Spec | Done when |
 |---|---|---|---|
-| 8 | **Control Center backups and restore** (schedule, off-server copy, retention, list/download, strict restore, alerts) | `specs/features/control-center-backups/` | Acceptance passes on admin.stemicschools.com |
-| 9 | **Control Center automation, phase 2**: Update All Schools, health watch, bulk actions, Service Health | `specs/features/control-center-automation/` | Acceptance passes on admin.stemicschools.com |
-| 10 | **Delete a school** (7-day grace, final copy 90 days, site/database/backups/records removed; tax records kept) | `specs/features/delete-school/` | Acceptance passes on admin.stemicschools.com |
+| 11 | **Control Center accounts + sidebar** (compulsory posting, Post Missing Entries, Check Ledger, Accounts/Tax/Operations groups) | `specs/features/control-center-accounts/` | Acceptance passes on admin.stemicschools.com |
 
 ## Next (in order)
 
 | # | Feature | Why | Done when |
 |---|---|---|---|
-| 9 | **Control Center automation, phase 2**: Update all schools, health watch, bulk actions | Owner: "more controls and automation to improve service delivery" | Spec written and agreed |
+| 12 | **Stemic expenses** (hosting, SMS, domains, salaries, marketing by category, approval, posted to the GL; cost vs revenue) | Owner, 22 Nov: "everything through the chart of accounts" | Spec agreed |
+| 13 | **Refunds and credit notes** (credit an invoice or refund a payment, linked, posted; eTIMS credit note) | Owner, 22 Nov | Spec agreed |
+| 14 | **Growth and health KPIs** (MRR, ARR, new/churned schools, ARPU, collection rate, ageing, cash vs costs, by plan/county, trends) | Owner, 22 Nov | Spec agreed |
 
 ## Done
 
 | Date | Feature | PR |
 |---|---|---|
+| 2026-11-22 | Control Center backups and restore (checked live: backups recorded, list, preview; long-path and nightly fixes) | #89, #92, #93 |
+| 2026-11-22 | Control Center automation: Update All Schools, bulk actions, health watch, Service Health (checked live: after-update batch ran, site watch answering) | #90 |
+| 2026-11-22 | Delete a school (preview checked live; deletion covered by CI) | #91 |
 | 2026-11-21 | Every shilling through the General Ledger (checked live: opening entry, deposit, daily sales summary, Fine Paid, reconciliation) | #86 |
 | 2026-11-21 | Clearer sidebar; graduate a learner; move learners between classes (checked live, incl. Move Class dialog) | #84, #85 |
 | 2026-11-21 | Auto-link guardians to parent logins (checked live on the test site) | #81 |

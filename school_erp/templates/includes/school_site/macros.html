@@ -48,6 +48,13 @@
 			{{ crest(site, 44) }}
 			<span class="ss-brand-text"><span class="ss-brand-name">{{ site.name | e }}</span>{% if site.motto %}<span class="ss-brand-motto">{{ site.motto | e }}</span>{% endif %}</span>
 		</a>
+		<nav class="ss-nav ss-nav-wide" aria-label="{{ _('Main') }}">
+				<a href="/#about">{{ _("About") }}</a>
+				<a href="/#fees">{{ _("Fees") }}</a>
+				<a href="/#notices">{{ _("Notices") }}</a>
+				<a href="/#contact">{{ _("Contact") }}</a>
+				<a class="ss-btn ss-btn-solid" href="{{ account.href }}">{{ _(account.label) }}</a>
+		</nav>
 		<details class="ss-menu">
 			<summary aria-label="{{ _('Menu') }}">{{ icon("menu", 20) }}</summary>
 			<nav class="ss-nav" aria-label="{{ _('Main') }}">

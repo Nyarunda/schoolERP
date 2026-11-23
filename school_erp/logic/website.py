@@ -4,7 +4,8 @@ import html
 import re
 from datetime import date
 
-from school_erp.logic.paybill import is_till
+from school_erp.logic.paybill import is_till, pay_line
+from school_erp.logic.text import render
 
 DEFAULT_COLOR = "#166534"  # a deep green that reads well with white text
 _HEX = re.compile(r"^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
@@ -73,9 +74,9 @@ def pay_steps(account_type: str | None, number: str | None) -> dict | None:
 				"steps": ["Go to M-Pesa, then Lipa na M-Pesa, then Buy Goods and Services",
 						  f"Till number: {number}", "Enter the amount and your M-Pesa PIN",
 						  "Keep the M-Pesa message: the school matches it to your phone number"]}
-	return {"kind": "Paybill", "label": "M-Pesa Paybill", "number": number, "account": "your child's admission number",
+	return {"kind": "Paybill", "label": "M-Pesa Paybill", "number": number, "account": "your child's Student ID or admission number",
 			"steps": ["Go to M-Pesa, then Lipa na M-Pesa, then Pay Bill", f"Business number: {number}",
-					  "Account number: your child's admission number", "Enter the amount and your M-Pesa PIN"]}
+					  "Account number: your child's Student ID or admission number", "Enter the amount and your M-Pesa PIN"]}
 
 
 def excerpt(text: str | None, most: int = 160) -> str:
@@ -120,3 +121,13 @@ def next_date(terms: list[dict], today: date) -> str | None:
 		return None
 	when, what = min(events)
 	return f"{what} {when.day} {when.strftime('%B %Y')}"
+
+
+def public_note(template: str | None, account_type: str | None, number: str | None, school_name: str | None) -> str:
+	"""The school's Payment Instructions for the homepage: the same {placeholders} the statements fill, with the
+	learner-specific ones in general words ('your child's Student ID'). Unknown placeholders are dropped, never shown."""
+	account = "your child's Student ID"
+	ctx = {"mpesa": pay_line(account_type, number, account), "paybill": number or "", "school_name": school_name or "",
+		   "student_id": account, "student_name": "your child", "first_name": "your child", "admission_number": account}
+	text = render((template or "").strip(), ctx)
+	return re.sub(r"\s{2,}", " ", re.sub(r"\{[a-z_]+\}", "", text)).strip()

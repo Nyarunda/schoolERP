@@ -3,7 +3,7 @@
 from datetime import date
 
 from school_erp.logic.website import (DEFAULT_COLOR, contrast, excerpt, initials, is_live, next_date, pay_steps,
-									   readable, terms_for_year, tint)
+									   public_note, readable, terms_for_year, tint)
 
 
 def test_initials():
@@ -30,7 +30,7 @@ def test_tint():
 def test_pay_steps_paybill():
 	p = pay_steps("Paybill", " 123456 ")
 	assert p["number"] == "123456" and p["kind"] == "Paybill"
-	assert "admission number" in p["account"] and any("123456" in s for s in p["steps"])
+	assert "Student ID" in p["account"] and "admission number" in p["account"] and any("123456" in s for s in p["steps"])
 
 
 def test_pay_steps_till_and_none():
@@ -78,3 +78,12 @@ def test_next_date():
 	assert next_date(terms, date(2026, 4, 10)) == "Term 2 opens 4 May 2026"
 	assert next_date(terms, date(2026, 2, 1)) == "Term 1 closes 2 April 2026"
 	assert next_date(terms, date(2026, 9, 1)) is None
+
+
+def test_public_note_fills_placeholders():
+	note = "Pay via {mpesa}. For a Paybill, always use the Student ID as the account number."
+	assert public_note(note, "Till (Buy Goods)", "247247", "X") == (
+		"Pay via M-Pesa Buy Goods, Till 247247. For a Paybill, always use the Student ID as the account number.")
+	assert public_note("Pay {mpesa}", "Paybill", "123", "X") == "Pay M-Pesa Paybill 123, Account your child's Student ID"
+	assert "{" not in public_note("Hi {unknown} there", "Paybill", "1", "X")
+	assert public_note(None, "Paybill", "1", "X") == ""

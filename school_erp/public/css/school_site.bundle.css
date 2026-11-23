@@ -15,12 +15,12 @@
 .ss-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
 .ss-brand-name { font-family: Manrope, Inter, sans-serif; font-weight: 800; font-size: 18px; }
 .ss-brand-motto { font-size: 12px; color: var(--ss-muted); }
-.ss-menu > summary { display: none; list-style: none; }
+.ss-menu { display: none; }
+.ss-menu > summary { list-style: none; }
 .ss-menu > summary::-webkit-details-marker { display: none; }
 .ss-nav { display: flex; align-items: center; gap: 28px; }
 .ss-nav a:not(.ss-btn) { color: var(--ss-body); font-weight: 500; font-size: 15px; text-decoration: none; }
 .ss-nav a:not(.ss-btn):hover { color: var(--ss-color); }
-.ss-menu:not([open]) > .ss-nav { display: flex; }
 
 /* buttons */
 .ss-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 0 20px;
@@ -150,9 +150,9 @@ body.ss-login-body .page-breadcrumbs { display: none; }
 	.ss-header-row { min-height: 64px; }
 	.ss-brand-name { font-size: 16px; }
 	.ss-brand-motto { display: none; }
-	.ss-menu { position: relative; }
+	.ss-nav-wide { display: none; }
+	.ss-menu { display: block; position: relative; }
 	.ss-menu > summary { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--ss-line); border-radius: 10px; cursor: pointer; }
-	.ss-menu:not([open]) > .ss-nav { display: none; }
 	.ss-menu[open] > .ss-nav { position: absolute; right: 0; top: 52px; flex-direction: column; align-items: stretch; gap: 4px; background: #fff; border: 1px solid var(--ss-line); border-radius: 14px; padding: 10px; width: 240px; box-shadow: 0 12px 32px rgba(15,23,42,.14); }
 	.ss-menu[open] > .ss-nav a:not(.ss-btn) { padding: 12px; }
 	.ss-section { padding: 40px 0; }
@@ -168,6 +168,7 @@ body.ss-login-body .page-breadcrumbs { display: none; }
 	.ss-card-title { font-size: 15px; }
 	.ss-h2 { font-size: 24px; margin-bottom: 16px; }
 	.ss-fees { padding: 24px; border-radius: 18px; }
+	.ss-fees .ss-fees-col:last-child { order: -1; }  /* the number first on a phone */
 	.ss-fees h2 { font-size: 24px; }
 	.ss-paynum { font-size: 30px; }
 	.ss-inline-form { flex-direction: column; }

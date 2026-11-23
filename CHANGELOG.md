@@ -5,6 +5,8 @@ Add your line in the PR that makes the change.
 
 ## Unreleased
 
+- School website fixes: the header menu shows on wide screens, the payment note fills in its M-Pesa details instead
+  of showing {mpesa}, the Paybill account reads Student ID or admission number, and the number comes first on phones (#100).
 - **School website**: the school's address now opens a homepage branded for the school (crest, colours, photos, fees
   and Paybill, notices, term dates, contacts), with a branded sign-in page, one header and footer on the public pages,
   and a calm "portal paused" page that keeps Stemic's invoice details for school administrators (#99).
